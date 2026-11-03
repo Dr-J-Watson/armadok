@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { api, refreshSession, setAccessToken } from './api'
+import { stillValid } from './time'
 
 export interface Grant {
   right: string
@@ -16,6 +17,8 @@ export interface User {
   id: string
   username: string
   grants: Grant[]
+  totp_enabled: boolean
+  backup_codes_remaining: number
 }
 
 type State =
@@ -92,4 +95,14 @@ export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext)
   if (!context) throw new Error('useAuth must be used inside AuthProvider')
   return context
+}
+
+// Interface hint only: whether the account holds a right everywhere, to hide screens it could
+// not use anyway. The server decides for real on every request.
+export function useCan(right: string): boolean {
+  const { state } = useAuth()
+  if (state.status !== 'authenticated') return false
+  return state.user.grants.some(
+    (g) => g.right === right && g.scope === '*' && stillValid(g.expires_at),
+  )
 }

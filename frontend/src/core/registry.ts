@@ -8,6 +8,8 @@ export interface NavItem {
   id: string
   labelKey: string // in the `common` namespace
   to: string
+  // Hidden when the account does not hold this right everywhere (the server still decides).
+  requiresRight?: string
 }
 
 export interface NodeTabProps {

@@ -10,5 +10,7 @@
   "prefs.languages.fr": "Français",
   "prefs.themes.system": "Système",
   "prefs.themes.light": "Clair",
-  "prefs.themes.dark": "Sombre"
+  "prefs.themes.dark": "Sombre",
+  "nav.account": "Mon compte",
+  "nav.users": "Équipe"
 }

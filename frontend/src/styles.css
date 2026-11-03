@@ -135,3 +135,7 @@ button:disabled { opacity: .6; cursor: progress; }
 .link-button { border: 0; background: none; padding: .25rem 0; min-height: var(--tap); color: var(--accent); text-decoration: underline; cursor: pointer; }
 .object-list { margin-top: var(--gap); }
 .object-list ul { list-style: none; padding: 0; max-height: 18rem; overflow: auto; }
+
+.qr { width: 14rem; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.secret { display: block; padding: .5rem .75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow-wrap: anywhere; }
+.danger-badge { color: var(--danger); border-color: var(--danger); }

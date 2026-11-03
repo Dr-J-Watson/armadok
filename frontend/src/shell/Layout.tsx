@@ -1,8 +1,15 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../core/auth'
+import { useAuth, useCan } from '../core/auth'
 import type { NavItem } from '../core/registry'
 import { Preferences } from './Preferences'
+
+function NavEntry({ item }: { item: NavItem }) {
+  const { t } = useTranslation()
+  const allowed = useCan(item.requiresRight ?? '')
+  if (item.requiresRight && !allowed) return null
+  return <NavLink to={item.to}>{t(item.labelKey)}</NavLink>
+}
 
 // The frame around every page: navigation (from the registry), preferences, account.
 export function Layout({ nav }: { nav: NavItem[] }) {
@@ -14,9 +21,7 @@ export function Layout({ nav }: { nav: NavItem[] }) {
         <strong className="brand">{t('app.name')}</strong>
         <nav aria-label={t('nav.main')}>
           {nav.map((item) => (
-            <NavLink key={item.id} to={item.to}>
-              {t(item.labelKey)}
-            </NavLink>
+            <NavEntry key={item.id} item={item} />
           ))}
         </nav>
         <div className="topbar-end">
