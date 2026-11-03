@@ -1,0 +1,30 @@
+# Example: build Armadok from this repository and run it locally (no Traefik, plain HTTP).
+# Copy to docker-compose.yml (git-ignored) and adapt.
+#
+#   docker compose up -d --build     # the hub, on http://127.0.0.1:8000
+#
+# Other machines run a worker: see docker-compose.worker.example.yml.
+services:
+  armadok:
+    build: .
+    image: armadok:local
+    restart: unless-stopped
+    environment:
+      ARMADOK_ENCRYPTION_KEY: ${ARMADOK_ENCRYPTION_KEY:?set it in .env}
+      # Plain HTTP on localhost: the refresh cookie cannot be "Secure" here. Keep the default
+      # (true) as soon as the hub is behind HTTPS.
+      ARMADOK_COOKIE_SECURE: "false"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - armadok-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  armadok-data:
