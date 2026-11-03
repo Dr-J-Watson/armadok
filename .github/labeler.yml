@@ -1,0 +1,20 @@
+# Labels added automatically to pull requests from the files they change.
+# Folder names are placeholders: adjust them when the code layout exists.
+"area:docs":
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.md", "docs/**"]
+"area:ci":
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", ".githooks/**", "scripts/**"]
+"area:i18n":
+  - changed-files:
+      - any-glob-to-any-file: ["locales/**"]
+"area:backend":
+  - changed-files:
+      - any-glob-to-any-file: ["backend/**"]
+"area:frontend":
+  - changed-files:
+      - any-glob-to-any-file: ["frontend/**"]
+"area:docker":
+  - changed-files:
+      - any-glob-to-any-file: ["Dockerfile", "docker-compose.example.yml", "docker-compose.*.example.yml"]

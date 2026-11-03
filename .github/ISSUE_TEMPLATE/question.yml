@@ -1,0 +1,25 @@
+name: Question
+description: Ask for help or clarification
+title: "question: "
+labels: ["question"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What are you trying to do, and what did you already try?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Armadok version
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I read the README and searched existing issues.
+          required: true
+        - label: I removed secrets, real domains and real IP addresses from this question.
+          required: true
