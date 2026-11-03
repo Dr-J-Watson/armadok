@@ -1,0 +1,10 @@
+{
+  "tab": "Conteneurs",
+  "empty": "Aucun conteneur sur cette machine.",
+  "truncated": "La liste est incomplète : cette machine a plus de conteneurs qu'on ne peut en afficher d'un coup.",
+  "columns.name": "Nom",
+  "columns.image": "Image",
+  "columns.state": "État",
+  "columns.ports": "Ports publiés",
+  "columns.networks": "Réseaux"
+}

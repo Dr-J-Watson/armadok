@@ -1,0 +1,14 @@
+{
+  "app.name": "Armadok",
+  "loading": "Loading…",
+  "notFound": "Page not found.",
+  "nav.main": "Main navigation",
+  "nav.nodes": "Nodes",
+  "prefs.language": "Language",
+  "prefs.theme": "Theme",
+  "prefs.languages.en": "English",
+  "prefs.languages.fr": "Français",
+  "prefs.themes.system": "System",
+  "prefs.themes.light": "Light",
+  "prefs.themes.dark": "Dark"
+}

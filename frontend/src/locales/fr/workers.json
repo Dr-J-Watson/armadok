@@ -1,0 +1,17 @@
+{
+  "tab": "Worker",
+  "state.connected": "Connecté",
+  "state.offline": "Enrôlé, hors ligne",
+  "state.none": "Aucun worker",
+  "lastSeen": "Vu pour la dernière fois le {{date}}",
+  "enrol": "Enrôler un worker",
+  "enrolAgain": "Enrôler un nouveau worker",
+  "ping": "Tester la connexion",
+  "pingOk": "Le worker a répondu.",
+  "revoke": "Révoquer le worker",
+  "enrolment.title": "Démarrer le worker sur la machine",
+  "enrolment.explain": "Mettez ces trois valeurs dans le .env de la machine, puis démarrez le worker. Le jeton ne sert qu'une fois et expire à {{time}}.",
+  "enrolment.copy": "Copier",
+  "enrolment.copied": "Copié",
+  "enrolment.once": "Ce jeton n'est affiché que maintenant. Si vous le perdez, enrôlez à nouveau."
+}

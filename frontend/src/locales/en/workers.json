@@ -1,0 +1,17 @@
+{
+  "tab": "Worker",
+  "state.connected": "Connected",
+  "state.offline": "Enrolled, offline",
+  "state.none": "No worker",
+  "lastSeen": "Last seen {{date}}",
+  "enrol": "Enrol a worker",
+  "enrolAgain": "Enrol a new worker",
+  "ping": "Test the connection",
+  "pingOk": "The worker answered.",
+  "revoke": "Revoke the worker",
+  "enrolment.title": "Start the worker on the machine",
+  "enrolment.explain": "Put these three values in the .env of the machine, then start the worker. The token works once and expires at {{time}}.",
+  "enrolment.copy": "Copy",
+  "enrolment.copied": "Copied",
+  "enrolment.once": "This token is shown only now. If you lose it, enrol again."
+}
