@@ -7,7 +7,6 @@ from collections.abc import Callable, Iterator
 
 from fastapi import Request
 
-from armadok.core.db import connect
 from armadok.core.errors import ApiError, Unauthenticated
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
@@ -23,7 +22,7 @@ def get_registry(request: Request) -> Registry:
 
 def get_db(request: Request) -> Iterator[sqlite3.Connection]:
     """Open a database connection for one request and close it afterwards."""
-    conn = connect(request.app.state.settings.db_path)
+    conn = request.app.state.settings.open_db()
     try:
         yield conn
     finally:

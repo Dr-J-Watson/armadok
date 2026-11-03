@@ -6,9 +6,12 @@ local run; production values come from the container environment.
 
 from __future__ import annotations
 
+import hashlib
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from armadok.core.db import Connection, connect
 
 
 @dataclass(frozen=True)
@@ -24,6 +27,17 @@ class Settings:
     encryption_key: str | None = field(default=None, repr=False)
     # Folder holding the built web interface. Absent in development (the dev server is used).
     web_dir: Path | None = None
+
+    @property
+    def audit_key(self) -> bytes | None:
+        """Key that signs audit entries (derived from the encryption key; None without one)."""
+        if not self.encryption_key:
+            return None
+        return hashlib.sha256(b"armadok-audit-v1" + self.encryption_key.encode()).digest()
+
+    def open_db(self) -> Connection:
+        """Open the database with this configuration's audit signing key."""
+        return connect(self.db_path, self.audit_key)
 
     @property
     def db_path(self) -> Path:

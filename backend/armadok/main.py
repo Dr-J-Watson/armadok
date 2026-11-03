@@ -8,9 +8,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from armadok.core import crypto
-from armadok.core.audit import AUDIT_MIGRATION
+from armadok.core.audit import AUDIT_MIGRATION, CHAIN_MIGRATION, HARDENING_MIGRATION
 from armadok.core.config import Settings, load_settings
-from armadok.core.db import apply_migrations, connect
+from armadok.core.db import apply_migrations
 from armadok.core.deps import Authenticator
 from armadok.core.errors import ApiError
 from armadok.core.grants import GRANTS_MIGRATION
@@ -37,11 +37,13 @@ def create_app(
     registry = registry or load_registry(ENABLED_MODULES)
 
     crypto.validate(settings)
-    conn = connect(settings.db_path)
+    conn = settings.open_db()
     apply_migrations(
         conn,
         [
             AUDIT_MIGRATION,
+            CHAIN_MIGRATION,
+            HARDENING_MIGRATION,
             GRANTS_MIGRATION,
             *(m for module in registry.modules for m in module.migrations),
         ],

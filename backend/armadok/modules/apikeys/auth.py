@@ -9,7 +9,6 @@ from datetime import UTC, datetime
 
 from fastapi import Request
 
-from armadok.core.db import connect
 from armadok.core.grants import load_grants, parse_expiry
 from armadok.core.rights import Principal
 from armadok.modules.apikeys import repository
@@ -30,7 +29,7 @@ def authenticate(request: Request) -> Principal | None:
     if match is None:
         return None
     key_id, secret = match.groups()
-    conn = connect(request.app.state.settings.db_path)
+    conn = request.app.state.settings.open_db()
     try:
         row = repository.get_key_for_auth(conn, key_id)
         # Compare against a hash even when the key is unknown, to keep timing uniform.

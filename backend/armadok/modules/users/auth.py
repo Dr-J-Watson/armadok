@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from fastapi import Request
 
-from armadok.core.db import connect
 from armadok.core.grants import load_grants
 from armadok.core.rights import Principal
 from armadok.modules.users import repository
@@ -25,7 +24,7 @@ def authenticate(request: Request) -> Principal | None:
     token = bearer_token(request)
     if token is None:
         return None
-    conn = connect(request.app.state.settings.db_path)
+    conn = request.app.state.settings.open_db()
     try:
         user_id = repository.user_for_access_token(conn, token)
         if user_id is None:

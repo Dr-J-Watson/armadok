@@ -18,7 +18,6 @@ from typing import Any
 from fastapi import APIRouter, Depends, Request, WebSocket
 
 from armadok.core import audit
-from armadok.core.db import connect
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError, NotFound
 from armadok.core.registry import Registry
@@ -170,7 +169,7 @@ async def call_operation(
     declared = registry.worker_ops().get(op)
     if declared is None:
         raise ValueError(f"operation {op!r} is not declared by any module")
-    conn = connect(app.state.settings.db_path)
+    conn = app.state.settings.open_db()
     try:
         node = nodes_repo.get_node(conn, node_id)
     finally:
@@ -256,7 +255,7 @@ def _verify_worker(
     settings: Any, registry: Registry, server: protocol.ServerHandshake, message: dict
 ) -> tuple[str, str]:
     """Check an enrolment or a reconnection; return `(node_id, worker_id)` or raise."""
-    conn = connect(settings.db_path)
+    conn = settings.open_db()
     try:
         if message.get("type") == "enroll":
             node_id, worker_id = _enrol(conn, registry, server.transcript, message)
@@ -272,7 +271,7 @@ def _verify_worker(
 
 def _still_valid(settings: Any, session: WorkerSession) -> bool:
     """Return True while the worker is not revoked and its node still exists."""
-    conn = connect(settings.db_path)
+    conn = settings.open_db()
     try:
         return (
             repository.get_active_worker(conn, session.worker_id) is not None
@@ -340,7 +339,7 @@ def _reconnect(conn: sqlite3.Connection, server: protocol.ServerHandshake, msg: 
 
 async def on_node_deleted(app: Any, node_id: str) -> None:
     """Revoke the worker of a deleted node and cut its connection."""
-    conn = connect(app.state.settings.db_path)
+    conn = app.state.settings.open_db()
     try:
         repository.revoke_node_worker(conn, node_id)
     finally:

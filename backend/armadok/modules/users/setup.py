@@ -23,6 +23,7 @@ SUPERADMIN_RIGHTS = (
     "users.reset_password",
     "users.reset_2fa",
     "grants.manage",
+    "audit.read",
     "nodes.create",
 )
 

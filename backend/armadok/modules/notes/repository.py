@@ -1,0 +1,172 @@
+"""Database access for notes.
+
+Every query is scoped to the owner: there is no way to read another account's note, not even
+for an administrator.
+"""
+
+from __future__ import annotations
+
+import sqlite3
+import uuid
+from datetime import UTC, datetime
+from typing import Any
+
+from armadok.core import crypto
+from armadok.core.config import Settings
+from armadok.core.db import Migration
+
+MIGRATION = Migration(
+    "notes-0001-create",
+    """
+    CREATE TABLE notes (
+        id TEXT PRIMARY KEY,
+        owner_id TEXT NOT NULL,
+        node_id TEXT NOT NULL,
+        object_type TEXT NOT NULL,
+        object_id TEXT NOT NULL,
+        body TEXT NOT NULL,
+        encrypted INTEGER NOT NULL DEFAULT 0,
+        importance TEXT NOT NULL DEFAULT 'info',
+        pinned INTEGER NOT NULL DEFAULT 0,
+        done INTEGER NOT NULL DEFAULT 0,
+        remind_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+    CREATE INDEX notes_owner ON notes (owner_id, node_id, object_type, object_id);
+    """,
+)
+
+MAX_PER_OWNER = 5000  # bounds the in-memory search and the table size per account
+
+
+def _seal(settings: Settings, text: str) -> tuple[str, int]:
+    """Encrypt a note's text when a key is configured, so a database copy does not read it."""
+    if settings.encryption_key:
+        return crypto.encrypt(settings, text), 1
+    return text, 0
+
+
+def _public(settings: Settings, row: sqlite3.Row) -> dict[str, Any]:
+    data = dict(row)
+    data["body"] = crypto.decrypt(settings, data["body"]) if data.pop("encrypted") else data["body"]
+    for flag in ("pinned", "done"):
+        data[flag] = bool(data[flag])
+    data.pop("owner_id")
+    return data
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def count(conn: sqlite3.Connection, owner_id: str) -> int:
+    """Return how many notes an account has."""
+    return conn.execute("SELECT COUNT(*) FROM notes WHERE owner_id = ?", (owner_id,)).fetchone()[0]
+
+
+def create(
+    conn: sqlite3.Connection,
+    settings: Settings,
+    owner_id: str,
+    node_id: str,
+    object_type: str,
+    object_id: str,
+    body: str,
+    importance: str,
+    remind_at: str | None,
+) -> dict[str, Any]:
+    """Insert a note owned by `owner_id` and return it."""
+    sealed, encrypted = _seal(settings, body)
+    note_id, now = uuid.uuid4().hex, _now()
+    conn.execute(
+        "INSERT INTO notes (id, owner_id, node_id, object_type, object_id, body, encrypted,"
+        " importance, remind_at, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            note_id,
+            owner_id,
+            node_id,
+            object_type,
+            object_id,
+            sealed,
+            encrypted,
+            importance,
+            remind_at,
+            now,
+            now,
+        ),
+    )
+    conn.commit()
+    return get(conn, settings, owner_id, note_id)  # type: ignore[return-value]
+
+
+def get(conn: sqlite3.Connection, settings: Settings, owner_id: str, note_id: str) -> dict | None:
+    """Return one of the owner's notes, or None (also for someone else's note)."""
+    row = conn.execute(
+        "SELECT * FROM notes WHERE id = ? AND owner_id = ?", (note_id, owner_id)
+    ).fetchone()
+    return _public(settings, row) if row else None
+
+
+def list_notes(
+    conn: sqlite3.Connection,
+    settings: Settings,
+    owner_id: str,
+    *,
+    node_id: str | None,
+    object_type: str | None,
+    object_id: str | None,
+    done: bool | None,
+) -> list[dict[str, Any]]:
+    """Return the owner's notes, pinned first then newest first."""
+    where, args = ["owner_id = ?"], [owner_id]
+    for column, value in (
+        ("node_id", node_id),
+        ("object_type", object_type),
+        ("object_id", object_id),
+    ):
+        if value is not None:
+            where.append(f"{column} = ?")
+            args.append(value)
+    if done is not None:
+        where.append("done = ?")
+        args.append(int(done))
+    rows = conn.execute(
+        f"SELECT * FROM notes WHERE {' AND '.join(where)} ORDER BY pinned DESC, updated_at DESC"
+        " LIMIT ?",
+        (*args, MAX_PER_OWNER),
+    )
+    return [_public(settings, r) for r in rows]
+
+
+def update(
+    conn: sqlite3.Connection,
+    settings: Settings,
+    owner_id: str,
+    note_id: str,
+    changes: dict[str, Any],
+) -> None:
+    """Apply changes (body, importance, pinned, done, remind_at) to one of the owner's notes."""
+    fields: dict[str, Any] = {}
+    if "body" in changes:
+        fields["body"], fields["encrypted"] = _seal(settings, changes["body"])
+    for key in ("importance", "remind_at"):
+        if key in changes:
+            fields[key] = changes[key]
+    for key in ("pinned", "done"):
+        if key in changes:
+            fields[key] = int(changes[key])
+    fields["updated_at"] = _now()
+    assignments = ", ".join(f"{k} = ?" for k in fields)
+    conn.execute(
+        f"UPDATE notes SET {assignments} WHERE id = ? AND owner_id = ?",
+        (*fields.values(), note_id, owner_id),
+    )
+    conn.commit()
+
+
+def delete(conn: sqlite3.Connection, owner_id: str, note_id: str) -> bool:
+    """Delete one of the owner's notes; False if it does not exist."""
+    cur = conn.execute("DELETE FROM notes WHERE id = ? AND owner_id = ?", (note_id, owner_id))
+    conn.commit()
+    return cur.rowcount == 1

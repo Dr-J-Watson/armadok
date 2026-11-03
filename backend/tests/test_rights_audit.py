@@ -2,7 +2,13 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from armadok.core.audit import AUDIT_MIGRATION, UnknownAuditEvent, record
+from armadok.core.audit import (
+    AUDIT_MIGRATION,
+    CHAIN_MIGRATION,
+    HARDENING_MIGRATION,
+    UnknownAuditEvent,
+    record,
+)
 from armadok.core.db import apply_migrations, connect
 from armadok.core.errors import MissingRight
 from armadok.core.module import Right
@@ -51,7 +57,7 @@ def test_cannot_grant_more_than_held():
 
 def test_audit_records_and_rejects_unknown_event(tmp_path):
     conn = connect(tmp_path / "a.db")
-    apply_migrations(conn, [AUDIT_MIGRATION])
+    apply_migrations(conn, [AUDIT_MIGRATION, CHAIN_MIGRATION, HARDENING_MIGRATION])
     record(conn, {"node.create"}, "u1", "node.create", object_type="node", object_id="n1")
     row = conn.execute("SELECT actor, event, outcome FROM audit_log").fetchone()
     assert (row["actor"], row["event"], row["outcome"]) == ("u1", "node.create", "success")

@@ -24,12 +24,23 @@ class Migration:
     sql: str
 
 
-def connect(path: Path) -> sqlite3.Connection:
+class Connection(sqlite3.Connection):
+    """A SQLite connection that also carries the key used to sign audit entries.
+
+    Carrying it here means any code that writes an audit entry signs it, without every call
+    site having to pass the key along.
+    """
+
+    audit_key: bytes | None = None
+
+
+def connect(path: Path, audit_key: bytes | None = None) -> Connection:
     """Open the database with foreign keys enforced and rows addressable by name."""
     path.parent.mkdir(parents=True, exist_ok=True)
     # check_same_thread=False: FastAPI may run a request's dependency and handler on different
     # worker threads; a connection is still only ever used by one request at a time.
-    conn = sqlite3.connect(path, check_same_thread=False)
+    conn = sqlite3.connect(path, check_same_thread=False, factory=Connection)
+    conn.audit_key = audit_key
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
