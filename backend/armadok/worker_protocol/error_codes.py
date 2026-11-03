@@ -27,5 +27,12 @@ WORKER_ERROR_CODES = frozenset(
         "worker.forbidden",
         "worker.conflict",
         "worker.not_text",
+        # Availability probes: why a probe got no answer (see `worker/uptime_ops.py`).
+        "worker.probe_dns",
+        "worker.probe_refused",
+        "worker.probe_timeout",
+        "worker.probe_tls",
+        "worker.probe_failed",
+        "worker.probe_address_not_allowed",
     }
 )

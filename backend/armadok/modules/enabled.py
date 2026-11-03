@@ -26,4 +26,5 @@ ENABLED_MODULES: tuple[str, ...] = (
     "hooks",
     "metrics",
     "service_accounts",
+    "uptime",
 )

@@ -123,5 +123,16 @@
   "emergency.already_open": "Vous avez déjà une session d'urgence sur cette machine.",
   "emergency.own_node": "Cette machine est déjà la vôtre.",
   "emergency.not_with_key": "Une session d'urgence s'ouvre depuis votre propre session, pas avec une clé.",
-  "emergency.cooling_down": "Le propriétaire a mis fin à votre dernière session il y a un instant. Réessayez plus tard."
+  "emergency.cooling_down": "Le propriétaire a mis fin à votre dernière session il y a un instant. Réessayez plus tard.",
+  "uptime.invalid_target": "Cette adresse ne peut pas être vérifiée.",
+  "uptime.address_not_allowed": "Cette adresse n'est pas autorisée.",
+  "uptime.too_many": "Cette machine a atteint sa limite de sondes.",
+  "uptime.too_soon": "Vérifié il y a un instant. Attendez quelques secondes.",
+  "uptime.not_checked": "La machine ne peut pas être interrogée pour l'instant.",
+  "worker.probe_dns": "Le nom n'a pas pu être résolu.",
+  "worker.probe_refused": "La connexion a été refusée.",
+  "worker.probe_timeout": "Pas de réponse à temps.",
+  "worker.probe_tls": "La poignée de main TLS ou le certificat a échoué.",
+  "worker.probe_failed": "La réponse n'est pas valide.",
+  "worker.probe_address_not_allowed": "Cette adresse n'est pas autorisée."
 }

@@ -175,3 +175,8 @@ button:disabled { opacity: .6; cursor: progress; }
 .emergency-banner button {
   color: inherit;
 }
+
+/* Availability history: one mark per check, newest on the right. */
+.history { margin-left: .6rem; letter-spacing: -.1em; }
+.dot.ok { color: var(--ok); }
+.dot.bad { color: var(--danger); }

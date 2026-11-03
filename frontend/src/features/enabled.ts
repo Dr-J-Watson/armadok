@@ -18,6 +18,7 @@ import { relationsFeature } from './relations/feature'
 import { serviceAccountsFeature } from './service_accounts/feature'
 import { startFeature } from './start/feature'
 import { rolesFeature } from './roles/feature'
+import { uptimeFeature } from './uptime/feature'
 import { traefikFeature } from './traefik/feature'
 import { usersFeature } from './users/feature'
 import { workersFeature } from './workers/feature'
@@ -42,5 +43,6 @@ export const features: Feature[] = [
   notificationsFeature,
   dnsFeature,
   certsFeature,
+  uptimeFeature,
   accountFeature,
 ]

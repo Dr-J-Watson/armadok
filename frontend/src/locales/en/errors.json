@@ -123,5 +123,16 @@
   "emergency.already_open": "You already have an emergency session on this machine.",
   "emergency.own_node": "This machine is yours already.",
   "emergency.not_with_key": "An emergency session is opened from your own session, not with a key.",
-  "emergency.cooling_down": "The owner ended your last session a moment ago. Try again later."
+  "emergency.cooling_down": "The owner ended your last session a moment ago. Try again later.",
+  "uptime.invalid_target": "This address cannot be checked.",
+  "uptime.address_not_allowed": "This address is not allowed.",
+  "uptime.too_many": "This machine has reached its limit of probes.",
+  "uptime.too_soon": "Checked a moment ago. Wait a few seconds.",
+  "uptime.not_checked": "The machine could not be asked right now.",
+  "worker.probe_dns": "The name could not be resolved.",
+  "worker.probe_refused": "The connection was refused.",
+  "worker.probe_timeout": "No answer in time.",
+  "worker.probe_tls": "The TLS handshake or certificate failed.",
+  "worker.probe_failed": "The answer was not valid.",
+  "worker.probe_address_not_allowed": "This address is not allowed."
 }

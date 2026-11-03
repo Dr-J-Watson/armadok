@@ -283,7 +283,14 @@ def test_a_delegate_gives_only_what_they_hold_where_they_hold_it(box):
     viewer, operator = role_id(client, admin, "viewer"), role_id(client, admin, "operator")
     # she holds nodes.read + docker.read only on `node`, but the viewer role has more.
     assert assign(client, carol, dave_id, viewer, scope=f"node:{node}").status_code == 403
-    for right in ("projects.read", "traefik.read", "certs.read", "dns.read", "workers.read"):
+    for right in (
+        "projects.read",
+        "traefik.read",
+        "certs.read",
+        "dns.read",
+        "workers.read",
+        "uptime.read",
+    ):
         client.post(
             f"/api/v1/users/{carol_id}/grants",
             headers=admin,
