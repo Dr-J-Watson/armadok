@@ -65,6 +65,13 @@ class HookAction:
     right: str
     validate: Callable[[dict[str, Any]], dict[str, Any]]
     run: Callable[[Any, Any, dict[str, Any]], Awaitable[None]]
+    # Where the action may be used: from an incoming hook (a token anyone holding it can use),
+    # on a schedule (the `schedule` module), or both.
+    hookable: bool = True
+    schedulable: bool = True
+    # What the target needs besides the machine, for forms: `(field, choices)`; no choices
+    # means free text.
+    fields: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
 
 @dataclass(frozen=True)

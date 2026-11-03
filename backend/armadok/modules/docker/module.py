@@ -1,7 +1,7 @@
 """Declaration of the `docker` module."""
 
 from armadok.core.module import Module, RelationProvider, Right, Signal, WorkerOp
-from armadok.modules.docker import relations
+from armadok.modules.docker import prune, relations
 from armadok.modules.docker.routes import router
 
 module = Module(
@@ -24,6 +24,7 @@ module = Module(
     ),
     signals=(Signal("docker.changed", "docker.read"),),
     audit_events=("docker.container_action", "docker.logs_read"),
+    hook_actions=(prune.ACTION,),
     relations=(
         RelationProvider(
             name="docker",
@@ -41,5 +42,6 @@ module = Module(
         WorkerOp("docker.volumes.list", ("docker", "full")),
         WorkerOp("docker.container.action", ("docker", "full")),
         WorkerOp("docker.container.logs", ("docker", "full")),
+        WorkerOp("docker.prune", ("docker", "full")),
     ),
 )

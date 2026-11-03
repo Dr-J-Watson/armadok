@@ -134,5 +134,18 @@
   "worker.probe_timeout": "No answer in time.",
   "worker.probe_tls": "The TLS handshake or certificate failed.",
   "worker.probe_failed": "The answer was not valid.",
-  "worker.probe_address_not_allowed": "This address is not allowed."
+  "worker.probe_address_not_allowed": "This address is not allowed.",
+  "schedule.invalid_target": "This target is not valid for this action.",
+  "schedule.invalid_schedule": "This schedule is not valid.",
+  "schedule.invalid_name": "The name cannot be empty.",
+  "schedule.unknown_action": "This action cannot be scheduled.",
+  "schedule.too_many": "This machine has reached its limit of scheduled tasks.",
+  "schedule.too_soon": "Run a moment ago. Wait a few seconds.",
+  "schedule.already_running": "This task is already running.",
+  "schedule.action_unavailable": "This action is no longer available.",
+  "schedule.creator_unavailable": "The account that created this task is disabled.",
+  "schedule.creator_lost_right": "The account that created this task no longer holds the right it needs.",
+  "schedule.failed": "The task failed.",
+  "schedule.timeout": "The task took too long and was stopped.",
+  "schedule.skipped_late": "The run was missed (the hub was stopped) and skipped."
 }

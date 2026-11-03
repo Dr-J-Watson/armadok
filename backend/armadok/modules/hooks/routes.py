@@ -96,7 +96,7 @@ def list_hooks(
     who.require("hooks.manage", registry.rights())
     return {
         "hooks": repo.list_for(conn, who.id),
-        "actions": sorted(registry.hook_actions()),
+        "actions": sorted(n for n, a in registry.hook_actions().items() if a.hookable),
     }
 
 
@@ -114,7 +114,7 @@ def create_hook(
     catalogue = registry.rights()
     who.require("hooks.manage", catalogue)
     action = registry.hook_actions().get(body.action)
-    if action is None:
+    if action is None or not action.hookable:
         raise ApiError("hooks.unknown_action", 422)
     try:
         target = action.validate(dict(body.target))
@@ -193,6 +193,8 @@ async def fire(
         raise ApiError("hooks.invalid", 401)
     actor = f"{row['created_by']} via key:hook-{hook_id}"
     action = registry.hook_actions().get(row["action"])
+    if action is not None and not action.hookable:
+        action = None
     creator = users_repo.get_user(conn, row["created_by"])
     # An account disabled since the hook was made takes its hooks with it for good.
     disabled_since = creator and creator["deactivated_at"]
@@ -201,6 +203,8 @@ async def fire(
         or creator is None
         or not creator["is_active"]
         or (disabled_since and disabled_since > row["created_at"])
+        # A service account stops with the person responsible for it.
+        or registry.account_blocked(conn, row["created_by"])
     ):
         _audit(conn, registry, actor, "hook.fire", hook_id, "failure", code="hooks.unavailable")
         raise ApiError("hooks.unavailable", 403)

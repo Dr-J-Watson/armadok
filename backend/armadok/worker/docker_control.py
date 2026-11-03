@@ -7,9 +7,11 @@ its volumes, and never forces (a running container must be stopped first).
 
 from __future__ import annotations
 
+import json
 import re
 import socket
 from typing import Any
+from urllib.parse import quote
 
 from armadok.worker.docker_ops import container_id, docker_get, docker_raw
 from armadok.worker.operation import Operation, OperationError
@@ -98,4 +100,50 @@ def container_action(args: dict[str, Any]) -> dict[str, Any]:
     return {"done": True}
 
 
-OPERATIONS: dict[str, Operation] = {"docker.container.action": container_action}
+# kind -> (daemon path, extra filters). Volumes are never pruned from here: their data is the
+# one thing that cannot be recreated. Anything labelled `armadok.protect=true` is left alone
+# (where the daemon can filter on it); dangling images only, never every unused image.
+_PRUNE: dict[str, tuple[str, dict[str, list[str]]]] = {
+    "containers": ("/containers/prune", {"label!": [f"{PROTECT_LABEL}=true"]}),
+    "images": ("/images/prune", {"dangling": ["true"]}),
+    "networks": ("/networks/prune", {"label!": [f"{PROTECT_LABEL}=true"]}),
+}
+PRUNE_TIMEOUT_SECONDS = 25  # under the hub's call limit
+
+
+def prune(args: dict[str, Any]) -> dict[str, Any]:
+    """Remove stopped containers, dangling images or unused networks.
+
+    Inputs: `kind`. Output: `{"removed": count, "space": bytes freed}`.
+    Errors: `worker.invalid_path` (unknown kind), `worker.docker_error`.
+    """
+    kind = args.get("kind")
+    if not isinstance(kind, str) or kind not in _PRUNE:
+        raise OperationError("worker.invalid_path")
+    path, filters = _PRUNE[kind]
+    status, body = docker_raw(
+        "POST", f"{path}?filters={quote(json.dumps(filters))}", PRUNE_TIMEOUT_SECONDS
+    )
+    if status != 200:
+        raise OperationError("worker.docker_error")
+    try:
+        data = json.loads(body)
+    except ValueError:
+        raise OperationError("worker.docker_error") from None
+    if not isinstance(data, dict):
+        raise OperationError("worker.docker_error")
+    # The daemon names the list differently for each kind; only counts go back to the hub.
+    names = (
+        data.get("ContainersDeleted") or data.get("ImagesDeleted") or data.get("NetworksDeleted")
+    )
+    space = data.get("SpaceReclaimed")
+    return {
+        "removed": len(names) if isinstance(names, list) else 0,
+        "space": space if type(space) is int and space >= 0 else 0,
+    }
+
+
+OPERATIONS: dict[str, Operation] = {
+    "docker.container.action": container_action,
+    "docker.prune": prune,
+}

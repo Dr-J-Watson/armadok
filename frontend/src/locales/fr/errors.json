@@ -134,5 +134,18 @@
   "worker.probe_timeout": "Pas de réponse à temps.",
   "worker.probe_tls": "La poignée de main TLS ou le certificat a échoué.",
   "worker.probe_failed": "La réponse n'est pas valide.",
-  "worker.probe_address_not_allowed": "Cette adresse n'est pas autorisée."
+  "worker.probe_address_not_allowed": "Cette adresse n'est pas autorisée.",
+  "schedule.invalid_target": "Cette cible n'est pas valable pour cette action.",
+  "schedule.invalid_schedule": "Cette planification n'est pas valable.",
+  "schedule.invalid_name": "Le nom ne peut pas être vide.",
+  "schedule.unknown_action": "Cette action ne peut pas être planifiée.",
+  "schedule.too_many": "Cette machine a atteint sa limite de tâches planifiées.",
+  "schedule.too_soon": "Exécutée il y a un instant. Attendez quelques secondes.",
+  "schedule.already_running": "Cette tâche est déjà en cours.",
+  "schedule.action_unavailable": "Cette action n'est plus disponible.",
+  "schedule.creator_unavailable": "Le compte qui a créé cette tâche est désactivé.",
+  "schedule.creator_lost_right": "Le compte qui a créé cette tâche n'a plus le droit nécessaire.",
+  "schedule.failed": "La tâche a échoué.",
+  "schedule.timeout": "La tâche a pris trop de temps et a été arrêtée.",
+  "schedule.skipped_late": "L'exécution a été manquée (le hub était arrêté) et sautée."
 }

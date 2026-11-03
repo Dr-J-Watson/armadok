@@ -35,7 +35,7 @@ module = Module(
         # Logs and task output can hold secrets that applications print.
         Right("projects.logs", depends_on=("projects.read",), node_owner=True, level="operate"),
     ),
-    hook_actions=(hook.ACTION,),
+    hook_actions=(hook.ACTION, hook.RESTART),
     signals=(
         Signal("projects.changed", "projects.read"),
         Signal("tasks.changed", "projects.read"),

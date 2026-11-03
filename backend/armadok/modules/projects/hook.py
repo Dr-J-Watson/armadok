@@ -28,16 +28,36 @@ def validate(target: dict[str, Any]) -> dict[str, Any]:
     return {"node_id": node_id, "project": project}
 
 
-async def run(app: Any, who: Any, target: dict[str, Any]) -> None:
-    """Redeploy: pull the images and bring the project up, as the hook's creator."""
-    registry = app.state.registry
-    conn = app.state.settings.open_db()
-    try:
-        authorise(conn, registry, who, target["node_id"], "projects.deploy")
-        body = schemas.ActionIn(action="up", pull=True)
-        await start_action(app, conn, registry, who, target["node_id"], target["project"], body)
-    finally:
-        conn.close()
+def _runner(body: schemas.ActionIn):
+    """Build the function that starts `body` on the project named by a target, as `who`."""
+
+    async def run(app: Any, who: Any, target: dict[str, Any]) -> None:
+        registry = app.state.registry
+        conn = app.state.settings.open_db()
+        try:
+            authorise(conn, registry, who, target["node_id"], "projects.deploy")
+            await start_action(app, conn, registry, who, target["node_id"], target["project"], body)
+        finally:
+            conn.close()
+
+    return run
 
 
-ACTION = HookAction("project.redeploy", "projects.deploy", validate, run)
+_FIELDS = (("project", ()),)
+# Redeploy: pull the images and bring the project up, as the creator of the hook or schedule.
+ACTION = HookAction(
+    "project.redeploy",
+    "projects.deploy",
+    validate,
+    _runner(schemas.ActionIn(action="up", pull=True)),
+    fields=_FIELDS,
+)
+# A scheduled restart: no reason to let a token trigger it, so not for hooks.
+RESTART = HookAction(
+    "project.restart",
+    "projects.deploy",
+    validate,
+    _runner(schemas.ActionIn(action="restart")),
+    hookable=False,
+    fields=_FIELDS,
+)
