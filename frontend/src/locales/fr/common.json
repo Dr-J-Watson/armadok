@@ -14,5 +14,6 @@
   "nav.account": "Mon compte",
   "nav.users": "Équipe",
   "nav.audit": "Audit",
-  "nav.notes": "Mes notes"
+  "nav.notes": "Mes notes",
+  "nav.dns": "DNS"
 }
