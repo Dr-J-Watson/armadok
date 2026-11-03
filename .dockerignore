@@ -1,0 +1,7 @@
+# Allow-list: only what the image needs enters the build context, so working files,
+# secrets and local data can never be copied into an image by mistake.
+*
+!backend/requirements.txt
+!backend/armadok
+**/__pycache__
+**/*.pyc

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
@@ -47,7 +49,7 @@ def create_app(
 
     app = FastAPI(
         title="Armadok",
-        version="0.0.0",
+        version=os.environ.get("ARMADOK_VERSION", "0.0.0"),
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
     )

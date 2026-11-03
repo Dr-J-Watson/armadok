@@ -1,0 +1,36 @@
+# Example: the Armadok hub behind Traefik. Copy to docker-compose.yml (git-ignored) and adapt.
+# Replace the host name, the network and the certificate resolver with your own.
+services:
+  armadok:
+    image: ghcr.io/dr-j-watson/armadok:edge
+    restart: unless-stopped
+    environment:
+      # Encrypts secrets in the database. Generate one (see .env.example) and keep a backup:
+      # without it, encrypted data cannot be read.
+      ARMADOK_ENCRYPTION_KEY: ${ARMADOK_ENCRYPTION_KEY:?set it in .env}
+    volumes:
+      - armadok-data:/data
+    # The container needs no write access outside its data volume and /tmp.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.routers.armadok.rule: Host(`armadok.example.com`)
+      traefik.http.routers.armadok.entrypoints: websecure
+      traefik.http.routers.armadok.tls.certresolver: letsencrypt
+      traefik.http.services.armadok.loadbalancer.server.port: "8000"
+
+volumes:
+  armadok-data:
+
+networks:
+  proxy:
+    external: true

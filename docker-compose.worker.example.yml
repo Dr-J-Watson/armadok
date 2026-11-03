@@ -1,0 +1,36 @@
+# Example: an Armadok worker on a machine you want to manage. One worker per machine.
+# Copy to docker-compose.yml on that machine (git-ignored) and adapt.
+#
+# First start: create the node in Armadok, click "Enrol a worker", and put the displayed
+# values in .env (ARMADOK_HUB_KEY, ARMADOK_ENROL_TOKEN). The token works once for 15 minutes;
+# after the worker has connected you can remove ARMADOK_ENROL_TOKEN.
+services:
+  armadok-worker:
+    image: ghcr.io/dr-j-watson/armadok:edge
+    command: ["python", "-m", "armadok.worker"]
+    restart: unless-stopped
+    environment:
+      # The worker dials the hub: no port has to be opened on this machine.
+      ARMADOK_HUB_URL: wss://armadok.example.com/api/v1/worker/connect
+      ARMADOK_HUB_KEY: ${ARMADOK_HUB_KEY:?set it in .env}
+      ARMADOK_ENROL_TOKEN: ${ARMADOK_ENROL_TOKEN:-}
+    volumes:
+      # The worker's identity key lives here: keep this volume.
+      - armadok-worker-data:/data
+      # Read access to Docker. Prefer a docker-socket-proxy limited to GET requests if you can.
+      - /var/run/docker.sock:/var/run/docker.sock
+    # The group that owns the Docker socket (find it with: stat -c %g /var/run/docker.sock).
+    group_add:
+      - ${DOCKER_GID:?set it in .env}
+    healthcheck:
+      disable: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  armadok-worker-data:
