@@ -46,6 +46,13 @@ THROTTLE_MIGRATION = Migration(
     """,
 )
 
+LANGUAGE_MIGRATION = Migration(
+    "users-0004-language",
+    "ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'en';",
+)
+
+LANGUAGES = ("en", "fr")
+
 TOTP_MIGRATION = Migration(
     "users-0003-totp",
     """
@@ -344,3 +351,15 @@ def remaining_backup_codes(conn: sqlite3.Connection, user_id: str) -> int:
     return conn.execute(
         "SELECT COUNT(*) FROM backup_codes WHERE user_id = ? AND used = 0", (user_id,)
     ).fetchone()[0]
+
+
+def get_language(conn: sqlite3.Connection, user_id: str) -> str:
+    """Return the language an account reads notifications in."""
+    row = conn.execute("SELECT language FROM users WHERE id = ?", (user_id,)).fetchone()
+    return row["language"] if row and row["language"] in LANGUAGES else "en"
+
+
+def set_language(conn: sqlite3.Connection, user_id: str, language: str) -> None:
+    """Remember the language an account prefers (interface and notifications)."""
+    conn.execute("UPDATE users SET language = ? WHERE id = ?", (language, user_id))
+    conn.commit()

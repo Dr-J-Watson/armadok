@@ -11,7 +11,14 @@ import importlib
 from collections.abc import Callable, Iterable
 from typing import Any
 
-from armadok.core.module import Module, Provider, RelationProvider, Right, WorkerOp
+from armadok.core.module import (
+    Module,
+    NotificationEvent,
+    Provider,
+    RelationProvider,
+    Right,
+    WorkerOp,
+)
 
 
 class RegistryError(Exception):
@@ -45,6 +52,10 @@ class Registry:
     def relation_providers(self) -> tuple[RelationProvider, ...]:
         """Return every relation provider declared by the modules."""
         return tuple(r for m in self.modules for r in m.relations)
+
+    def notification_events(self) -> dict[str, NotificationEvent]:
+        """Return the notification events modules can raise, by name."""
+        return {e.name: e for m in self.modules for e in m.notification_events}
 
     def node_owner_rights(self) -> tuple[str, ...]:
         """Return the rights a node's creator receives on that node."""
@@ -90,6 +101,9 @@ class Registry:
         self._check_unique("right", [r.id for m in self.modules for r in m.rights])
         self._check_unique("audit event", [e for m in self.modules for e in m.audit_events])
         self._check_unique("signal", [s for m in self.modules for s in m.signals])
+        self._check_unique(
+            "notification event", [e.name for m in self.modules for e in m.notification_events]
+        )
         self._check_unique("worker operation", [o.name for m in self.modules for o in m.worker_ops])
         self._check_unique("relation provider", [r.name for m in self.modules for r in m.relations])
         self._check_unique(

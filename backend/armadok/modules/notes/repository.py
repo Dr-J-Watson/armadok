@@ -37,6 +37,11 @@ MIGRATION = Migration(
     """,
 )
 
+REMINDER_MIGRATION = Migration(
+    "notes-0002-reminded",
+    "ALTER TABLE notes ADD COLUMN reminded_at TEXT;",
+)
+
 MAX_PER_OWNER = 5000  # bounds the in-memory search and the table size per account
 
 
@@ -53,6 +58,7 @@ def _public(settings: Settings, row: sqlite3.Row) -> dict[str, Any]:
     for flag in ("pinned", "done"):
         data[flag] = bool(data[flag])
     data.pop("owner_id")
+    data.pop("reminded_at", None)
     return data
 
 
@@ -153,6 +159,8 @@ def update(
     for key in ("importance", "remind_at"):
         if key in changes:
             fields[key] = changes[key]
+    if "remind_at" in changes:
+        fields["reminded_at"] = None  # a new date means the reminder is due again
     for key in ("pinned", "done"):
         if key in changes:
             fields[key] = int(changes[key])

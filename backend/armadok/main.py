@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -53,7 +55,19 @@ def create_app(
             hook(conn)
     conn.close()
 
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        """Start the modules' background jobs with the application and stop them with it."""
+        jobs = [asyncio.create_task(task(app)) for m in registry.modules for task in m.tasks]
+        try:
+            yield
+        finally:
+            for job in jobs:
+                job.cancel()
+            await asyncio.gather(*jobs, return_exceptions=True)
+
     app = FastAPI(
+        lifespan=lifespan,
         title="Armadok",
         version=os.environ.get("ARMADOK_VERSION", "0.0.0"),
         docs_url="/api/docs",

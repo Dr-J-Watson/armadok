@@ -27,6 +27,10 @@ class Settings:
     encryption_key: str | None = field(default=None, repr=False)
     # Folder holding the built web interface. Absent in development (the dev server is used).
     web_dir: Path | None = None
+    # Allow notification channels to reach private/loopback addresses (a self-hosted ntfy on the
+    # LAN, say). Off by default: it lets whoever can add a channel make the hub call internal
+    # services.
+    allow_private_outbound: bool = False
 
     @property
     def audit_key(self) -> bytes | None:
@@ -51,5 +55,7 @@ def load_settings() -> Settings:
         data_dir=Path(os.environ.get("ARMADOK_DATA_DIR", "data")),
         cookie_secure=os.environ.get("ARMADOK_COOKIE_SECURE", "true").lower() != "false",
         encryption_key=os.environ.get("ARMADOK_ENCRYPTION_KEY") or None,
+        allow_private_outbound=os.environ.get("ARMADOK_ALLOW_PRIVATE_OUTBOUND", "").lower()
+        == "true",
         web_dir=Path(os.environ["ARMADOK_WEB_DIR"]) if os.environ.get("ARMADOK_WEB_DIR") else None,
     )

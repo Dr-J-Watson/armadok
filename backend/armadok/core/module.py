@@ -95,6 +95,24 @@ class WorkerOp:
 
 
 @dataclass(frozen=True)
+class NotificationEvent:
+    """A kind of notification a module can raise.
+
+    `right` is what a person needs on the node to be told about it (so nobody learns about an
+    object they cannot see). `templates` hold the title and the body per language, with
+    `{name}` placeholders filled from the event's parameters; they never contain secrets.
+    """
+
+    name: str
+    severity: str  # "info", "warning" or "critical"
+    right: str | None
+    templates: dict[str, tuple[str, str]]  # language -> (title, body)
+    # Minimum seconds between two notifications of this event for the same node: a worker that
+    # keeps reconnecting must not become a stream of messages.
+    cooldown: int = 0
+
+
+@dataclass(frozen=True)
 class Provider:
     """An implementation of a provider kind (dns, git_host, notifier, scanner, template).
 
@@ -122,7 +140,9 @@ class Module:
     signals: tuple[str, ...] = ()
     relations: tuple[RelationProvider, ...] = ()
     search: tuple[Any, ...] = ()
-    notification_events: tuple[str, ...] = ()
+    notification_events: tuple[NotificationEvent, ...] = ()
+    # Long-running jobs started with the application (async functions taking the app).
+    tasks: tuple[Callable[[Any], Awaitable[None]], ...] = ()
     widgets: tuple[Any, ...] = ()
     nav: tuple[Any, ...] = ()
     i18n_namespaces: tuple[str, ...] = ()

@@ -185,7 +185,24 @@ def me(conn: sqlite3.Connection = Depends(get_db), who: Principal = Depends(get_
         **(user or {}),
         "totp_enabled": second_factor.is_enabled(conn, who.id),
         "backup_codes_remaining": repository.remaining_backup_codes(conn, who.id),
+        "language": repository.get_language(conn, who.id),
         "grants": [
             {"right": g.right, "scope": g.scope, "expires_at": g.expires_at} for g in who.grants
         ],
     }
+
+
+class LanguageIn(BaseModel):
+    """The language to use for the interface and for notifications."""
+
+    language: str = Field(pattern="^(en|fr)$")
+
+
+@router.patch("/auth/language", status_code=204, summary="Choose your language")
+def set_language(
+    body: LanguageIn,
+    conn: sqlite3.Connection = Depends(get_db),
+    who: Principal = Depends(get_principal),
+) -> None:
+    """Save the caller's language, used when the server writes notifications for them."""
+    repository.set_language(conn, who.id, body.language)

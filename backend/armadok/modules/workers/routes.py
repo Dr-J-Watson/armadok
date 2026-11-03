@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, Request, WebSocket
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError, NotFound
+from armadok.core.events import emit
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.nodes import repository as nodes_repo
@@ -209,6 +210,7 @@ async def worker_connect(ws: WebSocket) -> None:
         if not await asyncio.to_thread(_still_valid, ws.app.state.settings, session):
             raise protocol.ProtocolError("worker revoked")
         await session.send_json(ready)
+        await _announce(ws.app, session, "worker.connected")
         await session.run()
     except Exception as error:
         # Every failure ends the same way, without telling the peer why. The reason is kept
@@ -217,8 +219,30 @@ async def worker_connect(ws: WebSocket) -> None:
     finally:
         if session is not None:
             hub.detach(session)
+            # A worker cut off on purpose (revoked, node deleted) is not an incident.
+            if await asyncio.to_thread(_still_valid, ws.app.state.settings, session):
+                await _announce(ws.app, session, "worker.disconnected")
         with contextlib.suppress(Exception):
             await asyncio.wait_for(ws.close(code=1008), 2)
+
+
+async def _announce(app: Any, session: WorkerSession, event: str) -> None:
+    """Tell the people watching this node that its worker came or went."""
+    conn = app.state.settings.open_db()
+    try:
+        node = nodes_repo.get_node(conn, session.node_id)
+    finally:
+        conn.close()
+    try:
+        await emit(
+            app,
+            "notify",
+            event=event,
+            node_id=session.node_id,
+            params={"node": node["name"] if node else session.node_id},
+        )
+    except Exception:  # noqa: BLE001  (a notification problem must never drop the worker)
+        log.exception("could not announce %s", event)
 
 
 async def _authenticate(ws: WebSocket) -> tuple[WorkerSession, dict]:
