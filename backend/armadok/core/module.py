@@ -32,6 +32,9 @@ class Right:
     baseline: bool = False
     # Rights the creator of a node receives on it (scope `node:<id>`), whichever module owns them.
     node_owner: bool = False
+    # Which built-in roles include this right (see `modules/roles/builtin.py`); None for rights
+    # that are not given per node (platform administration, baseline rights).
+    level: str | None = None
 
 
 @dataclass(frozen=True)

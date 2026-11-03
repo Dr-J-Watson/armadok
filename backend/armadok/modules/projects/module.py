@@ -13,14 +13,27 @@ module = Module(
     requires=("workers",),
     routes=(router, deploy_router),
     rights=(
-        Right("projects.read", depends_on=("nodes.read",), node_owner=True),
-        Right("projects.files.read", depends_on=("projects.read",), node_owner=True),
-        Right("projects.files.write", depends_on=("projects.files.read",), node_owner=True),
+        Right("projects.read", depends_on=("nodes.read",), node_owner=True, level="view"),
+        Right(
+            "projects.files.read", depends_on=("projects.read",), node_owner=True, level="develop"
+        ),
+        Right(
+            "projects.files.write",
+            depends_on=("projects.files.read",),
+            node_owner=True,
+            level="develop",
+        ),
         # Running `docker compose` is as powerful as being root on the machine: sensitive, so
         # it is never carried by an API key unless explicitly confirmed, and flagged everywhere.
-        Right("projects.deploy", depends_on=("projects.read",), node_owner=True, sensitive=True),
+        Right(
+            "projects.deploy",
+            depends_on=("projects.read",),
+            node_owner=True,
+            sensitive=True,
+            level="operate",
+        ),
         # Logs and task output can hold secrets that applications print.
-        Right("projects.logs", depends_on=("projects.read",), node_owner=True),
+        Right("projects.logs", depends_on=("projects.read",), node_owner=True, level="operate"),
     ),
     audit_events=(
         "project.file_read",

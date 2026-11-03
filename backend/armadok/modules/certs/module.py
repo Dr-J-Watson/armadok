@@ -13,9 +13,9 @@ module = Module(
     routes=(router,),
     rights=(
         # See the certificates that cover hosts you can see.
-        Right("certs.read", depends_on=("nodes.read",), node_owner=True),
+        Right("certs.read", depends_on=("nodes.read",), node_owner=True, level="view"),
         # See every certificate of the node (and be warned about any of them).
-        Right("certs.read_all", depends_on=("certs.read",), node_owner=True),
+        Right("certs.read_all", depends_on=("certs.read",), node_owner=True, level="admin"),
     ),
     notification_events=(
         NotificationEvent(

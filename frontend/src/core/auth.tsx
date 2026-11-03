@@ -101,9 +101,13 @@ export function useAuth(): AuthContextValue {
 // Interface hint only: whether the account holds a right everywhere, to hide screens it could
 // not use anyway. The server decides for real on every request.
 export function useCan(right: string): boolean {
+  return useCanFn()(right)
+}
+
+// The same hint as a function, for code that checks several rights (a list of tabs).
+export function useCanFn(): (right: string) => boolean {
   const { state } = useAuth()
-  if (state.status !== 'authenticated') return false
-  return state.user.grants.some(
-    (g) => g.right === right && g.scope === '*' && stillValid(g.expires_at),
-  )
+  return (right) =>
+    state.status === 'authenticated' &&
+    state.user.grants.some((g) => g.right === right && g.scope === '*' && stillValid(g.expires_at))
 }

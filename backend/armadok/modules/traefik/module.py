@@ -12,11 +12,19 @@ module = Module(
     requires=("workers",),
     routes=(router, sites_router),
     rights=(
-        Right("traefik.read", depends_on=("nodes.read",), node_owner=True),
-        Right("traefik.files.read", depends_on=("traefik.read",), node_owner=True),
-        Right("traefik.files.write", depends_on=("traefik.files.read",), node_owner=True),
+        Right("traefik.read", depends_on=("nodes.read",), node_owner=True, level="view"),
+        Right("traefik.files.read", depends_on=("traefik.read",), node_owner=True, level="edit"),
+        Right(
+            "traefik.files.write", depends_on=("traefik.files.read",), node_owner=True, level="edit"
+        ),
         # Building sites from the form: routes real traffic to any address, so not for keys.
-        Right("traefik.sites.write", depends_on=("traefik.read",), node_owner=True, sensitive=True),
+        Right(
+            "traefik.sites.write",
+            depends_on=("traefik.read",),
+            node_owner=True,
+            sensitive=True,
+            level="edit",
+        ),
     ),
     audit_events=(
         "traefik.file_read",

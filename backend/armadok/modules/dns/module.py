@@ -22,8 +22,8 @@ module = Module(
         # Managing one's own provider accounts and domains: they only concern the account.
         Right("dns.use", baseline=True),
         # On a node: see (and, with write, change) the domains attached to it.
-        Right("dns.read", depends_on=("nodes.read",), node_owner=True),
-        Right("dns.write", depends_on=("dns.read",), node_owner=True),
+        Right("dns.read", depends_on=("nodes.read",), node_owner=True, level="view"),
+        Right("dns.write", depends_on=("dns.read",), node_owner=True, level="domains"),
     ),
     audit_events=(
         "dns.account_create",

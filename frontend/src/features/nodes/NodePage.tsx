@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
+import { useCanFn } from '../../core/auth'
 import { errorMessage } from '../../core/errors'
 import { useModules } from '../../core/modules'
 import type { NodeTab } from '../../core/registry'
@@ -35,13 +36,16 @@ export function NodePage() {
 
   // Tabs are contributed by features; only those whose module is enabled and that apply to
   // this node's type are shown.
-  const tabs = useMemo<NodeTab[]>(() => {
+  const allTabs = useMemo<NodeTab[]>(() => {
     if (!node.data || !modules) return []
     return features
       .filter((f) => !f.requiresModule || modules.has(f.requiresModule))
       .flatMap((f) => f.nodeTabs ?? [])
       .filter((tab) => !tab.nodeTypes || tab.nodeTypes.includes(node.data.type))
   }, [node.data, modules])
+
+  const can = useCanFn()
+  const tabs = allTabs.filter((tab) => !tab.requiresRight || can(tab.requiresRight))
 
   if (node.isPending) return <p>{t('loading')}</p>
   if (node.isError) {

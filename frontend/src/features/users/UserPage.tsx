@@ -6,6 +6,7 @@ import { Link, useParams } from 'react-router-dom'
 import { api } from '../../core/api'
 import { useCan } from '../../core/auth'
 import { errorMessage } from '../../core/errors'
+import { EffectiveSection } from '../roles/EffectiveSection'
 import { GrantsSection } from './GrantsSection'
 import type { Account } from './UsersPage'
 
@@ -108,6 +109,7 @@ export function UserPage() {
       )}
 
       <GrantsSection userId={userId} />
+      <EffectiveSection userId={userId} />
     </>
   )
 }

@@ -11,6 +11,7 @@ import { notesFeature } from './notes/feature'
 import { notificationsFeature } from './notifications/feature'
 import { projectsFeature } from './projects/feature'
 import { relationsFeature } from './relations/feature'
+import { rolesFeature } from './roles/feature'
 import { traefikFeature } from './traefik/feature'
 import { usersFeature } from './users/feature'
 import { workersFeature } from './workers/feature'
@@ -23,6 +24,7 @@ export const features: Feature[] = [
   traefikFeature,
   relationsFeature,
   usersFeature,
+  rolesFeature,
   auditFeature,
   notesFeature,
   notificationsFeature,

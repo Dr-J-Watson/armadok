@@ -92,5 +92,10 @@
   "traefik.site_paused": "This site is paused. Resume it first.",
   "traefik.site_not_found": "This site does not exist.",
   "traefik.invalid_site": "The site description does not match its name.",
-  "traefik.snapshot_incomplete": "Some configuration files could not be read in full, so the name cannot be checked. Try again after removing unused files."
+  "traefik.snapshot_incomplete": "Some configuration files could not be read in full, so the name cannot be checked. Try again after removing unused files.",
+  "roles.name_taken": "A role with this name already exists.",
+  "roles.builtin_readonly": "Built-in roles cannot be changed. Copy it first.",
+  "roles.in_use": "This role is still given to someone. Take it away first.",
+  "roles.invalid_rights": "A role can only hold rights that are given per machine.",
+  "groups.name_taken": "A group with this name already exists."
 }

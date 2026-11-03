@@ -15,5 +15,6 @@
   "nav.users": "Équipe",
   "nav.audit": "Audit",
   "nav.notes": "Mes notes",
-  "nav.dns": "DNS"
+  "nav.dns": "DNS",
+  "nav.access": "Accès"
 }

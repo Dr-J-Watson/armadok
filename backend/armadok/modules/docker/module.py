@@ -9,12 +9,18 @@ module = Module(
     requires=("workers",),
     routes=(router,),
     rights=(
-        Right("docker.read", depends_on=("nodes.read",), node_owner=True),
-        Right("docker.control", depends_on=("docker.read",), node_owner=True),
+        Right("docker.read", depends_on=("nodes.read",), node_owner=True, level="view"),
+        Right("docker.control", depends_on=("docker.read",), node_owner=True, level="operate"),
         # Removing a container loses its writable layer: kept apart, and never for API keys.
-        Right("docker.remove", depends_on=("docker.control",), node_owner=True, sensitive=True),
+        Right(
+            "docker.remove",
+            depends_on=("docker.control",),
+            node_owner=True,
+            sensitive=True,
+            level="admin",
+        ),
         # Logs can hold secrets that applications print.
-        Right("docker.logs", depends_on=("docker.read",), node_owner=True),
+        Right("docker.logs", depends_on=("docker.read",), node_owner=True, level="operate"),
     ),
     audit_events=("docker.container_action", "docker.logs_read"),
     relations=(

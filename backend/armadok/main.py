@@ -16,7 +16,7 @@ from armadok.core.config import Settings, load_settings
 from armadok.core.db import apply_migrations
 from armadok.core.deps import Authenticator
 from armadok.core.errors import ApiError
-from armadok.core.grants import GRANTS_MIGRATION
+from armadok.core.grants import GRANTS_MIGRATION, ROLES_MIGRATION
 from armadok.core.registry import Registry, load_registry
 from armadok.modules.enabled import ENABLED_MODULES
 from armadok.web import add_headers, mount_web
@@ -51,6 +51,7 @@ def create_app(
             CHAIN_MIGRATION,
             HARDENING_MIGRATION,
             GRANTS_MIGRATION,
+            ROLES_MIGRATION,
             *(m for module in registry.modules for m in module.migrations),
         ],
     )

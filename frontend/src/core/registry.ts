@@ -23,6 +23,8 @@ export interface NodeTab {
   labelKey: string // in the feature's own namespace, e.g. "docker:tab"
   // Node types that get this tab (omit for all).
   nodeTypes?: string[]
+  // Hidden when the account does not hold this right everywhere (the server still decides).
+  requiresRight?: string
   render: (props: NodeTabProps) => ReactNode
 }
 

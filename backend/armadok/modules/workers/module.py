@@ -9,8 +9,8 @@ module = Module(
     requires=("nodes",),
     routes=(router,),
     rights=(
-        Right("workers.read", depends_on=("nodes.read",), node_owner=True),
-        Right("workers.manage", depends_on=("workers.read",), node_owner=True),
+        Right("workers.read", depends_on=("nodes.read",), node_owner=True, level="view"),
+        Right("workers.manage", depends_on=("workers.read",), node_owner=True, level="admin"),
     ),
     audit_events=("worker.enrolment_created", "worker.enrolled", "worker.revoked", "worker.ping"),
     listeners=(("node.deleted", on_node_deleted),),
