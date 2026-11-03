@@ -1,6 +1,6 @@
 """Declaration of the `projects` module."""
 
-from armadok.core.module import Module, NotificationEvent, Right, WorkerOp
+from armadok.core.module import Module, NotificationEvent, Right, Signal, WorkerOp
 from armadok.modules.projects import tasks
 from armadok.modules.projects.deploy import resume_watchers
 from armadok.modules.projects.deploy import router as deploy_router
@@ -34,6 +34,10 @@ module = Module(
         ),
         # Logs and task output can hold secrets that applications print.
         Right("projects.logs", depends_on=("projects.read",), node_owner=True, level="operate"),
+    ),
+    signals=(
+        Signal("projects.changed", "projects.read"),
+        Signal("tasks.changed", "projects.read"),
     ),
     audit_events=(
         "project.file_read",

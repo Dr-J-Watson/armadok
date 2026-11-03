@@ -23,6 +23,7 @@ from armadok.core.errors import ApiError, NotFound
 from armadok.core.events import emit
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
+from armadok.core.signals import announce
 from armadok.modules.nodes import repository as nodes_repo
 from armadok.modules.workers import identity, repository
 from armadok.modules.workers.hub import (
@@ -274,6 +275,8 @@ async def worker_connect(ws: WebSocket) -> None:
 
 async def _announce(app: Any, session: WorkerSession, event: str) -> None:
     """Tell the people watching this node that its worker came or went."""
+    await announce(app, "workers.changed", session.node_id)
+    await announce(app, "worker.changed", session.node_id)
     conn = app.state.settings.open_db()
     try:
         node = nodes_repo.get_node(conn, session.node_id)

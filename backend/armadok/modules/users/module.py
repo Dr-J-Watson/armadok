@@ -1,6 +1,6 @@
 """Declaration of the `users` module: accounts, first-start setup and sessions."""
 
-from armadok.core.module import Module, Right
+from armadok.core.module import Module, Right, Signal
 from armadok.modules.users import repository, setup
 from armadok.modules.users.auth import authenticate
 from armadok.modules.users.routes_2fa import router as twofa_router
@@ -19,6 +19,7 @@ module = Module(
         Right("users.reset_2fa", depends_on=("users.update",), sensitive=True),
         Right("grants.manage", depends_on=("users.read",), sensitive=True),
     ),
+    signals=(Signal("users.changed", "users.read", shared=True),),
     audit_events=(
         "setup.complete",
         "auth.login",

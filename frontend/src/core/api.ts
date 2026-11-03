@@ -22,6 +22,10 @@ export function setAccessToken(token: string | null): void {
   accessToken = token
 }
 
+export function currentAccessToken(): string | null {
+  return accessToken
+}
+
 export function hasAccessToken(): boolean {
   return accessToken !== null
 }

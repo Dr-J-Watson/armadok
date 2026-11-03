@@ -4,6 +4,7 @@ import { UsersPage } from './UsersPage'
 
 export const usersFeature: Feature = {
   name: 'users',
+  signals: { 'users.changed': ['users', 'grants', 'effective', 'node-access'] },
   requiresModule: 'users',
   nav: [{ id: 'users', labelKey: 'nav.users', to: '/users', requiresRight: 'users.read' }],
   routes: [

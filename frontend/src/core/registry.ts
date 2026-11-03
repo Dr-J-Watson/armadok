@@ -57,4 +57,7 @@ export interface Feature {
   nodeTabs?: NodeTab[]
   objectSections?: ObjectSection[]
   headerWidgets?: HeaderWidget[]
+  // Live updates: for a change signal (`docker.changed`), the query keys to reload. Signals
+  // about one machine already reload every query that mentions that machine.
+  signals?: Record<string, string[]>
 }

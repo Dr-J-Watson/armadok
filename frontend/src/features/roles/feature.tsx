@@ -5,6 +5,11 @@ import { NodeAccessTab } from './NodeAccessTab'
 export const rolesFeature: Feature = {
   name: 'roles',
   requiresModule: 'roles',
+  signals: {
+    'roles.changed': ['roles', 'effective', 'node-access'],
+    'groups.changed': ['groups', 'effective', 'node-access'],
+    'assignments.changed': ['assignments', 'effective', 'node-access'],
+  },
   nav: [{ id: 'access', labelKey: 'nav.access', to: '/access', requiresRight: 'users.read' }],
   routes: [{ path: '/access', element: <AccessPage /> }],
   nodeTabs: [

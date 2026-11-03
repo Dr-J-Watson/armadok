@@ -4,6 +4,7 @@ import { NotesPanel } from './NotesPanel'
 
 export const notesFeature: Feature = {
   name: 'notes',
+  signals: { 'notes.changed': ['notes'] },
   requiresModule: 'notes',
   nav: [{ id: 'notes', labelKey: 'nav.notes', to: '/notes' }],
   routes: [{ path: '/notes', element: <NotesPage /> }],

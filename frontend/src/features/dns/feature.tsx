@@ -5,6 +5,7 @@ import { NodeDnsTab } from './NodeDnsTab'
 
 export const dnsFeature: Feature = {
   name: 'dns',
+  signals: { 'dns.changed': ['dns-domains', 'dns-records', 'dns-accounts', 'dns-report'] },
   requiresModule: 'dns',
   nav: [{ id: 'dns', labelKey: 'nav.dns', to: '/dns' }],
   routes: [

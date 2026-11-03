@@ -1,6 +1,6 @@
 """Declaration of the `certs` module."""
 
-from armadok.core.module import Module, NotificationEvent, RelationProvider, Right, WorkerOp
+from armadok.core.module import Module, NotificationEvent, RelationProvider, Right, Signal, WorkerOp
 from armadok.modules.certs import relations
 from armadok.modules.certs.routes import router
 from armadok.modules.certs.watch import watch_loop
@@ -10,6 +10,7 @@ _NODE_TYPES = ("network", "full")
 module = Module(
     name="certs",
     requires=("workers", "relations"),
+    signals=(Signal("certs.changed", "certs.read"),),
     routes=(router,),
     rights=(
         # See the certificates that cover hosts you can see.

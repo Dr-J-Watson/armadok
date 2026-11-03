@@ -1,6 +1,6 @@
 """Declaration of the `traefik` module."""
 
-from armadok.core.module import Module, RelationProvider, Right, WorkerOp
+from armadok.core.module import Module, RelationProvider, Right, Signal, WorkerOp
 from armadok.modules.traefik import relations
 from armadok.modules.traefik.routes import router
 from armadok.modules.traefik.sites_routes import router as sites_router
@@ -26,6 +26,7 @@ module = Module(
             level="edit",
         ),
     ),
+    signals=(Signal("traefik.changed", "traefik.read"),),
     audit_events=(
         "traefik.file_read",
         "traefik.file_write",

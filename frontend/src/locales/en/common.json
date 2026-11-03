@@ -16,5 +16,11 @@
   "nav.audit": "Audit",
   "nav.notes": "My notes",
   "nav.dns": "DNS",
-  "nav.access": "Access"
+  "nav.access": "Access",
+  "live.live.label": "Live",
+  "live.live.hint": "This page updates by itself.",
+  "live.connecting.label": "Connecting",
+  "live.connecting.hint": "Connecting to live updates…",
+  "live.offline.label": "Offline",
+  "live.offline.hint": "Live updates are interrupted. Pages still reload when you return to them."
 }

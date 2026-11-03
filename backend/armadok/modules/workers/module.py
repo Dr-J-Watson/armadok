@@ -1,6 +1,6 @@
 """Declaration of the `workers` module."""
 
-from armadok.core.module import Module, NotificationEvent, Right, WorkerOp
+from armadok.core.module import Module, NotificationEvent, Right, Signal, WorkerOp
 from armadok.modules.workers import repository
 from armadok.modules.workers.routes import on_node_deleted, router
 
@@ -14,7 +14,10 @@ module = Module(
     ),
     audit_events=("worker.enrolment_created", "worker.enrolled", "worker.revoked", "worker.ping"),
     listeners=(("node.deleted", on_node_deleted),),
-    signals=("workers.changed",),
+    signals=(
+        Signal("workers.changed", "workers.read", shared=True),
+        Signal("worker.changed", "workers.read", shared=True),
+    ),
     notification_events=(
         NotificationEvent(
             "worker.connected",

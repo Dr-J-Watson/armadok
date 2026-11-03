@@ -1,6 +1,6 @@
 """Declaration of the `dns` module and its providers."""
 
-from armadok.core.module import Module, Provider, Right
+from armadok.core.module import Module, Provider, Right, Signal
 from armadok.modules.dns import repository
 from armadok.modules.dns.node_routes import router as node_router
 from armadok.modules.dns.providers.duckdns import DuckDnsProvider
@@ -25,6 +25,7 @@ module = Module(
         Right("dns.read", depends_on=("nodes.read",), node_owner=True, level="view"),
         Right("dns.write", depends_on=("dns.read",), node_owner=True, level="domains"),
     ),
+    signals=(Signal("dns.changed", "dns.read"),),
     audit_events=(
         "dns.account_create",
         "dns.account_delete",

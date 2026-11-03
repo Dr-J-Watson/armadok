@@ -38,6 +38,20 @@ class Right:
 
 
 @dataclass(frozen=True)
+class Signal:
+    """A kind of change signal a module announces (see `core/signals.py`).
+
+    `right` is what a person needs to be told: on the machine when the signal names one,
+    otherwise anywhere. A signal that names no machine is, unless `shared`, sent only to the
+    person who made the change (their notes, their keys): others learn nothing about it.
+    """
+
+    name: str
+    right: str
+    shared: bool = False
+
+
+@dataclass(frozen=True)
 class RelationObject:
     """One object on the relations map (a container, a network, a router...).
 
@@ -140,7 +154,7 @@ class Module:
     routes: tuple[Any, ...] = ()
     rights: tuple[Right, ...] = ()
     audit_events: tuple[str, ...] = ()
-    signals: tuple[str, ...] = ()
+    signals: tuple[Signal, ...] = ()
     relations: tuple[RelationProvider, ...] = ()
     search: tuple[Any, ...] = ()
     notification_events: tuple[NotificationEvent, ...] = ()

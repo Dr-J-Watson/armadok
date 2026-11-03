@@ -16,5 +16,11 @@
   "nav.audit": "Audit",
   "nav.notes": "Mes notes",
   "nav.dns": "DNS",
-  "nav.access": "Accès"
+  "nav.access": "Accès",
+  "live.live.label": "En direct",
+  "live.live.hint": "Cette page se met à jour toute seule.",
+  "live.connecting.label": "Connexion",
+  "live.connecting.hint": "Connexion aux mises à jour en direct…",
+  "live.offline.label": "Hors ligne",
+  "live.offline.hint": "Les mises à jour en direct sont interrompues. Les pages se rechargent quand vous y revenez."
 }

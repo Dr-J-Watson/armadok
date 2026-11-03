@@ -4,6 +4,7 @@ import { AuditPage } from './AuditPage'
 
 export const auditFeature: Feature = {
   name: 'audit',
+  signals: { 'audit.changed': ['audit'] },
   requiresModule: 'audit',
   nav: [{ id: 'audit', labelKey: 'nav.audit', to: '/audit', requiresRight: 'audit.read' }],
   routes: [{ path: '/audit', element: <AuditPage /> }],

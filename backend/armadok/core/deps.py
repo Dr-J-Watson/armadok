@@ -37,4 +37,6 @@ def get_principal(request: Request) -> Principal:
         raise Unauthenticated()
     if principal.read_only and request.method not in ("GET", "HEAD", "OPTIONS"):
         raise ApiError("auth.read_only_key", 403)
+    # Remembered for the change signals: only people with the right to know hear about it.
+    request.state.actor_id = principal.id
     return principal

@@ -4,6 +4,7 @@ import type { RouteObject } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from './core/auth'
 import { useModules } from './core/modules'
+import { RealtimeProvider } from './core/RealtimeProvider'
 import { features } from './features/enabled'
 import { LoginPage } from './features/auth/LoginPage'
 import { SetupPage } from './features/auth/SetupPage'
@@ -41,7 +42,11 @@ function Gate() {
   if (state.status === 'loading') return <p className="loading">{t('loading')}</p>
   if (state.status === 'setup') return <SetupPage />
   if (state.status === 'anonymous') return <LoginPage />
-  return <AuthenticatedApp />
+  return (
+    <RealtimeProvider>
+      <AuthenticatedApp />
+    </RealtimeProvider>
+  )
 }
 
 export default function App() {

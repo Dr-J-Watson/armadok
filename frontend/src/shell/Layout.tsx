@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth, useCan } from '../core/auth'
 import { useFeatures } from '../core/useFeatures'
 import type { NavItem } from '../core/registry'
+import { useRealtimeStatus } from '../core/RealtimeProvider'
 import { Preferences } from './Preferences'
 
 function NavEntry({ item }: { item: NavItem }) {
@@ -16,6 +17,7 @@ function NavEntry({ item }: { item: NavItem }) {
 export function Layout({ nav }: { nav: NavItem[] }) {
   const { t } = useTranslation()
   const { state, logout } = useAuth()
+  const live = useRealtimeStatus()
   const widgets = useFeatures().flatMap((f) => f.headerWidgets ?? [])
   return (
     <div className="shell">
@@ -30,6 +32,9 @@ export function Layout({ nav }: { nav: NavItem[] }) {
           {widgets.map((widget) => (
             <span key={widget.id}>{widget.render()}</span>
           ))}
+          <span className={`badge ${live === 'live' ? 'ok' : 'off'}`} title={t(`live.${live}.hint`)}>
+            {t(`live.${live}.label`)}
+          </span>
           <Preferences />
           {state.status === 'authenticated' && (
             <>

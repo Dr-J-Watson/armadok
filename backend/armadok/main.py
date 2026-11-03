@@ -18,6 +18,7 @@ from armadok.core.deps import Authenticator
 from armadok.core.errors import ApiError
 from armadok.core.grants import GRANTS_MIGRATION, ROLES_MIGRATION
 from armadok.core.registry import Registry, load_registry
+from armadok.core.signals import announce, signal_for_request
 from armadok.modules.enabled import ENABLED_MODULES
 from armadok.web import add_headers, mount_web
 
@@ -95,6 +96,13 @@ def create_app(
         else:
             response = await call_next(request)
         add_headers(request, response)
+        # A change that went through is announced, so open screens reload what it touched.
+        found = signal_for_request(request.method, request.url.path)
+        actor = getattr(request.state, "actor_id", None)
+        # Only a request that came from a logged-in person is announced.
+        if found is not None and actor is not None and response.status_code < 400:
+            await announce(app, found[0], found[1], actor)
+            await announce(app, "audit.changed", found[1], actor)
         return response
 
     @app.exception_handler(ApiError)

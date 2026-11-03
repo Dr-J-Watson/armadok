@@ -17,6 +17,7 @@ from armadok.core.module import (
     Provider,
     RelationProvider,
     Right,
+    Signal,
     WorkerOp,
 )
 
@@ -52,6 +53,10 @@ class Registry:
     def relation_providers(self) -> tuple[RelationProvider, ...]:
         """Return every relation provider declared by the modules."""
         return tuple(r for m in self.modules for r in m.relations)
+
+    def signals(self) -> dict[str, Signal]:
+        """Return the change signals modules announce, by name."""
+        return {s.name: s for m in self.modules for s in m.signals}
 
     def notification_events(self) -> dict[str, NotificationEvent]:
         """Return the notification events modules can raise, by name."""
@@ -100,7 +105,7 @@ class Registry:
         self._check_requires()
         self._check_unique("right", [r.id for m in self.modules for r in m.rights])
         self._check_unique("audit event", [e for m in self.modules for e in m.audit_events])
-        self._check_unique("signal", [s for m in self.modules for s in m.signals])
+        self._check_unique("signal", [s.name for m in self.modules for s in m.signals])
         self._check_unique(
             "notification event", [e.name for m in self.modules for e in m.notification_events]
         )

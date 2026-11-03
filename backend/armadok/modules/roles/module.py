@@ -1,6 +1,6 @@
 """Declaration of the `roles` module: roles, groups and who can do what."""
 
-from armadok.core.module import Module
+from armadok.core.module import Module, Signal
 from armadok.modules.roles import repository
 from armadok.modules.roles.routes import router
 
@@ -14,6 +14,11 @@ module = Module(
     name="roles",
     requires=("users", "nodes"),
     routes=(router,),
+    signals=(
+        Signal("roles.changed", "users.read", shared=True),
+        Signal("groups.changed", "users.read", shared=True),
+        Signal("assignments.changed", "users.read", shared=True),
+    ),
     audit_events=(
         "role.create",
         "role.update",

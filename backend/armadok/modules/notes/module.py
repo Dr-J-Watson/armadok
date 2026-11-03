@@ -1,6 +1,6 @@
 """Declaration of the `notes` module."""
 
-from armadok.core.module import Module, NotificationEvent, Right
+from armadok.core.module import Module, NotificationEvent, Right, Signal
 from armadok.modules.notes import repository
 from armadok.modules.notes.reminders import reminder_loop
 from armadok.modules.notes.routes import router
@@ -8,6 +8,7 @@ from armadok.modules.notes.routes import router
 module = Module(
     name="notes",
     requires=("nodes",),
+    signals=(Signal("notes.changed", "notes.write"),),
     routes=(router,),
     # Everyone may keep private notes: it gives access to nothing but their own memos.
     rights=(Right("notes.write", baseline=True),),

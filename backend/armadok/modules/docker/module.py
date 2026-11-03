@@ -1,6 +1,6 @@
 """Declaration of the `docker` module."""
 
-from armadok.core.module import Module, RelationProvider, Right, WorkerOp
+from armadok.core.module import Module, RelationProvider, Right, Signal, WorkerOp
 from armadok.modules.docker import relations
 from armadok.modules.docker.routes import router
 
@@ -22,6 +22,7 @@ module = Module(
         # Logs can hold secrets that applications print.
         Right("docker.logs", depends_on=("docker.read",), node_owner=True, level="operate"),
     ),
+    signals=(Signal("docker.changed", "docker.read"),),
     audit_events=("docker.container_action", "docker.logs_read"),
     relations=(
         RelationProvider(

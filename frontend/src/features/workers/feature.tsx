@@ -3,6 +3,7 @@ import { WorkerTab } from './WorkerTab'
 
 export const workersFeature: Feature = {
   name: 'workers',
+  signals: { 'workers.changed': ['worker', 'nodes'] },
   requiresModule: 'workers',
   nodeTabs: [
     {

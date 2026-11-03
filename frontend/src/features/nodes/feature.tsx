@@ -4,6 +4,7 @@ import { NodesPage } from './NodesPage'
 
 export const nodesFeature: Feature = {
   name: 'nodes',
+  signals: { 'nodes.changed': ['nodes'] },
   requiresModule: 'nodes',
   nav: [{ id: 'nodes', labelKey: 'nav.nodes', to: '/nodes' }],
   routes: [

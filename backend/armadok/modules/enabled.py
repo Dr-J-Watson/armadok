@@ -18,4 +18,5 @@ ENABLED_MODULES: tuple[str, ...] = (
     "relations",
     "dns",
     "certs",
+    "realtime",
 )

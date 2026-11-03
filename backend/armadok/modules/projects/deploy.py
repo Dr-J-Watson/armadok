@@ -21,6 +21,7 @@ from armadok.core.errors import ApiError, NotFound
 from armadok.core.events import emit
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
+from armadok.core.signals import announce
 from armadok.modules.nodes import repository as nodes_repo
 from armadok.modules.projects import schemas, tasks
 from armadok.modules.workers.access import ask, audit_failure, authorise
@@ -66,6 +67,9 @@ async def sync_task(app: Any, node_id: str, row: sqlite3.Row) -> sqlite3.Row:
         )
     if result.state == "running":
         return row
+    # Whoever is watching the project sees it finish without asking.
+    await announce(app, "projects.changed", node_id)
+    await announce(app, "tasks.changed", node_id)
     conn = settings.open_db()
     try:
         moved = tasks.finish(
