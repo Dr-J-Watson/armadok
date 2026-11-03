@@ -2,6 +2,7 @@
 
 from armadok.core.module import Module, NotificationEvent, Right, WorkerOp
 from armadok.modules.projects import tasks
+from armadok.modules.projects.deploy import resume_watchers
 from armadok.modules.projects.deploy import router as deploy_router
 from armadok.modules.projects.routes import router
 
@@ -48,6 +49,7 @@ module = Module(
             },
         ),
     ),
+    tasks=(resume_watchers,),
     migrations=(tasks.MIGRATION,),
     worker_ops=(
         WorkerOp("projects.list", _DOCKER),

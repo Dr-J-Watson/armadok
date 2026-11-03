@@ -307,3 +307,36 @@ def test_a_linked_compose_file_is_refused_and_check_needs_the_logs_right(box):
         f"/api/v1/nodes/{node}/projects/blog/check", headers={"Authorization": f"Bearer {token}"}
     )
     assert denied.status_code == 403
+
+
+def test_without_an_encryption_key_the_output_is_not_stored(box):
+    import dataclasses
+    import sqlite3
+
+    from armadok.modules.projects import tasks
+
+    client, app, admin, node, tmp = box
+    conn = sqlite3.connect(tmp / "data" / "armadok.db")
+    conn.row_factory = sqlite3.Row
+    task = tasks.create(conn, node, "w1", "blog", "up", "someone")
+    keyless = dataclasses.replace(app.state.settings, encryption_key=None)
+    assert tasks.finish(conn, keyless, task, "success", 0, "token=abc", False)
+    assert conn.execute("SELECT output FROM deploy_tasks WHERE id = ?", (task,)).fetchone()[0] == ""
+
+
+def test_running_tasks_are_followed_again_after_a_restart(box):
+    import asyncio
+
+    from armadok.modules.projects import deploy
+
+    client, app, admin, node, tmp = box
+    mode(tmp, "slow")
+    task = start(client, admin, node).json()["task_id"]
+    followed = []
+    original = deploy._spawn_watcher
+    deploy._spawn_watcher = lambda a, n, t: followed.append((n, t))
+    try:
+        asyncio.run(deploy.resume_watchers(app))
+    finally:
+        deploy._spawn_watcher = original
+    assert followed == [(node, task)]

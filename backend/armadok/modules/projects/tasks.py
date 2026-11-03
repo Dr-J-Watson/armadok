@@ -82,8 +82,9 @@ def finish(
     truncated: bool,
 ) -> bool:
     """Store a task's end; return True only for the call that moved it out of "running"."""
+    # Output can hold secrets that applications print: without an encryption key it is not kept.
     sealed, encrypted = (
-        (crypto.encrypt(settings, output), 1) if settings.encryption_key else (output, 0)
+        (crypto.encrypt(settings, output), 1) if settings.encryption_key else ("", 0)
     )
     cur = conn.execute(
         "UPDATE deploy_tasks SET state = ?, exit_code = ?, output = ?, encrypted = ?,"

@@ -138,6 +138,26 @@ async def _watch(app: Any, node_id: str, task_id: str) -> None:
             log.exception("could not follow a deployment task")
 
 
+def _spawn_watcher(app: Any, node_id: str, task_id: str) -> None:
+    """Start following a task in the background, keeping a reference until it ends."""
+    watcher = asyncio.create_task(_watch(app, node_id, task_id))
+    _watchers.add(watcher)  # a task nobody references can be collected before it ends
+    watcher.add_done_callback(_watchers.discard)
+
+
+async def resume_watchers(app: Any) -> None:
+    """After a hub restart, follow again the tasks still marked as running."""
+    conn = app.state.settings.open_db()
+    try:
+        rows = conn.execute(
+            "SELECT id, node_id FROM deploy_tasks WHERE state = 'running'"
+        ).fetchall()
+    finally:
+        conn.close()
+    for row in rows:
+        _spawn_watcher(app, row["node_id"], row["id"])
+
+
 @router.post("/projects/{project}/actions", status_code=202, summary="Run an action on a project")
 async def run_action(
     node_id: str,
@@ -178,9 +198,7 @@ async def run_action(
         object_id=node_id,
         details={**details, "task": task_id},
     )
-    watcher = asyncio.create_task(_watch(request.app, node_id, task_id))
-    _watchers.add(watcher)  # a task nobody references can be collected before it ends
-    watcher.add_done_callback(_watchers.discard)
+    _spawn_watcher(request.app, node_id, task_id)
     return {"task_id": task_id, "state": "running"}
 
 
