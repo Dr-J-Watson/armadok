@@ -25,5 +25,6 @@
   "live.offline.hint": "Les mises à jour en direct sont interrompues. Les pages se rechargent quand vous y revenez.",
   "nav.integrations": "Intégrations",
   "nav.serviceAccounts": "Comptes de service",
-  "nav.nodeAdmin": "Machines (admin)"
+  "nav.nodeAdmin": "Machines (admin)",
+  "nav.start": "Premiers pas"
 }

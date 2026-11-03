@@ -25,5 +25,6 @@
   "live.offline.hint": "Live updates are interrupted. Pages still reload when you return to them.",
   "nav.integrations": "Integrations",
   "nav.serviceAccounts": "Service accounts",
-  "nav.nodeAdmin": "Machines (admin)"
+  "nav.nodeAdmin": "Machines (admin)",
+  "nav.start": "Getting started"
 }

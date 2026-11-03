@@ -14,6 +14,7 @@ ENABLED_MODULES: tuple[str, ...] = (
     "members",
     "nodeadmin",
     "emergency",
+    "diagnostics",
     "traefik",
     "audit",
     "notes",
