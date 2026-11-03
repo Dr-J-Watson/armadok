@@ -82,5 +82,7 @@
   "dns.bad_answer": "Le fournisseur a envoyé une réponse illisible.",
   "dns.too_many_records": "Cette zone a trop d'enregistrements pour être lue d'un coup.",
   "dns.rate_limited": "Le fournisseur limite les requêtes. Réessayez dans un instant.",
-  "dns.failed": "La modification du DNS a échoué."
+  "dns.failed": "La modification du DNS a échoué.",
+  "worker.acme_not_configured": "Aucun acme.json n'est configuré sur cette machine (ARMADOK_ACME_FILE).",
+  "worker.acme_invalid": "Le fichier acme.json n'a pas pu être lu comme des certificats Traefik."
 }

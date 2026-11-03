@@ -82,5 +82,7 @@
   "dns.bad_answer": "The provider sent an answer that could not be read.",
   "dns.too_many_records": "This zone has too many records to read at once.",
   "dns.rate_limited": "The provider is limiting requests. Try again shortly.",
-  "dns.failed": "The DNS change failed."
+  "dns.failed": "The DNS change failed.",
+  "worker.acme_not_configured": "No acme.json is configured on this machine (ARMADOK_ACME_FILE).",
+  "worker.acme_invalid": "The acme.json file could not be read as Traefik certificates."
 }

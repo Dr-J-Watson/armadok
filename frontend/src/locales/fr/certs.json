@@ -1,0 +1,23 @@
+{
+  "tab": "Certificats",
+  "explain": "Les certificats HTTPS obtenus par Traefik. Seules des informations publiques sont affichées : les clés privées ne quittent jamais la machine qui les détient.",
+  "truncated": "La liste est incomplète : il y a plus de certificats qu'on ne peut en lire d'un coup.",
+  "problems.title": "Sites avec un problème de certificat",
+  "states.ok": "Valide",
+  "states.expiring": "Expire bientôt",
+  "states.expired": "Expiré",
+  "states.missing": "Pas de certificat",
+  "list.title": "Certificats",
+  "list.empty": "Aucun certificat trouvé.",
+  "columns.names": "Noms",
+  "columns.issuer": "Émis par",
+  "columns.expires": "Valide jusqu'au",
+  "columns.resolver": "Résolveur",
+  "daysLeft_one": "{{count}} jour restant",
+  "daysLeft_other": "{{count}} jours restants",
+  "expired": "Expiré",
+  "hosts.title": "Noms utilisés par les sites",
+  "hosts.empty": "Aucun nom utilisé.",
+  "hosts.host": "Nom",
+  "hosts.state": "Certificat"
+}

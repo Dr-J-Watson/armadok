@@ -3,6 +3,7 @@
 import type { Feature } from '../core/registry'
 import { accountFeature } from './account/feature'
 import { auditFeature } from './audit/feature'
+import { certsFeature } from './certs/feature'
 import { dnsFeature } from './dns/feature'
 import { dockerFeature } from './docker/feature'
 import { nodesFeature } from './nodes/feature'
@@ -26,5 +27,6 @@ export const features: Feature[] = [
   notesFeature,
   notificationsFeature,
   dnsFeature,
+  certsFeature,
   accountFeature,
 ]

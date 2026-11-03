@@ -28,5 +28,7 @@
   "kinds.uses": "utilise",
   "providers.docker": "Docker",
   "types.service": "Service",
-  "kinds.targets": "cible"
+  "kinds.targets": "cible",
+  "types.certificate": "Certificat",
+  "kinds.covers": "couvre"
 }
