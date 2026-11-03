@@ -8,6 +8,7 @@ from armadok.core.registry import Registry
 from armadok.core.rights import Grant, Principal
 from armadok.main import create_app
 from armadok.modules.nodes.module import module as nodes_module
+from armadok.modules.users.module import module as users_module
 
 ADMIN = Principal("admin", (Grant("nodes.read"), Grant("nodes.create")))
 READER_ALL = Principal("r", (Grant("nodes.read"),))
@@ -15,7 +16,9 @@ READER_ALL = Principal("r", (Grant("nodes.read"),))
 
 def client_for(tmp_path, principal):
     """Build a client whose requests are always made by `principal` (None = anonymous)."""
-    app = create_app(Settings(data_dir=tmp_path), Registry([nodes_module]), lambda _r: principal)
+    app = create_app(
+        Settings(data_dir=tmp_path), Registry([users_module, nodes_module]), lambda _r: principal
+    )
     return TestClient(app), app
 
 

@@ -17,6 +17,8 @@ class Settings:
 
     # Folder holding the database and other state (a volume in production).
     data_dir: Path
+    # Send the refresh cookie over HTTPS only. Disable only for local development over HTTP.
+    cookie_secure: bool = True
 
     @property
     def db_path(self) -> Path:
@@ -25,5 +27,8 @@ class Settings:
 
 
 def load_settings() -> Settings:
-    """Build `Settings` from the environment (`ARMADOK_DATA_DIR`, default `./data`)."""
-    return Settings(data_dir=Path(os.environ.get("ARMADOK_DATA_DIR", "data")))
+    """Build `Settings` from the environment (`ARMADOK_DATA_DIR`, `ARMADOK_COOKIE_SECURE`)."""
+    return Settings(
+        data_dir=Path(os.environ.get("ARMADOK_DATA_DIR", "data")),
+        cookie_secure=os.environ.get("ARMADOK_COOKIE_SECURE", "true").lower() != "false",
+    )

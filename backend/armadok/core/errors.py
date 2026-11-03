@@ -14,10 +14,11 @@ class ApiError(Exception):
     status_code = 400
     code = "common.bad_request"
 
-    def __init__(self, code: str | None = None) -> None:
-        """Override the default code when a more specific one applies."""
+    def __init__(self, code: str | None = None, status_code: int | None = None) -> None:
+        """Override the default code and/or status when a more specific one applies."""
         super().__init__(code or self.code)
         self.code = code or self.code
+        self.status_code = status_code or self.status_code
 
 
 class Unauthenticated(ApiError):

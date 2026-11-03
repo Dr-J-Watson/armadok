@@ -6,10 +6,12 @@ from armadok.modules.nodes.routes import router
 
 module = Module(
     name="nodes",
+    requires=("users",),
     routes=(router,),
     rights=(
         Right("nodes.read"),
-        Right("nodes.create", depends_on=("nodes.read",)),
+        # Creating a node must not require reading other people's nodes, hence no dependency.
+        Right("nodes.create"),
         Right("nodes.update", depends_on=("nodes.read",)),
         Right("nodes.delete", depends_on=("nodes.read",)),
     ),

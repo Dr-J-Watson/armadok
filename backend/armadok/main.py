@@ -10,6 +10,7 @@ from armadok.core.config import Settings, load_settings
 from armadok.core.db import apply_migrations, connect
 from armadok.core.deps import Authenticator
 from armadok.core.errors import ApiError
+from armadok.core.grants import GRANTS_MIGRATION
 from armadok.core.registry import Registry, load_registry
 from armadok.modules.enabled import ENABLED_MODULES
 
@@ -31,8 +32,15 @@ def create_app(
     conn = connect(settings.db_path)
     apply_migrations(
         conn,
-        [AUDIT_MIGRATION, *(m for module in registry.modules for m in module.migrations)],
+        [
+            AUDIT_MIGRATION,
+            GRANTS_MIGRATION,
+            *(m for module in registry.modules for m in module.migrations),
+        ],
     )
+    for module in registry.modules:
+        for hook in module.startup:
+            hook(conn)
     conn.close()
 
     app = FastAPI(
@@ -43,7 +51,7 @@ def create_app(
     )
     app.state.registry = registry
     app.state.settings = settings
-    app.state.authenticator = authenticator
+    app.state.authenticator = authenticator or registry.authenticator()
 
     @app.exception_handler(ApiError)
     def api_error(_: Request, exc: ApiError) -> JSONResponse:

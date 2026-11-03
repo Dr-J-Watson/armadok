@@ -8,7 +8,8 @@ to start instead of misbehaving later.
 from __future__ import annotations
 
 import importlib
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from armadok.core.module import Module, Provider, Right
 
@@ -41,9 +42,18 @@ class Registry:
         """All declared rights, keyed by id."""
         return {r.id: r for m in self.modules for r in m.rights}
 
+    def audit_events(self) -> set[str]:
+        """Return every audit event type declared by the modules."""
+        return {e for m in self.modules for e in m.audit_events}
+
     def providers(self, kind: str) -> dict[str, Provider]:
         """Return the providers of one kind (e.g. "dns"), keyed by name."""
         return {p.name: p for m in self.modules for p in m.providers if p.kind == kind}
+
+    def authenticator(self) -> Callable[[Any], Any] | None:
+        """Return the request authenticator provided by a module, if any."""
+        found = [m.authenticator for m in self.modules if m.authenticator is not None]
+        return found[0] if found else None
 
     def _validate(self) -> None:
         """Run every start-up check; the first failure aborts."""
@@ -59,6 +69,8 @@ class Registry:
             "provider", [f"{p.kind}/{p.name}" for m in self.modules for p in m.providers]
         )
         self._check_right_dependencies()
+        if sum(m.authenticator is not None for m in self.modules) > 1:
+            raise RegistryError("more than one module provides an authenticator")
 
     def _check_requires(self) -> None:
         for module in self.modules:

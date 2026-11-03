@@ -15,8 +15,9 @@ from pydantic import BaseModel, Field
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import NotFound
+from armadok.core.grants import add_grant
 from armadok.core.registry import Registry
-from armadok.core.rights import ALL_SCOPES, Principal
+from armadok.core.rights import ALL_SCOPES, Grant, Principal
 from armadok.modules.nodes import repository
 
 router = APIRouter(prefix="/nodes", tags=["nodes"])
@@ -58,8 +59,9 @@ def _scope(node_id: str) -> str:
 def _audit(
     conn: sqlite3.Connection, registry: Registry, who: Principal, event: str, node_id: str
 ) -> None:
-    events = {e for m in registry.modules for e in m.audit_events}
-    audit.record(conn, events, who.id, event, object_type="node", object_id=node_id)
+    audit.record(
+        conn, registry.audit_events(), who.id, event, object_type="node", object_id=node_id
+    )
 
 
 def _visible_or_404(
@@ -94,6 +96,9 @@ def create_node(
     """Create a node. Requires `nodes.create` everywhere; the caller becomes its owner."""
     who.require("nodes.create", registry.rights(), ALL_SCOPES)
     node = repository.create_node(conn, body.name, body.type, body.description, who.id)
+    # The creator owns the node: grant them what they need on it (and nothing elsewhere).
+    for right in ("nodes.read", "nodes.update", "nodes.delete"):
+        add_grant(conn, who.id, Grant(right, _scope(node["id"])), granted_by=who.id)
     _audit(conn, registry, who, "node.create", node["id"])
     return node
 

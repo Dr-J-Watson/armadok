@@ -9,6 +9,7 @@ Every field except `name` is optional: a module declares only what it provides.
 
 from __future__ import annotations
 
+import sqlite3
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -74,3 +75,7 @@ class Module:
     worker_ops: tuple[str, ...] = ()
     settings: tuple[Any, ...] = ()
     providers: tuple[Provider, ...] = ()
+    # Turns a request into a `Principal` (or None). At most one module provides it.
+    authenticator: Callable[[Any], Any] | None = None
+    # Run once after migrations at start-up (e.g. generate a one-time install code).
+    startup: tuple[Callable[[sqlite3.Connection], None], ...] = ()
