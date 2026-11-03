@@ -1,0 +1,14 @@
+{
+  "tab": "Projets",
+  "list": "Projets et leurs fichiers",
+  "empty": "Aucun projet Compose trouvé dans le dossier des projets de cette machine.",
+  "pickOne": "Choisissez un fichier pour le lire ou le modifier.",
+  "unsaved": "Modifications non enregistrées",
+  "saved": "Enregistré.",
+  "save": "Enregistrer",
+  "discard": "Annuler mes modifications",
+  "editorLabel": "Contenu de {{file}}",
+  "conflict": "Ce fichier a été modifié sur la machine depuis que vous l'avez ouvert. Rien n'a été écrasé.",
+  "reload": "Recharger le fichier depuis la machine (perdre mes modifications)",
+  "keepMine": "Garder ma version (remplacera l'autre au prochain enregistrement)"
+}

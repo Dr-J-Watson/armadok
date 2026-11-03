@@ -139,3 +139,8 @@ button:disabled { opacity: .6; cursor: progress; }
 .qr { width: 14rem; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius); }
 .secret { display: block; padding: .5rem .75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow-wrap: anywhere; }
 .danger-badge { color: var(--danger); border-color: var(--danger); }
+
+.projects-layout { display: grid; gap: var(--gap); grid-template-columns: 1fr; }
+@media (min-width: 50rem) { .projects-layout { grid-template-columns: 16rem 1fr; } }
+.projects-layout [aria-current='true'] { font-weight: 700; text-decoration: none; }
+.editor { width: 100%; min-height: 24rem; font-family: ui-monospace, monospace; font-size: .9rem; tab-size: 2; padding: .75rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); resize: vertical; }

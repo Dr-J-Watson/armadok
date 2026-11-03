@@ -14,14 +14,21 @@ services:
       ARMADOK_HUB_URL: wss://armadok.example.com/api/v1/worker/connect
       ARMADOK_HUB_KEY: ${ARMADOK_HUB_KEY:?set it in .env}
       ARMADOK_ENROL_TOKEN: ${ARMADOK_ENROL_TOKEN:-}
+      # The only folder whose Compose projects Armadok can read and edit (mounted below).
+      ARMADOK_PROJECTS_DIR: /stacks
     volumes:
       # The worker's identity key lives here: keep this volume.
       - armadok-worker-data:/data
+      # Your Compose projects, one sub-folder each. Armadok edits only the Compose files in it.
+      - ${PROJECTS_DIR:?set it in .env}:/stacks
       # Read access to Docker. Prefer a docker-socket-proxy limited to GET requests if you can.
       - /var/run/docker.sock:/var/run/docker.sock
     # The group that owns the Docker socket (find it with: stat -c %g /var/run/docker.sock).
+    # Groups the worker joins: the one owning the Docker socket, and one with write access to
+    # your projects folder (make the folder group-writable: chmod -R g+w and chgrp).
     group_add:
       - ${DOCKER_GID:?set it in .env}
+      - ${PROJECTS_GID:?set it in .env}
     healthcheck:
       disable: true
     read_only: true

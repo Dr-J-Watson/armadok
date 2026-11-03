@@ -1,0 +1,14 @@
+{
+  "tab": "Projects",
+  "list": "Projects and their files",
+  "empty": "No Compose project found in this machine's projects folder.",
+  "pickOne": "Choose a file to read or edit it.",
+  "unsaved": "Unsaved changes",
+  "saved": "Saved.",
+  "save": "Save",
+  "discard": "Discard my changes",
+  "editorLabel": "Content of {{file}}",
+  "conflict": "This file was changed on the machine since you opened it. Nothing was overwritten.",
+  "reload": "Reload the file from the machine (lose my changes)",
+  "keepMine": "Keep my version (replace theirs on the next save)"
+}

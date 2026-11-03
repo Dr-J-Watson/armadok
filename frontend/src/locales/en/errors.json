@@ -33,6 +33,14 @@
   "worker.op_not_for_node_type": "This node type does not support this.",
   "worker.docker_unavailable": "Docker is not reachable from the worker.",
   "worker.docker_error": "Docker returned an unexpected answer.",
-  "worker.too_large": "The answer was too large.",
-  "worker.invalid_answer": "The worker sent an answer that was refused."
+  "worker.too_large": "The file is too large.",
+  "worker.invalid_answer": "The worker sent an answer that was refused.",
+  "projects.invalid_name": "This project or file name is not valid.",
+  "worker.conflict": "The file changed on the machine.",
+  "worker.not_found": "Not found on the machine.",
+  "worker.invalid_path": "This name is not allowed.",
+  "worker.forbidden": "This file cannot be accessed (symbolic links are never followed).",
+  "worker.not_text": "This file is not text.",
+  "worker.projects_not_configured": "No projects folder is configured on this machine (ARMADOK_PROJECTS_DIR).",
+  "common.too_large": "The request is too large."
 }
