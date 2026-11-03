@@ -21,7 +21,7 @@ jobs:
       python: ${{ steps.d.outputs.python }}
       javascript: ${{ steps.d.outputs.javascript }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: d
         run: |
           if [ -n "$(git ls-files '*.py' | head -n 1)" ]; then echo "python=true" >> "$GITHUB_OUTPUT"; else echo "python=false" >> "$GITHUB_OUTPUT"; fi
@@ -44,7 +44,7 @@ jobs:
           - language: javascript-typescript
             enabled: ${{ needs.detect.outputs.javascript }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: matrix.enabled == 'true'
       - uses: github/codeql-action/init@v3
         if: matrix.enabled == 'true'
