@@ -20,12 +20,17 @@ services:
       # may contain tokens). Whoever may write there can publish anything Traefik can reach.
       # Uncomment this line and the matching volume below on a machine that runs Traefik.
       # ARMADOK_TRAEFIK_DIR: /traefik-dynamic
+      # Traefik's acme.json, to show its certificates. The file holds the PRIVATE KEYS: Armadok
+      # reads it and sends only public facts (names, issuer, dates), never a key. Mount it
+      # read-only, preferably on its own (a folder that holds nothing else).
+      # ARMADOK_ACME_FILE: /acme/acme.json
     volumes:
       # The worker's identity key lives here: keep this volume.
       - armadok-worker-data:/data
       # Your Compose projects, one sub-folder each. Armadok edits only the Compose files in it.
       - ${PROJECTS_DIR:?set it in .env}:/stacks
       # - ${TRAEFIK_DYNAMIC_DIR:?set it in .env}:/traefik-dynamic
+      # - ${ACME_DIR:?set it in .env}:/acme:ro
       # Read access to Docker. Prefer a docker-socket-proxy limited to GET requests if you can.
       - /var/run/docker.sock:/var/run/docker.sock
     # The group that owns the Docker socket (find it with: stat -c %g /var/run/docker.sock).

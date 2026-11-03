@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from armadok.worker import docker_ops, projects_ops, traefik_ops
+from armadok.worker import certs_ops, docker_ops, projects_ops, traefik_ops
 from armadok.worker.operation import Operation, OperationError
 
 __all__ = ["OPERATIONS", "Operation", "OperationError"]
@@ -25,4 +25,5 @@ OPERATIONS: dict[str, Operation] = {
     **docker_ops.OPERATIONS,
     **projects_ops.OPERATIONS,
     **traefik_ops.OPERATIONS,
+    **certs_ops.OPERATIONS,
 }
