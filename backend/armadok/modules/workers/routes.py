@@ -155,8 +155,18 @@ async def call_operation(
 
     Only operations declared by a module (the closed list) can be sent.
     """
-    if op not in registry.worker_ops():
+    declared = registry.worker_ops().get(op)
+    if declared is None:
         raise ValueError(f"operation {op!r} is not declared by any module")
+    conn = connect(app.state.settings.db_path)
+    try:
+        node = nodes_repo.get_node(conn, node_id)
+    finally:
+        conn.close()
+    if node is None:
+        raise NotFound()
+    if node["type"] not in declared.node_types:
+        raise ApiError("worker.op_not_for_node_type", 409)
     session = get_hub(app).get(node_id)
     if session is None:
         raise ApiError("worker.not_connected", 409)

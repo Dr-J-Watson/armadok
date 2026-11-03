@@ -47,6 +47,18 @@ class RelationSource:
 
 
 @dataclass(frozen=True)
+class WorkerOp:
+    """An operation a worker may be asked to run.
+
+    `node_types` lists the node types it makes sense for ("network", "docker", "full"); the
+    hub refuses to send it to any other kind of node.
+    """
+
+    name: str
+    node_types: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class Provider:
     """An implementation of a provider kind (dns, git_host, notifier, scanner, template).
 
@@ -79,7 +91,7 @@ class Module:
     nav: tuple[Any, ...] = ()
     i18n_namespaces: tuple[str, ...] = ()
     migrations: tuple[Any, ...] = ()
-    worker_ops: tuple[str, ...] = ()
+    worker_ops: tuple[WorkerOp, ...] = ()
     settings: tuple[Any, ...] = ()
     providers: tuple[Provider, ...] = ()
     # Turns a request into a `Principal`, or None if the credentials are not its kind.

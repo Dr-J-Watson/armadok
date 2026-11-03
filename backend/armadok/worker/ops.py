@@ -1,15 +1,18 @@
 """The closed list of operations a worker can run.
 
-Adding an operation = write a function here and register it in `OPERATIONS`, and declare
-the same name in the owning module's `worker_ops`. Anything not listed is refused.
+Adding an operation = write a function in a module under `armadok/worker/`, add it to that
+module's `OPERATIONS`, include the module below, and declare the same name (with its node
+types) in the owning hub module's `worker_ops`. Anything not listed is refused.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Any
 
-Operation = Callable[[dict[str, Any]], dict[str, Any]]
+from armadok.worker import docker_ops
+from armadok.worker.operation import Operation, OperationError
+
+__all__ = ["OPERATIONS", "Operation", "OperationError"]
 
 
 def ping(args: dict[str, Any]) -> dict[str, Any]:
@@ -17,4 +20,4 @@ def ping(args: dict[str, Any]) -> dict[str, Any]:
     return {"pong": True}
 
 
-OPERATIONS: dict[str, Operation] = {"ping": ping}
+OPERATIONS: dict[str, Operation] = {"ping": ping, **docker_ops.OPERATIONS}

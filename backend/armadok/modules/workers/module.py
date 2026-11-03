@@ -1,6 +1,6 @@
 """Declaration of the `workers` module."""
 
-from armadok.core.module import Module, Right
+from armadok.core.module import Module, Right, WorkerOp
 from armadok.modules.workers import repository
 from armadok.modules.workers.routes import on_node_deleted, router
 
@@ -16,6 +16,6 @@ module = Module(
     listeners=(("node.deleted", on_node_deleted),),
     signals=("workers.changed",),
     # The closed list of operations the hub may ask a worker to run.
-    worker_ops=("ping",),
+    worker_ops=(WorkerOp("ping", ("network", "docker", "full")),),
     migrations=(repository.MIGRATION,),
 )

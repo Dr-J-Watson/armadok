@@ -10,7 +10,7 @@ import json
 from collections.abc import Callable
 from typing import Any, Protocol
 
-from armadok.worker.ops import Operation
+from armadok.worker.ops import Operation, OperationError
 from armadok.worker.state import WorkerState
 from armadok.worker_protocol import channel as protocol
 
@@ -107,7 +107,16 @@ def serve(
         else:
             try:
                 answer = {"id": call_id, "ok": True, "result": handler(args)}
+            except OperationError as error:
+                answer = {"id": call_id, "ok": False, "error": error.code}
             except Exception:
                 # Details stay on the machine; the hub only gets a stable code.
                 answer = {"id": call_id, "ok": False, "error": MAX_ERROR_CODE}
-        transport.send(channel.seal(json.dumps(answer).encode()))
+        try:
+            frame = channel.seal(json.dumps(answer).encode())
+        except protocol.ProtocolError:
+            # Too big for the channel: say so instead of dropping the whole connection.
+            frame = channel.seal(
+                json.dumps({"id": call_id, "ok": False, "error": "worker.too_large"}).encode()
+            )
+        transport.send(frame)

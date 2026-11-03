@@ -11,7 +11,7 @@ import importlib
 from collections.abc import Callable, Iterable
 from typing import Any
 
-from armadok.core.module import Module, Provider, Right
+from armadok.core.module import Module, Provider, Right, WorkerOp
 
 
 class RegistryError(Exception):
@@ -46,9 +46,9 @@ class Registry:
         """Return the rights a node's creator receives on that node."""
         return tuple(r.id for r in self.rights().values() if r.node_owner)
 
-    def worker_ops(self) -> set[str]:
-        """Return the closed list of operations modules allow workers to run."""
-        return {o for m in self.modules for o in m.worker_ops}
+    def worker_ops(self) -> dict[str, WorkerOp]:
+        """Return the closed list of operations modules allow workers to run, by name."""
+        return {o.name: o for m in self.modules for o in m.worker_ops}
 
     def baseline_rights(self) -> tuple[str, ...]:
         """Return the rights every new account receives."""
@@ -86,7 +86,7 @@ class Registry:
         self._check_unique("right", [r.id for m in self.modules for r in m.rights])
         self._check_unique("audit event", [e for m in self.modules for e in m.audit_events])
         self._check_unique("signal", [s for m in self.modules for s in m.signals])
-        self._check_unique("worker operation", [o for m in self.modules for o in m.worker_ops])
+        self._check_unique("worker operation", [o.name for m in self.modules for o in m.worker_ops])
         self._check_unique(
             "relation source", [s.object_type for m in self.modules for s in m.relations]
         )
