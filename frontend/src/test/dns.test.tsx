@@ -119,7 +119,7 @@ describe('dns', () => {
     await userEvent.selectOptions(await screen.findByLabelText(/Attached to/), 'n1')
     expect(await screen.findByText(/using YOUR provider account/)).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'MX' })).not.toBeChecked() // narrow by default
-    expect(screen.getByRole('checkbox', { name: 'A', exact: true })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: /^A$/ })).toBeChecked()
     await userEvent.click(screen.getByRole('checkbox', { name: 'TXT' }))
     await userEvent.type(screen.getByLabelText(/Only these names/), 'dev, staging')
     await userEvent.click(screen.getByRole('button', { name: 'Attach' }))
