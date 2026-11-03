@@ -1,0 +1,30 @@
+# Secrets and local configuration — never commit
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# Private working files (specification, rules, repository plan, stack notes) — not published
+CLAUDE.md
+FONCTIONNALITES.md
+ORGANISATION_GITHUB.md
+TECHNOLOGIES.md
+.claude/
+
+# Local deployment files — only the *.example.yml versions are committed
+docker-compose.yml
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.example.yml
+!docker-compose.*.example.yml
+
+# Runtime data
+data/
+*.log
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+__pycache__/
+*.pyc

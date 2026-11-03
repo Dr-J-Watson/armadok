@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# pre-commit: refuse commits that would leak a secret or a personal address.
+# Enable once with:  git config core.hooksPath .githooks
+set -euo pipefail
+
+fail() { echo "pre-commit: $1" >&2; exit 1; }
+
+# 1. Nothing that .gitignore excludes may be committed (secrets, local compose files,
+#    private working files). A forced `git add -f` is caught here.
+ignored="$(git diff --cached --name-only --diff-filter=AM | git check-ignore --no-index --stdin || true)"
+if [ -n "$ignored" ]; then
+  echo "pre-commit: these staged files are git-ignored (private or local) and must not be committed:" >&2
+  echo "$ignored" | sed 's/^/  - /' >&2
+  fail "unstage them with: git restore --staged <file>"
+fi
+
+# 2. The author address must be a GitHub noreply address (the real e-mail stays private).
+email="$(git config user.email || true)"
+case "$email" in
+  *@users.noreply.github.com) ;;
+  "") fail "git user.email is not set. Use your GitHub noreply address." ;;
+  *) fail "git user.email is not a GitHub noreply address ($email). Fix it with: git config user.email <id>+<login>@users.noreply.github.com" ;;
+esac
+
+# 3. Secret-looking values in the added lines.
+added="$(git diff --cached -U0 --no-color | grep -E '^\+[^+]' || true)"
+if [ -n "$added" ]; then
+  if echo "$added" | grep -Eqi '(-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|xox[baprs]-[A-Za-z0-9-]{10,}|(password|secret|token|api[_-]?key)[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"' ]{12,}["'"'"'])'; then
+    fail "a secret-looking value was found in the staged changes. Remove it (or use a placeholder) and try again."
+  fi
+  # 4. Any e-mail address other than noreply / example addresses.
+  if echo "$added" | grep -Eo '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' \
+     | grep -Evi '(@users\.noreply\.github\.com|@example\.(com|org|net)|noreply@anthropic\.com)$' | grep -q .; then
+    fail "an e-mail address was found in the staged changes. Only noreply or example.com addresses are allowed."
+  fi
+fi
+exit 0
