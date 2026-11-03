@@ -923,10 +923,21 @@ def test_provider_answers_are_untrusted_and_a_huge_zone_is_an_error_not_a_short_
     ).json()["id"]
     FakeOvh.records = {
         str(i): {"id": i, "fieldType": "A", "subDomain": f"h{i}", "target": "1.2.3.4", "ttl": 60}
-        for i in range(1, ovh.MAX_RECORDS + 2)
+        for i in range(1, ovh.max_records() + 2)
     }
     huge = client.get(f"/api/v1/dns/domains/{domain}/records", headers=admin)
     assert huge.status_code == 502 and huge.json()["error"]["code"] == "dns.too_many_records"
     FakeOvh.records = {"1": {"id": 1, "garbage": True}}
     broken = client.get(f"/api/v1/dns/domains/{domain}/records", headers=admin)
     assert broken.status_code == 502 and broken.json()["error"]["code"] == "dns.bad_answer"
+
+
+def test_the_zone_size_limit_can_be_set_and_is_bounded(monkeypatch):
+    assert ovh.max_records() == 500
+    monkeypatch.setenv("ARMADOK_DNS_MAX_RECORDS", "1500")
+    assert ovh.max_records() == 1500
+    monkeypatch.setenv("ARMADOK_DNS_MAX_RECORDS", "999999")
+    assert ovh.max_records() == ovh.HARD_MAX_RECORDS
+    for odd in ("0", "-5", "many", ""):
+        monkeypatch.setenv("ARMADOK_DNS_MAX_RECORDS", odd)
+        assert 1 <= ovh.max_records() <= ovh.HARD_MAX_RECORDS

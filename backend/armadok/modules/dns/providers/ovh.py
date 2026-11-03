@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import os
 import re
 import time
 from typing import Any, ClassVar, Literal
@@ -26,7 +27,23 @@ ENDPOINTS = {
     "ovh-ca": "https://ca.api.ovh.com/1.0",
     "ovh-us": "https://api.us.ovhcloud.com/1.0",
 }
-MAX_RECORDS = 500
+DEFAULT_MAX_RECORDS = 500
+HARD_MAX_RECORDS = 5000  # listing costs one request per record: this is the ceiling whatever is set
+
+
+def max_records() -> int:
+    """Return how many records of one zone we are willing to read.
+
+    `ARMADOK_DNS_MAX_RECORDS` raises or lowers it (1 to 5000, default 500). Reading a zone takes
+    one OVH request per record, so a large zone is slow and uses the account's API quota.
+    """
+    try:
+        value = int(os.environ.get("ARMADOK_DNS_MAX_RECORDS", DEFAULT_MAX_RECORDS))
+    except ValueError:
+        value = DEFAULT_MAX_RECORDS
+    return max(1, min(value, HARD_MAX_RECORDS))
+
+
 CONCURRENCY = 8
 DEADLINE_SECONDS = 60
 MAX_ANSWER_BYTES = 2 * 1024 * 1024
@@ -151,7 +168,7 @@ class OvhProvider:
                     ids = await self._request("GET", f"/domain/zone/{zone}/record")
                     if not isinstance(ids, list):
                         raise ProviderError("dns.bad_answer")
-                    if len(ids) > MAX_RECORDS:
+                    if len(ids) > max_records():
                         raise ProviderError("dns.too_many_records")
                     slots = asyncio.Semaphore(CONCURRENCY)
 
