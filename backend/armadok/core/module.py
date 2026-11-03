@@ -10,7 +10,7 @@ Every field except `name` is optional: a module declares only what it provides.
 from __future__ import annotations
 
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -35,15 +35,49 @@ class Right:
 
 
 @dataclass(frozen=True)
-class RelationSource:
-    """Tells the relations service how to find the objects linked to one object type.
+class RelationObject:
+    """One object on the relations map (a container, a network, a router...).
 
-    `resolve(object_id)` returns the linked objects as `(type, id)` pairs.
-    Rights filtering is applied by the core, never by the source.
+    `type` and `id` identify it within a node; `label` is what the interface shows.
     """
 
-    object_type: str
-    resolve: Callable[[str], list[tuple[str, str]]]
+    type: str
+    id: str
+    label: str
+
+
+@dataclass(frozen=True)
+class RelationLink:
+    """A directed link between two objects, e.g. container --attached--> network.
+
+    The link is stored once and read in both directions: each end sees it.
+    """
+
+    source: tuple[str, str]
+    target: tuple[str, str]
+    kind: str
+
+
+@dataclass(frozen=True)
+class RelationData:
+    """What a provider knows about a node: its objects and the links between them."""
+
+    objects: tuple[RelationObject, ...] = ()
+    links: tuple[RelationLink, ...] = ()
+
+
+@dataclass(frozen=True)
+class RelationProvider:
+    """Tells the relations service how to discover objects and links on a node.
+
+    `provide(app, node_id)` is async. `right` is what the viewer needs on the node to see
+    this provider's objects; `node_types` limits it to the machines it applies to.
+    """
+
+    name: str
+    right: str
+    node_types: tuple[str, ...]
+    provide: Callable[[Any, str], Awaitable[RelationData]]
 
 
 @dataclass(frozen=True)
@@ -84,7 +118,7 @@ class Module:
     rights: tuple[Right, ...] = ()
     audit_events: tuple[str, ...] = ()
     signals: tuple[str, ...] = ()
-    relations: tuple[RelationSource, ...] = ()
+    relations: tuple[RelationProvider, ...] = ()
     search: tuple[Any, ...] = ()
     notification_events: tuple[str, ...] = ()
     widgets: tuple[Any, ...] = ()

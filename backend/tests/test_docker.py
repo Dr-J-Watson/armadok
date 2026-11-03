@@ -17,7 +17,7 @@ from armadok.worker import main as worker_main
 from armadok.worker.ops import OperationError
 
 PASSWORD = "correct horse battery"
-MODULES = ("users", "apikeys", "nodes", "workers", "docker")
+MODULES = ("users", "apikeys", "nodes", "workers", "docker", "relations")
 
 CONTAINERS = [
     {

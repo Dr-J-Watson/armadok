@@ -11,7 +11,7 @@ import importlib
 from collections.abc import Callable, Iterable
 from typing import Any
 
-from armadok.core.module import Module, Provider, Right, WorkerOp
+from armadok.core.module import Module, Provider, RelationProvider, Right, WorkerOp
 
 
 class RegistryError(Exception):
@@ -41,6 +41,10 @@ class Registry:
     def rights(self) -> dict[str, Right]:
         """All declared rights, keyed by id."""
         return {r.id: r for m in self.modules for r in m.rights}
+
+    def relation_providers(self) -> tuple[RelationProvider, ...]:
+        """Return every relation provider declared by the modules."""
+        return tuple(r for m in self.modules for r in m.relations)
 
     def node_owner_rights(self) -> tuple[str, ...]:
         """Return the rights a node's creator receives on that node."""
@@ -87,9 +91,7 @@ class Registry:
         self._check_unique("audit event", [e for m in self.modules for e in m.audit_events])
         self._check_unique("signal", [s for m in self.modules for s in m.signals])
         self._check_unique("worker operation", [o.name for m in self.modules for o in m.worker_ops])
-        self._check_unique(
-            "relation source", [s.object_type for m in self.modules for s in m.relations]
-        )
+        self._check_unique("relation provider", [r.name for m in self.modules for r in m.relations])
         self._check_unique(
             "provider", [f"{p.kind}/{p.name}" for m in self.modules for p in m.providers]
         )
