@@ -42,5 +42,8 @@
   "worker.forbidden": "Ce fichier n'est pas accessible (les liens symboliques ne sont jamais suivis).",
   "worker.not_text": "Ce fichier n'est pas du texte.",
   "worker.projects_not_configured": "Aucun dossier de projets n'est configuré sur cette machine (ARMADOK_PROJECTS_DIR).",
-  "common.too_large": "La requête est trop volumineuse."
+  "common.too_large": "La requête est trop volumineuse.",
+  "traefik.invalid_path": "Ce chemin de fichier n'est pas valide.",
+  "traefik.invalid_yaml": "Ce n'est pas du YAML valide : il n'a pas été enregistré (Traefik ignorerait tout le fichier).",
+  "worker.traefik_not_configured": "Aucun dossier Traefik n'est configuré sur cette machine (ARMADOK_TRAEFIK_DIR)."
 }

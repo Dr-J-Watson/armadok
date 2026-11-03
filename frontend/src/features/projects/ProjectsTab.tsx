@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
-import { FileEditor } from './FileEditor'
+import { FileEditor } from '../../shell/FileEditor'
 
 interface Project {
   name: string
@@ -65,7 +65,13 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
       <div>
         {project && file ? (
           // Changing file starts a fresh editor: no draft leaks from one file to another.
-          <FileEditor key={`${project}/${file}`} nodeId={nodeId} project={project} file={file} />
+          <FileEditor
+            key={`${project}/${file}`}
+            path={`/nodes/${nodeId}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(file)}`}
+            title={`${project} / ${file}`}
+            fileName={file}
+            queryKey={['project-file', nodeId, project, file]}
+          />
         ) : (
           <p className="hint">{t('projects:pickOne')}</p>
         )}

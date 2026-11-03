@@ -16,11 +16,16 @@ services:
       ARMADOK_ENROL_TOKEN: ${ARMADOK_ENROL_TOKEN:-}
       # The only folder whose Compose projects Armadok can read and edit (mounted below).
       ARMADOK_PROJECTS_DIR: /stacks
+      # Traefik's DYNAMIC configuration folder only (never the folder holding traefik.yml, which
+      # may contain tokens). Whoever may write there can publish anything Traefik can reach.
+      # Uncomment this line and the matching volume below on a machine that runs Traefik.
+      # ARMADOK_TRAEFIK_DIR: /traefik-dynamic
     volumes:
       # The worker's identity key lives here: keep this volume.
       - armadok-worker-data:/data
       # Your Compose projects, one sub-folder each. Armadok edits only the Compose files in it.
       - ${PROJECTS_DIR:?set it in .env}:/stacks
+      # - ${TRAEFIK_DYNAMIC_DIR:?set it in .env}:/traefik-dynamic
       # Read access to Docker. Prefer a docker-socket-proxy limited to GET requests if you can.
       - /var/run/docker.sock:/var/run/docker.sock
     # The group that owns the Docker socket (find it with: stat -c %g /var/run/docker.sock).

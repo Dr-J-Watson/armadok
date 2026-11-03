@@ -42,5 +42,8 @@
   "worker.forbidden": "This file cannot be accessed (symbolic links are never followed).",
   "worker.not_text": "This file is not text.",
   "worker.projects_not_configured": "No projects folder is configured on this machine (ARMADOK_PROJECTS_DIR).",
-  "common.too_large": "The request is too large."
+  "common.too_large": "The request is too large.",
+  "traefik.invalid_path": "This file path is not valid.",
+  "traefik.invalid_yaml": "This is not valid YAML, so it was not saved (Traefik would ignore the whole file).",
+  "worker.traefik_not_configured": "No Traefik folder is configured on this machine (ARMADOK_TRAEFIK_DIR)."
 }

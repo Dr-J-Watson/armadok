@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ApiError, api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { ApiError, api } from '../core/api'
+import { errorMessage } from '../core/errors'
 
 interface FileContent {
   content: string
@@ -11,18 +11,20 @@ interface FileContent {
 }
 
 interface Props {
-  nodeId: string
-  project: string
-  file: string
+  // API path of the file (it answers GET with the text and PUT to save).
+  path: string
+  // What is shown as the file's name, and the label of the text area.
+  title: string
+  // Name of the file alone, for the text area's label (defaults to the title).
+  fileName?: string
+  queryKey: unknown[]
 }
 
-// Editor for one Compose file. A save names the version it replaces; if the file changed on
+// Editor for one configuration file (a Compose file, a Traefik file...). A save names the version it replaces; if the file changed on
 // the machine in the meantime the server answers 409 and nothing is overwritten.
-export function FileEditor({ nodeId, project, file }: Props) {
-  const { t } = useTranslation(['projects', 'errors'])
+export function FileEditor({ path, title, fileName, queryKey: key }: Props) {
+  const { t } = useTranslation(['files', 'errors'])
   const queryClient = useQueryClient()
-  const path = `/nodes/${nodeId}/projects/${encodeURIComponent(project)}/files/${encodeURIComponent(file)}`
-  const key = ['project-file', nodeId, project, file]
   const loaded = useQuery({ queryKey: key, queryFn: () => api.get<FileContent>(path), staleTime: Infinity })
 
   // `draft` is null until the user types: then the editor shows what is on disk.
@@ -75,16 +77,16 @@ export function FileEditor({ nodeId, project, file }: Props) {
   return (
     <div>
       <h3>
-        {project} / <code>{file}</code> {dirty && <span className="badge">{t('projects:unsaved')}</span>}
+        <code>{title}</code> {dirty && <span className="badge">{t('files:unsaved')}</span>}
       </h3>
       {conflict && (
         <div className="notice" role="alert">
-          <p>{t('projects:conflict')}</p>
+          <p>{t('files:conflict')}</p>
           <button type="button" onClick={() => void reloadFromDisk()}>
-            {t('projects:reload')}
+            {t('files:reload')}
           </button>{' '}
           <button type="button" onClick={() => void keepMine()}>
-            {t('projects:keepMine')}
+            {t('files:keepMine')}
           </button>
         </div>
       )}
@@ -95,11 +97,11 @@ export function FileEditor({ nodeId, project, file }: Props) {
       )}
       {saved && !dirty && !conflict && (
         <p role="status" className="ok-text">
-          {t('projects:saved')}
+          {t('files:saved')}
         </p>
       )}
       <label htmlFor="file-text" className="visually-hidden">
-        {t('projects:editorLabel', { file })}
+        {t('files:editorLabel', { file: fileName ?? title })}
       </label>
       <textarea
         id="file-text"
@@ -113,11 +115,11 @@ export function FileEditor({ nodeId, project, file }: Props) {
       />
       <div className="actions">
         <button type="button" className="primary" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
-          {t('projects:save')}
+          {t('files:save')}
         </button>
         {dirty && (
           <button type="button" onClick={() => setDraft(null)}>
-            {t('projects:discard')}
+            {t('files:discard')}
           </button>
         )}
       </div>

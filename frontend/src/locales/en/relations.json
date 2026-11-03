@@ -26,5 +26,7 @@
   "kinds.routes_to": "routes to",
   "kinds.serves": "serves",
   "kinds.uses": "uses",
-  "providers.docker": "Docker"
+  "providers.docker": "Docker",
+  "types.service": "Service",
+  "kinds.targets": "targets"
 }

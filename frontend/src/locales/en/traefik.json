@@ -1,0 +1,21 @@
+{
+  "tab": "Traefik",
+  "views.sites": "Sites",
+  "views.files": "Files",
+  "noSites": "No site defined in the configuration files.",
+  "noFiles": "No configuration file found in this machine's Traefik folder.",
+  "pickOne": "Choose a file to read or edit it.",
+  "fileList": "Configuration files",
+  "truncated": "The list is incomplete: there are more files than can be read at once.",
+  "badFile": "{{path}} is not valid YAML, so its sites are not shown.",
+  "openFile": "Open the file",
+  "relations": "Relations",
+  "columns.name": "Site",
+  "columns.rule": "Rule",
+  "columns.service": "Service",
+  "columns.middlewares": "Middlewares",
+  "columns.https": "HTTPS",
+  "columns.file": "File",
+  "tls.on": "HTTPS",
+  "tls.off": "No HTTPS"
+}
