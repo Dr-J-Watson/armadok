@@ -29,6 +29,9 @@ jobs:
       - id: rp
         uses: googleapis/release-please-action@v5
         with:
+          # A personal token (optional secret) makes the release PR come from the owner,
+          # so its checks run without manual approval. Falls back to the default token.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
