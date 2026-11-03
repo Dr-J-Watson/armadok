@@ -14,10 +14,23 @@ services:
       # Plain HTTP on localhost: the refresh cookie cannot be "Secure" here. Keep the default
       # (true) as soon as the hub is behind HTTPS.
       ARMADOK_COOKIE_SECURE: "false"
+      # Manage this machine as a node, with no worker. The hub then acts on the machine itself:
+      # a compromised hub could do what the Docker socket allows. Remove these lines (and the
+      # socket below) if you only manage other machines through workers.
+      ARMADOK_LOCAL_NODE: "true"
+      # Optional folders the local node may use (mount them below):
+      # ARMADOK_PROJECTS_DIR: /stacks
+      # ARMADOK_TRAEFIK_DIR: /traefik-dynamic
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
       - armadok-data:/data
+      # Read access to Docker for the local node.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # - ${PROJECTS_DIR}:/stacks
+      # - ${TRAEFIK_DYNAMIC_DIR}:/traefik-dynamic
+    group_add:
+      - ${DOCKER_GID:?set it in .env}
     read_only: true
     tmpfs:
       - /tmp

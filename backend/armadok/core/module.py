@@ -154,5 +154,6 @@ class Module:
     # Event listeners: pairs of (event name, async handler(app, **payload)).
     listeners: tuple[tuple[str, Callable[..., Any]], ...] = ()
     authenticator: Callable[[Any], Any] | None = None
-    # Run once after migrations at start-up (e.g. generate a one-time install code).
-    startup: tuple[Callable[[sqlite3.Connection], None], ...] = ()
+    # Run once after migrations at start-up, with the connection, the settings and the registry
+    # (e.g. generate a one-time install code, create the local node).
+    startup: tuple[Callable[[sqlite3.Connection, Any, Any], None], ...] = ()

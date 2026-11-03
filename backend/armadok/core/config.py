@@ -31,6 +31,9 @@ class Settings:
     # LAN, say). Off by default: it lets whoever can add a channel make the hub call internal
     # services.
     allow_private_outbound: bool = False
+    # Manage the hub's own machine as a node, with no worker: the hub runs the operations itself.
+    # Off by default, because it needs the hub to reach Docker and the configuration folders.
+    local_node: bool = False
 
     @property
     def audit_key(self) -> bytes | None:
@@ -55,6 +58,7 @@ def load_settings() -> Settings:
         data_dir=Path(os.environ.get("ARMADOK_DATA_DIR", "data")),
         cookie_secure=os.environ.get("ARMADOK_COOKIE_SECURE", "true").lower() != "false",
         encryption_key=os.environ.get("ARMADOK_ENCRYPTION_KEY") or None,
+        local_node=os.environ.get("ARMADOK_LOCAL_NODE", "").lower() == "true",
         allow_private_outbound=os.environ.get("ARMADOK_ALLOW_PRIVATE_OUTBOUND", "").lower()
         == "true",
         web_dir=Path(os.environ["ARMADOK_WEB_DIR"]) if os.environ.get("ARMADOK_WEB_DIR") else None,

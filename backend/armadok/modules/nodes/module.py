@@ -1,7 +1,7 @@
 """Declaration of the `nodes` module: what it contributes to the application."""
 
 from armadok.core.module import Module, Right
-from armadok.modules.nodes import repository
+from armadok.modules.nodes import local, repository
 from armadok.modules.nodes.routes import router
 
 module = Module(
@@ -17,5 +17,7 @@ module = Module(
     ),
     audit_events=("node.create", "node.update", "node.delete"),
     signals=("nodes.changed",),
-    migrations=(repository.MIGRATION,),
+    migrations=(repository.MIGRATION, repository.LOCAL_MIGRATION),
+    startup=(local.ensure_local_node,),
+    listeners=(("setup.completed", local.on_setup_completed),),
 )

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError
+from armadok.core.events import emit
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.users import repository, second_factor, setup
@@ -80,8 +81,9 @@ def setup_status(conn: sqlite3.Connection = Depends(get_db)) -> dict[str, bool]:
 
 
 @router.post("/setup", status_code=201, summary="Create the super-administrator")
-def run_setup(
+async def run_setup(
     body: SetupIn,
+    request: Request,
     conn: sqlite3.Connection = Depends(get_db),
     registry: Registry = Depends(get_registry),
 ) -> dict:
@@ -101,6 +103,7 @@ def run_setup(
         raise ApiError("setup.closed", 409) from None
     if user is None:
         raise ApiError("setup.invalid_code", 403)
+    await emit(request.app, "setup.completed", user_id=user["id"])
     audit.record(
         conn,
         registry.audit_events(),

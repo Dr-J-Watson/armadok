@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
-from armadok.core.errors import NotFound
+from armadok.core.errors import ApiError, NotFound
 from armadok.core.events import emit
 from armadok.core.grants import add_grant
 from armadok.core.registry import Registry
@@ -51,6 +51,7 @@ class NodeOut(BaseModel):
     description: str
     owner: str
     created_at: str
+    local: bool = False
 
 
 def _scope(node_id: str) -> str:
@@ -140,8 +141,11 @@ async def delete_node(
     who: Principal = Depends(get_principal),
 ) -> None:
     """Soft-delete a node. Requires `nodes.delete` on this node."""
-    _visible_or_404(conn, registry, who, node_id)
+    node = _visible_or_404(conn, registry, who, node_id)
     who.require("nodes.delete", registry.rights(), _scope(node_id))
+    if node["local"]:
+        # It is the machine Armadok runs on: remove it by turning ARMADOK_LOCAL_NODE off.
+        raise ApiError("nodes.local_not_deletable", 409)
     repository.soft_delete_node(conn, node_id)
     _audit(conn, registry, who, "node.delete", node_id)
     # Other modules (workers...) react, e.g. by cutting the machine's worker off.

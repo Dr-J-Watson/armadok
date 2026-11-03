@@ -28,7 +28,9 @@ SUPERADMIN_RIGHTS = (
 )
 
 
-def ensure_install_code(conn: sqlite3.Connection) -> None:
+def ensure_install_code(
+    conn: sqlite3.Connection, settings: object = None, registry: object = None
+) -> None:
     """On a fresh install, create a one-time code and print it in the logs.
 
     Whoever can read the container logs proves they control the server. Does nothing once

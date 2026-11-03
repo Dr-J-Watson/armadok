@@ -52,7 +52,7 @@ def create_app(
     )
     for module in registry.modules:
         for hook in module.startup:
-            hook(conn)
+            hook(conn, settings, registry)
     conn.close()
 
     @asynccontextmanager

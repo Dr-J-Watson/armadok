@@ -23,7 +23,22 @@ MIGRATION = Migration(
     """,
 )
 
-_COLUMNS = "id, name, type, description, owner, created_at"
+LOCAL_MIGRATION = Migration(
+    "nodes-0002-local",
+    """
+    ALTER TABLE nodes ADD COLUMN is_local INTEGER NOT NULL DEFAULT 0;
+    -- At most one node is the hub's own machine.
+    CREATE UNIQUE INDEX nodes_one_local ON nodes (is_local) WHERE is_local = 1;
+    """,
+)
+
+_COLUMNS = "id, name, type, description, owner, created_at, is_local AS local"
+
+
+def _row(row: sqlite3.Row) -> dict:
+    data = dict(row)
+    data["local"] = bool(data["local"])
+    return data
 
 
 def list_nodes(conn: sqlite3.Connection) -> list[dict]:
@@ -31,7 +46,7 @@ def list_nodes(conn: sqlite3.Connection) -> list[dict]:
     rows = conn.execute(
         f"SELECT {_COLUMNS} FROM nodes WHERE deleted_at IS NULL ORDER BY created_at, id"
     )
-    return [dict(r) for r in rows]
+    return [_row(r) for r in rows]
 
 
 def get_node(conn: sqlite3.Connection, node_id: str) -> dict | None:
@@ -39,7 +54,7 @@ def get_node(conn: sqlite3.Connection, node_id: str) -> dict | None:
     row = conn.execute(
         f"SELECT {_COLUMNS} FROM nodes WHERE id = ? AND deleted_at IS NULL", (node_id,)
     ).fetchone()
-    return dict(row) if row else None
+    return _row(row) if row else None
 
 
 def create_node(
@@ -73,3 +88,23 @@ def soft_delete_node(conn: sqlite3.Connection, node_id: str) -> None:
         "UPDATE nodes SET deleted_at = ? WHERE id = ?", (datetime.now(UTC).isoformat(), node_id)
     )
     conn.commit()
+
+
+def get_local(conn: sqlite3.Connection) -> dict | None:
+    """Return the node that stands for the hub's own machine, if there is one."""
+    row = conn.execute(
+        f"SELECT {_COLUMNS} FROM nodes WHERE is_local = 1 AND deleted_at IS NULL"
+    ).fetchone()
+    return _row(row) if row else None
+
+
+def create_local(conn: sqlite3.Connection) -> dict:
+    """Create the local node (a full node: Docker and Traefik on the hub's machine)."""
+    node_id = uuid.uuid4().hex
+    conn.execute(
+        "INSERT INTO nodes (id, name, type, description, owner, created_at, is_local)"
+        " VALUES (?, 'Local', 'full', 'The machine Armadok runs on.', 'system', ?, 1)",
+        (node_id, datetime.now(UTC).isoformat()),
+    )
+    conn.commit()
+    return get_node(conn, node_id)  # type: ignore[return-value]

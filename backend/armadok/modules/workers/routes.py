@@ -26,12 +26,16 @@ from armadok.core.rights import Principal
 from armadok.modules.nodes import repository as nodes_repo
 from armadok.modules.workers import identity, repository
 from armadok.modules.workers.hub import (
+    CALL_TIMEOUT_SECONDS,
     WorkerCallError,
     WorkerHub,
     WorkerSession,
     receive_frame,
 )
+from armadok.worker import ops as worker_ops
+from armadok.worker.operation import OperationError
 from armadok.worker_protocol import channel as protocol
+from armadok.worker_protocol.error_codes import WORKER_ERROR_CODES
 
 router = APIRouter(tags=["workers"])
 log = logging.getLogger("armadok.workers")
@@ -95,8 +99,10 @@ def create_enrolment(
     The token is shown only here. It lets one machine become this node's worker; enrolling
     again later replaces the previous worker.
     """
-    _visible_node(conn, registry, who, node_id)
+    node = _visible_node(conn, registry, who, node_id)
     who.require("workers.manage", registry.rights(), _scope(node_id))
+    if node["local"]:
+        raise ApiError("workers.local_node", 409)
     token, expires = repository.create_enrolment(conn, node_id, protocol.enrolment_public_hex)
     _audit(conn, registry, who.actor, "worker.enrolment_created", node_id)
     return {
@@ -115,14 +121,24 @@ def worker_status(
     who: Principal = Depends(get_principal),
 ) -> dict:
     """Return whether a worker is enrolled and whether it is connected right now."""
-    _visible_node(conn, registry, who, node_id)
+    node = _visible_node(conn, registry, who, node_id)
     who.require("workers.read", registry.rights(), _scope(node_id))
+    if node["local"]:
+        # No worker: the hub itself acts on its own machine, so it is always "there".
+        return {
+            "enrolled": True,
+            "worker_id": None,
+            "connected": True,
+            "last_seen_at": None,
+            "local": True,
+        }
     worker = repository.get_worker_of_node(conn, node_id)
     return {
         "enrolled": worker is not None,
         "worker_id": worker["id"] if worker else None,
         "connected": get_hub(request.app).get(node_id) is not None,
         "last_seen_at": worker["last_seen_at"] if worker else None,
+        "local": False,
     }
 
 
@@ -135,8 +151,10 @@ async def revoke_worker(
     who: Principal = Depends(get_principal),
 ) -> None:
     """Revoke the node's worker and cancel pending tokens; a live connection is dropped."""
-    _visible_node(conn, registry, who, node_id)
+    node = _visible_node(conn, registry, who, node_id)
     who.require("workers.manage", registry.rights(), _scope(node_id))
+    if node["local"]:
+        raise ApiError("workers.local_node", 409)
     if not repository.revoke_node_worker(conn, node_id):
         raise NotFound()
     # Audited before the connection is cut, so the record exists even if closing misbehaves.
@@ -160,6 +178,28 @@ async def ping_worker(
     return await call_operation(request.app, registry, node_id, "ping", {})
 
 
+async def _run_locally(op: str, args: dict[str, Any]) -> dict:
+    """Run an operation on the hub's own machine (the local node has no worker).
+
+    The very same handlers a worker runs, with the same closed list, the same confinement and
+    the same error codes, so the rest of the application cannot tell the difference.
+    """
+    handler = worker_ops.OPERATIONS.get(op)
+    if handler is None:
+        raise ApiError("worker.unknown_op", 502)
+    try:
+        result = await asyncio.wait_for(asyncio.to_thread(handler, args), CALL_TIMEOUT_SECONDS)
+    except OperationError as error:
+        code = error.code if error.code in WORKER_ERROR_CODES else "worker.error"
+        raise ApiError(code, WORKER_ERROR_STATUS.get(code, 502)) from None
+    except TimeoutError:
+        raise ApiError("worker.timeout", 502) from None
+    except Exception:  # noqa: BLE001  (details stay in the log, as for a remote worker)
+        log.exception("local operation %s failed", op)
+        raise ApiError("worker.op_failed", 502) from None
+    return result
+
+
 async def call_operation(
     app: Any, registry: Registry, node_id: str, op: str, args: dict[str, Any]
 ) -> dict:
@@ -179,6 +219,8 @@ async def call_operation(
         raise NotFound()
     if node["type"] not in declared.node_types:
         raise ApiError("worker.op_not_for_node_type", 409)
+    if node["local"]:
+        return await _run_locally(op, args)
     session = get_hub(app).get(node_id)
     if session is None:
         raise ApiError("worker.not_connected", 409)
