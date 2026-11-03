@@ -235,3 +235,26 @@ def test_login_is_throttled_after_repeated_failures(env):
     assert (
         blocked.status_code == 429 and blocked.json()["error"]["code"] == "auth.too_many_attempts"
     )
+
+
+def test_rights_catalogue_is_readable_by_any_account_and_flags_sensitive_rights(env):
+    client, code = env
+    setup_admin(client, code)
+    _, admin = login(client)
+    uid = client.post(
+        "/api/v1/users", headers=admin, json={"username": "bob", "password": PASSWORD}
+    ).json()["id"]
+    _, bob = login(client, "bob")
+    assert uid
+    catalogue = {r["id"]: r for r in client.get("/api/v1/rights", headers=bob).json()}
+    assert catalogue["users.reset_password"]["sensitive"] is True
+    assert catalogue["nodes.update"]["depends_on"] == ["nodes.read"]
+    assert client.get("/api/v1/rights").status_code == 401
+
+
+def test_me_reports_the_second_factor_state(env):
+    client, code = env
+    setup_admin(client, code)
+    _, admin = login(client)
+    me = client.get("/api/v1/auth/me", headers=admin).json()
+    assert me["totp_enabled"] is False and me["backup_codes_remaining"] == 0

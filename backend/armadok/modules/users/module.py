@@ -5,11 +5,12 @@ from armadok.modules.users import repository, setup
 from armadok.modules.users.auth import authenticate
 from armadok.modules.users.routes_2fa import router as twofa_router
 from armadok.modules.users.routes_auth import router as auth_router
+from armadok.modules.users.routes_users import catalogue_router
 from armadok.modules.users.routes_users import router as users_router
 
 module = Module(
     name="users",
-    routes=(auth_router, twofa_router, users_router),
+    routes=(auth_router, twofa_router, users_router, catalogue_router),
     rights=(
         Right("users.read"),
         Right("users.create", depends_on=("users.read",)),

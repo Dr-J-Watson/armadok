@@ -183,6 +183,8 @@ def me(conn: sqlite3.Connection = Depends(get_db), who: Principal = Depends(get_
     user = repository.get_user(conn, who.id)
     return {
         **(user or {}),
+        "totp_enabled": second_factor.is_enabled(conn, who.id),
+        "backup_codes_remaining": repository.remaining_backup_codes(conn, who.id),
         "grants": [
             {"right": g.right, "scope": g.scope, "expires_at": g.expires_at} for g in who.grants
         ],

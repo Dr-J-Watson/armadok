@@ -19,6 +19,8 @@ from armadok.modules.users.routes_auth import USERNAME_PATTERN
 from armadok.modules.users.security import MIN_PASSWORD_LENGTH, hash_password
 
 router = APIRouter(prefix="/users", tags=["users"])
+# Not under /users: the catalogue is not about one account.
+catalogue_router = APIRouter(tags=["users"])
 
 SCOPE_PATTERN = re.compile(r"^(\*|[a-z_]+:[A-Za-z0-9_.-]+)$")
 
@@ -74,6 +76,25 @@ def _outranks(conn: sqlite3.Connection, who: Principal, user_id: str, catalogue:
         if not can_grant(who, g, catalogue):
             return False
     return True
+
+
+@catalogue_router.get("/rights", summary="The catalogue of rights")
+def rights_catalogue(
+    registry: Registry = Depends(get_registry), who: Principal = Depends(get_principal)
+) -> list[dict]:
+    """Return every right with its dependencies and flags, so the interface can offer them.
+
+    Any logged-in account may read it: knowing that a right exists gives no access to anything.
+    """
+    return [
+        {
+            "id": r.id,
+            "depends_on": list(r.depends_on),
+            "sensitive": r.sensitive,
+            "node_owner": r.node_owner,
+        }
+        for r in sorted(registry.rights().values(), key=lambda r: r.id)
+    ]
 
 
 @router.get("", summary="List accounts")
