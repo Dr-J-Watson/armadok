@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -38,6 +39,9 @@ def create_app(
     settings = settings or load_settings()
     registry = registry or load_registry(ENABLED_MODULES)
 
+    # httpx logs full request URLs at INFO, and a DuckDNS token travels in its URL.
+    for noisy in ("httpx", "httpcore"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
     crypto.validate(settings)
     conn = settings.open_db()
     apply_migrations(
