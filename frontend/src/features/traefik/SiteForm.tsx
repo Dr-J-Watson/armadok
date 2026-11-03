@@ -49,7 +49,7 @@ export function SiteForm({
   nodeId: string
   initial?: SiteSpec
   expectedSha256?: string
-  onDone: () => void
+  onDone: (created?: { hosts: string[]; https: boolean }) => void
 }) {
   const { t } = useTranslation(['traefik', 'errors'])
   const queryClient = useQueryClient()
@@ -95,7 +95,7 @@ export function SiteForm({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['traefik-managed', nodeId] })
       await queryClient.invalidateQueries({ queryKey: ['traefik-sites', nodeId] })
-      onDone()
+      onDone(editing ? undefined : { hosts: body().spec.hosts, https: spec.https })
     },
   })
 
@@ -214,7 +214,7 @@ export function SiteForm({
         <button type="submit" className="primary" disabled={save.isPending}>
           {t('traefik:form.save')}
         </button>
-        <button type="button" onClick={onDone}>
+        <button type="button" onClick={() => onDone()}>
           {t('traefik:form.cancel')}
         </button>
       </div>

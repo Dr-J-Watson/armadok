@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
+import { SiteFollowUp } from './SiteFollowUp'
 import { SiteForm } from './SiteForm'
 import type { SiteSpec } from './SiteForm'
 
@@ -27,6 +28,8 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
   const queryClient = useQueryClient()
   const base = `/nodes/${nodeId}/traefik`
   const [form, setForm] = useState<Managed | 'new' | null>(null)
+  // Set right after a creation: the screen then walks through DNS and certificate.
+  const [created, setCreated] = useState<{ hosts: string[]; https: boolean } | null>(null)
   const [renaming, setRenaming] = useState<{ name: string; to: string } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [historyOf, setHistoryOf] = useState<string | null>(null)
@@ -52,6 +55,9 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
     onSuccess: refresh,
   })
 
+  if (created) {
+    return <SiteFollowUp nodeId={nodeId} {...created} onDone={() => setCreated(null)} />
+  }
   if (form) {
     return (
       <SiteForm
@@ -59,7 +65,10 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
         nodeId={nodeId}
         initial={form === 'new' ? undefined : (form.spec ?? undefined)}
         expectedSha256={form === 'new' ? undefined : form.sha256}
-        onDone={() => setForm(null)}
+        onDone={(made) => {
+          setForm(null)
+          if (made) setCreated(made)
+        }}
       />
     )
   }

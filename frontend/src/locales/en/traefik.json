@@ -51,5 +51,10 @@
   "managed.noHistory": "No earlier version.",
   "managed.restore": "Put back",
   "managed.delete": "Delete",
-  "managed.confirmDelete": "Confirm deletion"
+  "managed.confirmDelete": "Confirm deletion",
+  "followUp.title": "Your new site",
+  "followUp.created": "The site is saved and Traefik will serve it. Two things remain: the DNS name must point to this machine, and (with HTTPS) Traefik must get the certificate.",
+  "followUp.unavailable": "not available to you",
+  "followUp.certHint": "The certificate is requested by Traefik once the name resolves. This page checks again every few seconds.",
+  "followUp.done": "Done"
 }

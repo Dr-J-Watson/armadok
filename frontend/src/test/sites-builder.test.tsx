@@ -11,14 +11,19 @@ const spec = {
   name: 'blog', hosts: ['blog.example.com'], path_prefix: null, container: 'blog-web', url: null,
   port: 80, scheme: 'http', middlewares: [], https: true, cert_resolver: null, entrypoints: null,
 }
+let dnsStatus = 'missing'
 const calls: { method: string; path: string; body: unknown }[] = []
 
 function server(sites: unknown[]) {
   calls.length = 0
+  dnsStatus = 'missing'
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const path = String(input).replace('/api/v1', '')
     const method = (init?.method ?? 'GET').toUpperCase()
     if (method !== 'GET') calls.push({ method, path, body: init?.body ? JSON.parse(String(init.body)) : null })
+    if (path.endsWith('/dns/report')) return json({ hosts: [{ host: 'blog.example.com', status: dnsStatus }] })
+    if (path.endsWith('/dns/fix')) { dnsStatus = 'present'; return json({}, 201) }
+    if (path.endsWith('/certs')) return json({ hosts: [{ host: 'blog.example.com', state: 'missing' }] })
     if (path.endsWith('/managed')) return json({ sites })
     if (path.endsWith('/traefik/sites')) return method === 'POST' ? json({ name: 'blog' }, 201) : json({ middlewares: [{ id: 'auth@file' }] })
     if (path.endsWith('/sites/preview')) return json({ yaml: 'http:\n  routers: {}\n', name_taken: false })
@@ -53,7 +58,16 @@ describe('site builder', () => {
     await userEvent.type(screen.getByLabelText('Container name'), 'blog-web')
     expect(screen.getByLabelText('Port')).toHaveValue(8080)
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-    await screen.findByText('No site built with the form yet.')
+    // After saving, the flow goes on with DNS and certificate instead of dropping back to the list.
+    expect(await screen.findByText('Your new site')).toBeInTheDocument()
+    expect(await screen.findByText('Missing')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Create the record' }))
+    expect(await screen.findByText('In the DNS')).toBeInTheDocument()
+    expect(screen.getByText('No certificate')).toBeInTheDocument()
+    expect(calls.map((c) => c.path)).toEqual(['/nodes/n1/traefik/sites', '/nodes/n1/dns/fix'])
+    expect(calls[1].body).toEqual({ host: 'blog.example.com' })
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+    expect(await screen.findByRole('button', { name: 'New site' })).toBeInTheDocument()
     expect(calls[0].path).toBe('/nodes/n1/traefik/sites')
     expect(calls[0].body).toMatchObject({ spec: { name: 'blog', hosts: ['blog.example.com'], container: 'blog-web', port: 8080, https: true, url: null } })
   })
