@@ -9,6 +9,7 @@ interface WorkerStatus {
   worker_id: string | null
   connected: boolean
   last_seen_at: string | null
+  local?: boolean
 }
 
 interface Enrolment {
@@ -63,6 +64,24 @@ export function WorkerTab({ nodeId }: { nodeId: string }) {
   }
 
   const failed = status.error ?? enrol.error ?? revoke.error ?? ping.error
+
+  // The hub's own machine needs no worker: the hub acts on it directly.
+  if (status.data?.local) {
+    return (
+      <>
+        <p>
+          <span className="badge ok">{t('workers:state.local')}</span>
+        </p>
+        <p>{t('workers:localExplain')}</p>
+        <div className="actions">
+          <button type="button" onClick={() => ping.mutate()}>
+            {t('workers:ping')}
+          </button>
+        </div>
+        {ping.data && <p className="ok-text">{t('workers:pingOk')}</p>}
+      </>
+    )
+  }
 
   return (
     <>

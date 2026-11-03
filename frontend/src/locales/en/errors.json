@@ -57,5 +57,7 @@
   "notifications.invalid_rule": "One of the rules is not valid.",
   "notifications.delivery_failed": "The last delivery failed.",
   "outbound.rejected": "The receiver refused the message.",
-  "notifications.too_fast": "Please wait a few seconds before testing again."
+  "notifications.too_fast": "Please wait a few seconds before testing again.",
+  "workers.local_node": "The local node has no worker.",
+  "nodes.local_not_deletable": "The local node cannot be deleted: turn ARMADOK_LOCAL_NODE off to remove it."
 }

@@ -57,5 +57,7 @@
   "notifications.invalid_rule": "Une des règles n'est pas valide.",
   "notifications.delivery_failed": "Le dernier envoi a échoué.",
   "outbound.rejected": "Le destinataire a refusé le message.",
-  "notifications.too_fast": "Patientez quelques secondes avant de tester à nouveau."
+  "notifications.too_fast": "Patientez quelques secondes avant de tester à nouveau.",
+  "workers.local_node": "Le nœud local n'a pas de worker.",
+  "nodes.local_not_deletable": "Le nœud local ne peut pas être supprimé : désactivez ARMADOK_LOCAL_NODE pour le retirer."
 }

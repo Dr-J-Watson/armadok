@@ -64,6 +64,7 @@ export function NodePage() {
       </p>
       <h1>
         {node.data.name} <span className="badge">{t(`nodes:types.${node.data.type}`)}</span>
+        {node.data.local && <span className="badge ok">{t('nodes:local')}</span>}
       </h1>
       {node.data.description && <p>{node.data.description}</p>}
 
@@ -110,6 +111,7 @@ export function NodePage() {
           ))}
       </section>
 
+      {!node.data.local && (
       <section className="danger">
         <h2>{t('nodes:delete.title')}</h2>
         <p>{t('nodes:delete.explain')}</p>
@@ -133,6 +135,7 @@ export function NodePage() {
           </button>
         )}
       </section>
+      )}
     </>
   )
 }

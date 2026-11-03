@@ -13,5 +13,7 @@
   "enrolment.explain": "Put these three values in the .env of the machine, then start the worker. The token works once and expires at {{time}}.",
   "enrolment.copy": "Copy",
   "enrolment.copied": "Copied",
-  "enrolment.once": "This token is shown only now. If you lose it, enrol again."
+  "enrolment.once": "This token is shown only now. If you lose it, enrol again.",
+  "state.local": "This machine (no worker needed)",
+  "localExplain": "This is the machine Armadok runs on. The hub acts on it directly, so there is no worker to install."
 }

@@ -48,6 +48,7 @@ export function NodesPage() {
             <Link to={`/nodes/${node.id}`}>
               <strong>{node.name}</strong>
               <span className="badge">{t(`nodes:types.${node.type}`)}</span>
+              {node.local && <span className="badge ok">{t('nodes:local')}</span>}
             </Link>
             {node.description && <p>{node.description}</p>}
           </li>

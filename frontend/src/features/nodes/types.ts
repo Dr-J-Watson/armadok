@@ -7,4 +7,5 @@ export interface Node {
   description: string
   owner: string
   created_at: string
+  local?: boolean
 }
