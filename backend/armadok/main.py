@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
+from armadok.core.audit import AUDIT_MIGRATION
 from armadok.core.config import Settings, load_settings
 from armadok.core.db import apply_migrations, connect
+from armadok.core.errors import ApiError
 from armadok.core.registry import Registry, load_registry
 from armadok.modules.enabled import ENABLED_MODULES
 
@@ -20,7 +23,10 @@ def create_app(settings: Settings | None = None, registry: Registry | None = Non
     registry = registry or load_registry(ENABLED_MODULES)
 
     conn = connect(settings.db_path)
-    apply_migrations(conn, [m for module in registry.modules for m in module.migrations])
+    apply_migrations(
+        conn,
+        [AUDIT_MIGRATION, *(m for module in registry.modules for m in module.migrations)],
+    )
     conn.close()
 
     app = FastAPI(
@@ -31,6 +37,11 @@ def create_app(settings: Settings | None = None, registry: Registry | None = Non
     )
     app.state.registry = registry
     app.state.settings = settings
+
+    @app.exception_handler(ApiError)
+    def api_error(_: Request, exc: ApiError) -> JSONResponse:
+        """Return errors as a stable code; the interface translates it."""
+        return JSONResponse({"error": {"code": exc.code}}, status_code=exc.status_code)
 
     @app.get("/api/v1/health", tags=["platform"])
     def health() -> dict[str, str]:
