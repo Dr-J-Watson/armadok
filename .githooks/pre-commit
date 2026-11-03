@@ -29,7 +29,9 @@ if [ -n "$added" ]; then
     fail "a secret-looking value was found in the staged changes. Remove it (or use a placeholder) and try again."
   fi
   # 4. Any e-mail address other than noreply / example addresses.
-  if echo "$added" | grep -Eo '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' \
+  # The leading "+" of a diff line is stripped first, and the local part must start with a
+  # letter or digit, so Python decorators such as `@router.get` are not taken for addresses.
+  if echo "$added" | sed 's/^+//' | grep -Eo '[A-Za-z0-9][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' \
      | grep -Evi '(@users\.noreply\.github\.com|@example\.(com|org|net)|noreply@anthropic\.com)$' | grep -q .; then
     fail "an e-mail address was found in the staged changes. Only noreply or example.com addresses are allowed."
   fi
