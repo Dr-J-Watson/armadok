@@ -178,6 +178,24 @@ async def run_action(
     `GET /nodes/{id}/tasks/{task_id}`.
     """
     authorise(conn, registry, who, node_id, "projects.deploy")
+    task_id = await start_action(request.app, conn, registry, who, node_id, project, body)
+    return {"task_id": task_id, "state": "running"}
+
+
+async def start_action(
+    app: Any,
+    conn: sqlite3.Connection,
+    registry: Registry,
+    who: Principal,
+    node_id: str,
+    project: str,
+    body: schemas.ActionIn,
+) -> str:
+    """Start an action on the worker, record and audit it, and follow it; return the task id.
+
+    The caller has already checked `projects.deploy` on the node (an endpoint for a person, the
+    hook runner for a hook): this function never decides who may.
+    """
     details = {
         "project": project,
         "action": body.action,
@@ -186,9 +204,7 @@ async def run_action(
         "pull": body.pull,
     }
     try:
-        started = await ask(
-            request, registry, node_id, "compose.start", _args(project, body), schemas.Started
-        )
+        started = await ask_app(app, registry, node_id, "compose.start", _args(project, body))
     except ApiError as error:
         audit_failure(conn, registry, who, "project.action", node_id, details, error)
         raise
@@ -202,8 +218,8 @@ async def run_action(
         object_id=node_id,
         details={**details, "task": task_id},
     )
-    _spawn_watcher(request.app, node_id, task_id)
-    return {"task_id": task_id, "state": "running"}
+    _spawn_watcher(app, node_id, task_id)
+    return task_id
 
 
 @router.get("/tasks/{task_id}", summary="State and output of a deployment task")

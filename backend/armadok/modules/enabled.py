@@ -19,4 +19,6 @@ ENABLED_MODULES: tuple[str, ...] = (
     "dns",
     "certs",
     "realtime",
+    "hooks",
+    "metrics",
 )

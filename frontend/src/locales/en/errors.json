@@ -97,5 +97,13 @@
   "roles.builtin_readonly": "Built-in roles cannot be changed. Copy it first.",
   "roles.in_use": "This role is still given to someone. Take it away first.",
   "roles.invalid_rights": "A role can only hold rights that are given per machine.",
-  "groups.name_taken": "A group with this name already exists."
+  "groups.name_taken": "A group with this name already exists.",
+  "hooks.invalid": "This hook address or token is not valid.",
+  "hooks.unavailable": "This hook can no longer run.",
+  "hooks.too_often": "This hook was called a moment ago. Try again shortly.",
+  "hooks.too_many_attempts": "Too many wrong tokens. Try again in a minute.",
+  "hooks.creator_lost_right": "The person who made this hook no longer has the right to do this.",
+  "hooks.unknown_action": "This hook action does not exist.",
+  "hooks.invalid_target": "The hook target is not valid.",
+  "hooks.invalid_expiry": "The end date must be in the future."
 }

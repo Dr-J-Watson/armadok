@@ -52,6 +52,22 @@ class Signal:
 
 
 @dataclass(frozen=True)
+class HookAction:
+    """One thing an incoming hook may trigger (see the `hooks` module).
+
+    A hook is a dedicated URL with its own token that does exactly one action on exactly one
+    object. `right` is what the hook's creator must hold on the target machine, now and at
+    each call. `validate(target)` checks and normalises the target a creator gave (it raises
+    `ValueError`); `run(app, who, target)` does the work as `who` and may raise `ApiError`.
+    """
+
+    name: str
+    right: str
+    validate: Callable[[dict[str, Any]], dict[str, Any]]
+    run: Callable[[Any, Any, dict[str, Any]], Awaitable[None]]
+
+
+@dataclass(frozen=True)
 class RelationObject:
     """One object on the relations map (a container, a network, a router...).
 
@@ -155,6 +171,7 @@ class Module:
     rights: tuple[Right, ...] = ()
     audit_events: tuple[str, ...] = ()
     signals: tuple[Signal, ...] = ()
+    hook_actions: tuple[HookAction, ...] = ()
     relations: tuple[RelationProvider, ...] = ()
     search: tuple[Any, ...] = ()
     notification_events: tuple[NotificationEvent, ...] = ()

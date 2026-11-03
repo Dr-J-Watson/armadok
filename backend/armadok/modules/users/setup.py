@@ -25,6 +25,8 @@ SUPERADMIN_RIGHTS = (
     "grants.manage",
     "audit.read",
     "nodes.create",
+    "hooks.manage",
+    "metrics.read",
 )
 
 

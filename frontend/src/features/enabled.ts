@@ -6,6 +6,7 @@ import { auditFeature } from './audit/feature'
 import { certsFeature } from './certs/feature'
 import { dnsFeature } from './dns/feature'
 import { dockerFeature } from './docker/feature'
+import { integrationsFeature } from './integrations/feature'
 import { nodesFeature } from './nodes/feature'
 import { notesFeature } from './notes/feature'
 import { notificationsFeature } from './notifications/feature'
@@ -25,6 +26,7 @@ export const features: Feature[] = [
   relationsFeature,
   usersFeature,
   rolesFeature,
+  integrationsFeature,
   auditFeature,
   notesFeature,
   notificationsFeature,

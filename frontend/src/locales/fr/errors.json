@@ -97,5 +97,13 @@
   "roles.builtin_readonly": "Les rôles prédéfinis ne se modifient pas. Copiez-le d'abord.",
   "roles.in_use": "Ce rôle est encore donné à quelqu'un. Retirez-le d'abord.",
   "roles.invalid_rights": "Un rôle ne peut contenir que des droits donnés par machine.",
-  "groups.name_taken": "Un groupe porte déjà ce nom."
+  "groups.name_taken": "Un groupe porte déjà ce nom.",
+  "hooks.invalid": "L'adresse ou le jeton de ce hook n'est pas valide.",
+  "hooks.unavailable": "Ce hook ne peut plus s'exécuter.",
+  "hooks.too_often": "Ce hook vient d'être appelé. Réessayez dans un instant.",
+  "hooks.too_many_attempts": "Trop de jetons erronés. Réessayez dans une minute.",
+  "hooks.creator_lost_right": "La personne qui a créé ce hook n'a plus le droit de le faire.",
+  "hooks.unknown_action": "Cette action de hook n'existe pas.",
+  "hooks.invalid_target": "La cible du hook n'est pas valide.",
+  "hooks.invalid_expiry": "La date de fin doit être dans le futur."
 }

@@ -12,6 +12,7 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 from armadok.core.module import (
+    HookAction,
     Module,
     NotificationEvent,
     Provider,
@@ -53,6 +54,10 @@ class Registry:
     def relation_providers(self) -> tuple[RelationProvider, ...]:
         """Return every relation provider declared by the modules."""
         return tuple(r for m in self.modules for r in m.relations)
+
+    def hook_actions(self) -> dict[str, HookAction]:
+        """Return what incoming hooks can trigger, by name."""
+        return {a.name: a for m in self.modules for a in m.hook_actions}
 
     def signals(self) -> dict[str, Signal]:
         """Return the change signals modules announce, by name."""
@@ -106,6 +111,7 @@ class Registry:
         self._check_unique("right", [r.id for m in self.modules for r in m.rights])
         self._check_unique("audit event", [e for m in self.modules for e in m.audit_events])
         self._check_unique("signal", [s.name for m in self.modules for s in m.signals])
+        self._check_unique("hook action", [a.name for m in self.modules for a in m.hook_actions])
         self._check_unique(
             "notification event", [e.name for m in self.modules for e in m.notification_events]
         )

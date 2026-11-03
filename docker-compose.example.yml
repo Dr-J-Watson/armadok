@@ -8,6 +8,9 @@ services:
       # Encrypts secrets in the database. Generate one (see .env.example) and keep a backup:
       # without it, encrypted data cannot be read.
       ARMADOK_ENCRYPTION_KEY: ${ARMADOK_ENCRYPTION_KEY:?set it in .env}
+      # Behind a reverse proxy, tell the server whose "X-Forwarded-For" to believe (the proxy's
+      # address or network), so limits and logs see visitors' real addresses, not the proxy's.
+      # UVICORN_FORWARDED_ALLOW_IPS: 172.18.0.0/16
     volumes:
       - armadok-data:/data
     # The container needs no write access outside its data volume and /tmp.
