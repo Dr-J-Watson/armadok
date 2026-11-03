@@ -10,5 +10,9 @@ target-version = "py312"
 select = ["E", "F", "I", "B", "UP", "D"]
 ignore = ["D203", "D213"]
 
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency injection is written as `x = Depends(...)` in signatures.
+extend-immutable-calls = ["fastapi.Depends"]
+
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D"]

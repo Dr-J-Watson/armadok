@@ -20,6 +20,13 @@ class ApiError(Exception):
         self.code = code or self.code
 
 
+class Unauthenticated(ApiError):
+    """No valid credentials were presented."""
+
+    status_code = 401
+    code = "auth.required"
+
+
 class MissingRight(ApiError):
     """The caller can see the object but lacks the right for this action."""
 

@@ -27,7 +27,9 @@ class Migration:
 def connect(path: Path) -> sqlite3.Connection:
     """Open the database with foreign keys enforced and rows addressable by name."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path)
+    # check_same_thread=False: FastAPI may run a request's dependency and handler on different
+    # worker threads; a connection is still only ever used by one request at a time.
+    conn = sqlite3.connect(path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")

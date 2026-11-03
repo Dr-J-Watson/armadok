@@ -8,16 +8,22 @@ from fastapi.responses import JSONResponse
 from armadok.core.audit import AUDIT_MIGRATION
 from armadok.core.config import Settings, load_settings
 from armadok.core.db import apply_migrations, connect
+from armadok.core.deps import Authenticator
 from armadok.core.errors import ApiError
 from armadok.core.registry import Registry, load_registry
 from armadok.modules.enabled import ENABLED_MODULES
 
 
-def create_app(settings: Settings | None = None, registry: Registry | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    registry: Registry | None = None,
+    authenticator: Authenticator | None = None,
+) -> FastAPI:
     """Build the FastAPI application.
 
     Fails at start-up if the module set is inconsistent (see `Registry`).
-    Arguments exist so tests can inject their own settings and modules.
+    `authenticator` turns a request into a `Principal`; until a login module provides one,
+    protected routes answer 401. Arguments also let tests inject their own settings and modules.
     """
     settings = settings or load_settings()
     registry = registry or load_registry(ENABLED_MODULES)
@@ -37,6 +43,7 @@ def create_app(settings: Settings | None = None, registry: Registry | None = Non
     )
     app.state.registry = registry
     app.state.settings = settings
+    app.state.authenticator = authenticator
 
     @app.exception_handler(ApiError)
     def api_error(_: Request, exc: ApiError) -> JSONResponse:
