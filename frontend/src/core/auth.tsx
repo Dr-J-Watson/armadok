@@ -18,6 +18,7 @@ export interface User {
   username: string
   grants: Grant[]
   totp_enabled: boolean
+  language?: string
   backup_codes_remaining: number
 }
 

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth, useCan } from '../core/auth'
+import { useFeatures } from '../core/useFeatures'
 import type { NavItem } from '../core/registry'
 import { Preferences } from './Preferences'
 
@@ -15,6 +16,7 @@ function NavEntry({ item }: { item: NavItem }) {
 export function Layout({ nav }: { nav: NavItem[] }) {
   const { t } = useTranslation()
   const { state, logout } = useAuth()
+  const widgets = useFeatures().flatMap((f) => f.headerWidgets ?? [])
   return (
     <div className="shell">
       <header className="topbar">
@@ -25,6 +27,9 @@ export function Layout({ nav }: { nav: NavItem[] }) {
           ))}
         </nav>
         <div className="topbar-end">
+          {widgets.map((widget) => (
+            <span key={widget.id}>{widget.render()}</span>
+          ))}
           <Preferences />
           {state.status === 'authenticated' && (
             <>

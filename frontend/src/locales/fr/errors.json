@@ -47,5 +47,15 @@
   "traefik.invalid_yaml": "Ce n'est pas du YAML valide : il n'a pas été enregistré (Traefik ignorerait tout le fichier).",
   "worker.traefik_not_configured": "Aucun dossier Traefik n'est configuré sur cette machine (ARMADOK_TRAEFIK_DIR).",
   "notes.conflict": "Cette note a été modifiée ailleurs. Rechargez-la.",
-  "notes.too_many": "Vous avez atteint le nombre maximum de notes."
+  "notes.too_many": "Vous avez atteint le nombre maximum de notes.",
+  "outbound.invalid_url": "Cette adresse n'est pas valide (http ou https, sans nom d'utilisateur ni mot de passe).",
+  "outbound.unresolvable": "Cette adresse est introuvable.",
+  "outbound.address_not_allowed": "Cette adresse est dans un réseau privé, ce qui n'est pas autorisé.",
+  "outbound.failed": "La requête a échoué.",
+  "notifications.invalid_channel": "Les réglages du canal ne sont pas valides.",
+  "notifications.too_many_channels": "Vous avez atteint le nombre maximum de canaux.",
+  "notifications.invalid_rule": "Une des règles n'est pas valide.",
+  "notifications.delivery_failed": "Le dernier envoi a échoué.",
+  "outbound.rejected": "Le destinataire a refusé le message.",
+  "notifications.too_fast": "Patientez quelques secondes avant de tester à nouveau."
 }

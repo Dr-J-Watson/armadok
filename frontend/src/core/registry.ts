@@ -40,6 +40,12 @@ export interface ObjectSection {
   render: (props: ObjectSectionProps) => ReactNode
 }
 
+// A small piece of the top bar (a bell, a status light), contributed by a feature.
+export interface HeaderWidget {
+  id: string
+  render: () => ReactNode
+}
+
 export interface Feature {
   name: string
   // Backend module that must be enabled for this feature to appear.
@@ -48,4 +54,5 @@ export interface Feature {
   nav?: NavItem[]
   nodeTabs?: NodeTab[]
   objectSections?: ObjectSection[]
+  headerWidgets?: HeaderWidget[]
 }

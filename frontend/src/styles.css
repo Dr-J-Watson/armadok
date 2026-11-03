@@ -159,3 +159,7 @@ button:disabled { opacity: .6; cursor: progress; }
 .note-body { margin: .4rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .note-text { width: 100%; min-height: 5rem; padding: .5rem; font: inherit; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); }
 .note-actions { display: flex; gap: .75rem; }
+
+.bell { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: var(--tap); min-height: var(--tap); text-decoration: none; color: var(--text); }
+.bell-count { position: absolute; top: 4px; right: 2px; min-width: 1.2rem; padding: 0 .3rem; border-radius: 999px; background: var(--danger); color: var(--accent-text); font-size: .75rem; line-height: 1.2rem; text-align: center; }
+.note.unread { border-left-width: 6px; }

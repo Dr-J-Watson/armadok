@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { api } from '../core/api'
+import { useAuth } from '../core/auth'
 import { useTranslation } from 'react-i18next'
 import { LANGUAGES, setLanguage } from '../core/i18n'
 import type { Language } from '../core/i18n'
@@ -9,6 +11,7 @@ import type { Theme } from '../core/theme'
 export function Preferences() {
   const { t, i18n } = useTranslation()
   const [theme, setTheme] = useState<Theme>(currentTheme())
+  const { state } = useAuth()
 
   return (
     <div className="prefs">
@@ -16,7 +19,12 @@ export function Preferences() {
         <span className="visually-hidden">{t('prefs.language')}</span>
         <select
           value={i18n.language}
-          onChange={(e) => setLanguage(e.target.value as Language)}
+          onChange={(e) => {
+            setLanguage(e.target.value as Language)
+            // Signed in: the server also writes notifications in this language.
+            if (state.status === 'authenticated')
+              void api.patch('/auth/language', { language: e.target.value }).catch(() => undefined)
+          }}
           aria-label={t('prefs.language')}
         >
           {LANGUAGES.map((lang) => (

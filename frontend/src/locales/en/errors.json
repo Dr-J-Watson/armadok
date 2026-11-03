@@ -47,5 +47,15 @@
   "traefik.invalid_yaml": "This is not valid YAML, so it was not saved (Traefik would ignore the whole file).",
   "worker.traefik_not_configured": "No Traefik folder is configured on this machine (ARMADOK_TRAEFIK_DIR).",
   "notes.conflict": "This note was changed elsewhere. Reload it.",
-  "notes.too_many": "You have reached the maximum number of notes."
+  "notes.too_many": "You have reached the maximum number of notes.",
+  "outbound.invalid_url": "This address is not valid (use http or https, without a user name or password).",
+  "outbound.unresolvable": "This address could not be found.",
+  "outbound.address_not_allowed": "This address is inside a private network, which is not allowed.",
+  "outbound.failed": "The request failed.",
+  "notifications.invalid_channel": "The channel settings are not valid.",
+  "notifications.too_many_channels": "You have reached the maximum number of channels.",
+  "notifications.invalid_rule": "One of the rules is not valid.",
+  "notifications.delivery_failed": "The last delivery failed.",
+  "outbound.rejected": "The receiver refused the message.",
+  "notifications.too_fast": "Please wait a few seconds before testing again."
 }
