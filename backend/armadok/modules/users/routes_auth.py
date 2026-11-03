@@ -12,7 +12,7 @@ from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
-from armadok.modules.users import repository, setup
+from armadok.modules.users import repository, second_factor, setup
 from armadok.modules.users.auth import bearer_token
 from armadok.modules.users.security import (
     DUMMY_HASH,
@@ -43,6 +43,8 @@ class LoginIn(BaseModel):
 
     username: str = Field(max_length=64)
     password: str = Field(max_length=256)
+    # Authenticator code or backup code; required only when the account has 2FA.
+    totp_code: str | None = Field(default=None, max_length=32)
 
 
 class TokenOut(BaseModel):
@@ -125,6 +127,14 @@ def login(
         repository.record_failure(conn, body.username)
         audit.record(conn, registry.audit_events(), "anonymous", "auth.login", outcome="denied")
         raise ApiError("auth.invalid_credentials", 401)
+    if second_factor.is_enabled(conn, row["id"]):
+        if not body.totp_code:
+            raise ApiError("auth.totp_required", 401)
+        settings = request.app.state.settings
+        if not second_factor.verify(conn, settings, row["id"], body.totp_code):
+            repository.record_failure(conn, body.username)
+            audit.record(conn, registry.audit_events(), row["id"], "auth.login", outcome="denied")
+            raise ApiError("auth.invalid_code", 401)
     repository.clear_failures(conn, body.username)
     audit.record(conn, registry.audit_events(), row["id"], "auth.login")
     return _token_out(request, response, repository.issue_tokens(conn, row["id"]))

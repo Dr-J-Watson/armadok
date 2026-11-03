@@ -46,6 +46,25 @@ THROTTLE_MIGRATION = Migration(
     """,
 )
 
+TOTP_MIGRATION = Migration(
+    "users-0003-totp",
+    """
+    CREATE TABLE user_totp (
+        user_id TEXT PRIMARY KEY REFERENCES users (id),
+        secret_enc TEXT NOT NULL,
+        confirmed INTEGER NOT NULL DEFAULT 0,
+        last_step INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE backup_codes (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users (id),
+        code_hash TEXT NOT NULL,
+        used INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX backup_codes_user ON backup_codes (user_id);
+    """,
+)
+
 MAX_FAILURES = 5
 FAILURE_WINDOW = timedelta(minutes=15)
 
@@ -228,3 +247,69 @@ def revoke_family_of_access_token(conn: sqlite3.Connection, token: str) -> None:
         (token_hash(token),),
     )
     conn.commit()
+
+
+# --- two-factor authentication ------------------------------------------------------------
+
+
+def get_totp(conn: sqlite3.Connection, user_id: str) -> sqlite3.Row | None:
+    """Return the TOTP row of a user (encrypted secret, confirmed flag, last used step)."""
+    return conn.execute("SELECT * FROM user_totp WHERE user_id = ?", (user_id,)).fetchone()
+
+
+def save_totp(conn: sqlite3.Connection, user_id: str, secret_enc: str) -> None:
+    """Store a new, not yet confirmed TOTP secret (replaces an unconfirmed one)."""
+    conn.execute(
+        "INSERT OR REPLACE INTO user_totp (user_id, secret_enc, confirmed, last_step)"
+        " VALUES (?, ?, 0, 0)",
+        (user_id, secret_enc),
+    )
+    conn.commit()
+
+
+def confirm_totp(conn: sqlite3.Connection, user_id: str, backup_hashes: list[str]) -> None:
+    """Switch 2FA on and store the hashed backup codes, in one transaction."""
+    conn.execute("UPDATE user_totp SET confirmed = 1 WHERE user_id = ?", (user_id,))
+    conn.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
+    conn.executemany(
+        "INSERT INTO backup_codes (id, user_id, code_hash) VALUES (?, ?, ?)",
+        [(uuid.uuid4().hex, user_id, h) for h in backup_hashes],
+    )
+    conn.commit()
+
+
+def disable_totp(conn: sqlite3.Connection, user_id: str) -> None:
+    """Remove 2FA and its backup codes."""
+    conn.execute("DELETE FROM user_totp WHERE user_id = ?", (user_id,))
+    conn.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
+    conn.commit()
+
+
+def use_totp_step(conn: sqlite3.Connection, user_id: str, step: int) -> bool:
+    """Record a time step as used; False if it (or a later one) was already used.
+
+    One atomic statement, so the same code cannot be accepted twice, even concurrently.
+    """
+    cur = conn.execute(
+        "UPDATE user_totp SET last_step = ? WHERE user_id = ? AND last_step < ?",
+        (step, user_id, step),
+    )
+    conn.commit()
+    return cur.rowcount == 1
+
+
+def use_backup_code(conn: sqlite3.Connection, user_id: str, code_hash: str) -> bool:
+    """Burn a backup code; True only if it existed and was unused."""
+    cur = conn.execute(
+        "UPDATE backup_codes SET used = 1 WHERE user_id = ? AND code_hash = ? AND used = 0",
+        (user_id, code_hash),
+    )
+    conn.commit()
+    return cur.rowcount == 1
+
+
+def remaining_backup_codes(conn: sqlite3.Connection, user_id: str) -> int:
+    """Count unused backup codes."""
+    return conn.execute(
+        "SELECT COUNT(*) FROM backup_codes WHERE user_id = ? AND used = 0", (user_id,)
+    ).fetchone()[0]

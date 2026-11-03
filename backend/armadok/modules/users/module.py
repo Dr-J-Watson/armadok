@@ -3,12 +3,13 @@
 from armadok.core.module import Module, Right
 from armadok.modules.users import repository, setup
 from armadok.modules.users.auth import authenticate
+from armadok.modules.users.routes_2fa import router as twofa_router
 from armadok.modules.users.routes_auth import router as auth_router
 from armadok.modules.users.routes_users import router as users_router
 
 module = Module(
     name="users",
-    routes=(auth_router, users_router),
+    routes=(auth_router, twofa_router, users_router),
     rights=(
         Right("users.read"),
         Right("users.create", depends_on=("users.read",)),
@@ -20,12 +21,18 @@ module = Module(
         "setup.complete",
         "auth.login",
         "auth.logout",
+        "auth.2fa.enable",
+        "auth.2fa.disable",
         "user.create",
         "user.update",
         "grant.add",
         "grant.remove",
     ),
-    migrations=(repository.MIGRATION, repository.THROTTLE_MIGRATION),
+    migrations=(
+        repository.MIGRATION,
+        repository.THROTTLE_MIGRATION,
+        repository.TOTP_MIGRATION,
+    ),
     authenticator=authenticate,
     startup=(setup.ensure_install_code,),
 )

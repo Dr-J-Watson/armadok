@@ -19,6 +19,9 @@ class Settings:
     data_dir: Path
     # Send the refresh cookie over HTTPS only. Disable only for local development over HTTP.
     cookie_secure: bool = True
+    # Key that encrypts secrets stored in the database (Fernet, urlsafe base64, 32 bytes).
+    # Kept apart from the database; never logged or returned by the API.
+    encryption_key: str | None = None
 
     @property
     def db_path(self) -> Path:
@@ -27,8 +30,9 @@ class Settings:
 
 
 def load_settings() -> Settings:
-    """Build `Settings` from the environment (`ARMADOK_DATA_DIR`, `ARMADOK_COOKIE_SECURE`)."""
+    """Build `Settings` from the `ARMADOK_*` environment variables listed in `.env.example`."""
     return Settings(
         data_dir=Path(os.environ.get("ARMADOK_DATA_DIR", "data")),
         cookie_secure=os.environ.get("ARMADOK_COOKIE_SECURE", "true").lower() != "false",
+        encryption_key=os.environ.get("ARMADOK_ENCRYPTION_KEY") or None,
     )
