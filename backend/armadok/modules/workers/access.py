@@ -45,7 +45,9 @@ async def ask(
     model: type[BaseModel],
 ):
     """Run an operation on the node's worker and validate the answer against `model`."""
-    actor = getattr(request.state, "actor_id", None)
+    # Only a person's own session may use what an emergency session opens up.
+    session = getattr(request.state, "actor_kind", "") == "session"
+    actor = getattr(request.state, "actor_id", None) if session else None
     result = await call_operation(request.app, registry, node_id, op, args, actor)
     try:
         return model.model_validate(result)

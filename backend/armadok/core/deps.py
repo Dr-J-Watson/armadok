@@ -39,4 +39,5 @@ def get_principal(request: Request) -> Principal:
         raise ApiError("auth.read_only_key", 403)
     # Remembered for the change signals: only people with the right to know hear about it.
     request.state.actor_id = principal.id
+    request.state.actor_kind = principal.kind
     return principal

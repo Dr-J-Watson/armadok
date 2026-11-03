@@ -119,5 +119,9 @@
   "nodes.local_not_transferable": "The machine Armadok runs on cannot be handed over.",
   "nodes.transfer_to_self": "You already own this machine.",
   "members.too_many_searches": "Too many searches. Try again in a minute.",
-  "members.not_with_key": "A key cannot hand a machine over. Do it from your own session."
+  "members.not_with_key": "A key cannot hand a machine over. Do it from your own session.",
+  "emergency.already_open": "You already have an emergency session on this machine.",
+  "emergency.own_node": "This machine is yours already.",
+  "emergency.not_with_key": "An emergency session is opened from your own session, not with a key.",
+  "emergency.cooling_down": "The owner ended your last session a moment ago. Try again later."
 }

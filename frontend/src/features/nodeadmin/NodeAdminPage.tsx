@@ -21,7 +21,7 @@ export function NodeAdminPage() {
   const { t } = useTranslation(['nodeadmin', 'errors'])
   const queryClient = useQueryClient()
   const nodes = useQuery({ queryKey: ['admin-nodes'], queryFn: () => api.get<AdminNode[]>('/admin/nodes') })
-  const [open, setOpen] = useState<{ id: string; action: 'suspend' | 'resume' | 'restore' } | null>(null)
+  const [open, setOpen] = useState<{ id: string; action: 'suspend' | 'resume' | 'restore' | 'emergency' } | null>(null)
   const [form, setForm] = useState({ name: '', code: '', reason: '' })
   const impact = useQuery({
     queryKey: ['admin-impact', open?.id],
@@ -31,14 +31,14 @@ export function NodeAdminPage() {
   const run = useMutation({
     mutationFn: () =>
       api.post(`/admin/nodes/${open?.id}/${open?.action}`, {
-        confirm_name: form.name,
+        ...(open?.action === 'emergency' ? {} : { confirm_name: form.name }),
         code: form.code,
-        ...(open?.action === 'suspend' ? { reason: form.reason } : {}),
+        ...(open?.action === 'suspend' || open?.action === 'emergency' ? { reason: form.reason } : {}),
       }),
     onSuccess: async () => {
       setOpen(null)
       setForm({ name: '', code: '', reason: '' })
-      await queryClient.invalidateQueries({ queryKey: ['admin-nodes'] })
+      await queryClient.invalidateQueries()
     },
   })
   const failed = nodes.error ?? run.error
@@ -66,6 +66,11 @@ export function NodeAdminPage() {
                 {n.restorable_until && <small> — {t('nodeadmin:until', { date: new Date(n.restorable_until).toLocaleDateString() })}</small>}
               </td>
               <td>
+                {n.state !== 'deleted' && (
+                  <button type="button" onClick={() => setOpen({ id: n.id, action: 'emergency' })}>
+                    {t('nodeadmin:emergency')}
+                  </button>
+                )}
                 {n.state === 'active' && !n.local && (
                   <button type="button" onClick={() => setOpen({ id: n.id, action: 'suspend' })}>
                     {t('nodeadmin:suspend')}
@@ -101,17 +106,20 @@ export function NodeAdminPage() {
               {impact.data.worker_connected ? t('nodeadmin:workerOn') : t('nodeadmin:workerOff')}
             </p>
           )}
-          {open.action === 'suspend' && (
+          {open.action === 'emergency' && <p className="notice">{t('nodeadmin:emergencyWarning')}</p>}
+          {(open.action === 'suspend' || open.action === 'emergency') && (
             <label>
               {t('nodeadmin:reason')}
               <small> {t('nodeadmin:reasonShared')}</small>
               <input value={form.reason} required minLength={10} maxLength={300} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
             </label>
           )}
+          {open.action !== 'emergency' && (
           <label>
             {t('nodeadmin:typeName')}
             <input value={form.name} required onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </label>
+          )}
           <label>
             {t('nodeadmin:code')}
             <input value={form.code} required autoComplete="one-time-code" onChange={(e) => setForm({ ...form, code: e.target.value })} />

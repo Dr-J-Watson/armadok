@@ -119,5 +119,9 @@
   "nodes.local_not_transferable": "La machine sur laquelle tourne Armadok ne peut pas être transmise.",
   "nodes.transfer_to_self": "Cette machine est déjà la vôtre.",
   "members.too_many_searches": "Trop de recherches. Réessayez dans une minute.",
-  "members.not_with_key": "Une clé ne peut pas transmettre une machine. Faites-le depuis votre propre session."
+  "members.not_with_key": "Une clé ne peut pas transmettre une machine. Faites-le depuis votre propre session.",
+  "emergency.already_open": "Vous avez déjà une session d'urgence sur cette machine.",
+  "emergency.own_node": "Cette machine est déjà la vôtre.",
+  "emergency.not_with_key": "Une session d'urgence s'ouvre depuis votre propre session, pas avec une clé.",
+  "emergency.cooling_down": "Le propriétaire a mis fin à votre dernière session il y a un instant. Réessayez plus tard."
 }

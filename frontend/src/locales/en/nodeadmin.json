@@ -16,5 +16,7 @@
   "impact": "{{members}} member(s) will lose access.",
   "workerOn": "Its worker is connected.",
   "workerOff": "Its worker is not connected.",
-  "reasonShared": "The reason is shown to everyone who can see the machine."
+  "reasonShared": "The reason is shown to everyone who can see the machine.",
+  "emergency": "Emergency access",
+  "emergencyWarning": "This opens a 30-minute session with the machine's administrator rights. Its owner is told at once, with your reason, and keeps the list of what you do."
 }

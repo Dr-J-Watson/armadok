@@ -16,5 +16,7 @@
   "impact": "{{members}} membre(s) perdront l'accès.",
   "workerOn": "Son worker est connecté.",
   "workerOff": "Son worker n'est pas connecté.",
-  "reasonShared": "Le motif est montré à toutes les personnes qui voient la machine."
+  "reasonShared": "Le motif est montré à toutes les personnes qui voient la machine.",
+  "emergency": "Accès d'urgence",
+  "emergencyWarning": "Cela ouvre une session de 30 minutes avec les droits d'administrateur de la machine. Son propriétaire en est averti aussitôt, avec votre motif, et garde la liste de ce que vous faites."
 }

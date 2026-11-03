@@ -1,0 +1,17 @@
+{
+  "tab": "Urgence",
+  "banner": "Accès d'urgence à {{node}} : {{time}} restant",
+  "open": "Ouvrir la machine",
+  "end": "Terminer la session",
+  "ownerOnly": "Seul le propriétaire de cette machine voit les accès d'urgence.",
+  "none": "Aucun administrateur n'a utilisé d'accès d'urgence sur cette machine.",
+  "explain": "Un administrateur est entré par un accès d'urgence. Vous pouvez acquitter un avis, mais il reste.",
+  "open_now": "en cours",
+  "over": "terminée",
+  "actions": "{{count}} action(s) pendant la session",
+  "acknowledged": "acquitté",
+  "acknowledge": "Acquitter",
+  "cut": "Mettre fin à cette session",
+  "truncated": "Seules les premières et dernières actions sont montrées : {{total}} en tout.",
+  "cutByOwner": "terminée par le propriétaire"
+}

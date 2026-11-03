@@ -163,3 +163,15 @@ button:disabled { opacity: .6; cursor: progress; }
 .bell { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: var(--tap); min-height: var(--tap); text-decoration: none; color: var(--text); }
 .bell-count { position: absolute; top: 4px; right: 2px; min-width: 1.2rem; padding: 0 .3rem; border-radius: 999px; background: var(--danger); color: var(--accent-text); font-size: .75rem; line-height: 1.2rem; text-align: center; }
 .note.unread { border-left-width: 6px; }
+
+/* The emergency banner is meant to be impossible to miss. */
+.emergency-banner {
+  background: var(--danger, #b3261e);
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+}
+.emergency-banner a,
+.emergency-banner button {
+  color: inherit;
+}

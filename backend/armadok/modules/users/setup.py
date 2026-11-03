@@ -29,6 +29,7 @@ SUPERADMIN_RIGHTS = (
     "metrics.read",
     "service_accounts.manage",
     "nodes.admin",
+    "emergency.use",
 )
 
 

@@ -182,6 +182,9 @@ class Module:
     # emergency session).
     scope_blockers: tuple[Callable[[Any], frozenset[str]], ...] = ()
     scope_unblockers: tuple[Callable[[Any, str], frozenset[str]], ...] = ()
+    # Like `grant_sources`, but only for a person's own session: never a key, a token or a hook
+    # (an emergency session is the person's, and must not leak into what they lent out).
+    session_grant_sources: tuple[Callable[[Any, str], tuple[Any, ...]], ...] = ()
     account_blockers: tuple[Callable[[Any, str], bool], ...] = ()
     relations: tuple[RelationProvider, ...] = ()
     search: tuple[Any, ...] = ()

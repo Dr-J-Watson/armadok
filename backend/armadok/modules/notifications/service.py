@@ -57,7 +57,16 @@ def _eligible(conn, registry, event, node_id: str | None, only: list[str] | None
         users = [u for u in users if u in only]
     if right is None:
         return users
-    return [u for u in users if registry.principal_for(conn, u).has(right, catalogue, scope)]
+    # A suspended node must not mute its owner's notifications (an emergency access to it is
+    # exactly what they need to hear about), and a background check is not a session: an open
+    # emergency session of an administrator does not count here.
+    return [
+        u
+        for u in users
+        if registry.principal_for(conn, u, kind="background").has(
+            right, catalogue, scope, ignore_blocked=True
+        )
+    ]
 
 
 def _targets(

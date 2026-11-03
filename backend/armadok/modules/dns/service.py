@@ -77,7 +77,7 @@ def access(
     if node_id is None or nodes_repo.get_node(conn, node_id) is None:
         return None
     owner = users_repo.get_user(conn, domain["owner_id"])
-    owner_principal = registry.principal_for(conn, domain["owner_id"])
+    owner_principal = registry.principal_for(conn, domain["owner_id"], kind="background")
     if (
         owner is None
         or not owner["is_active"]

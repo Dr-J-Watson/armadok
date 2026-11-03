@@ -75,13 +75,19 @@ class Registry:
         """Return the principal of an account: its grants and the scopes it may not use now."""
         from armadok.core.rights import Principal
 
+        session = kwargs.get("kind", "session") == "session"
         blocked = frozenset().union(*(b(conn) for m in self.modules for b in m.scope_blockers))
-        allowed = frozenset().union(
-            *(u(conn, account_id) for m in self.modules for u in m.scope_unblockers)
-        )
-        return Principal(
-            account_id, self.grants_of(conn, account_id), blocked=blocked - allowed, **kwargs
-        )
+        allowed = self.unblocked_for(conn, account_id) if session else frozenset()
+        grants = self.grants_of(conn, account_id)
+        if session:
+            extra = (
+                g
+                for m in self.modules
+                for s in m.session_grant_sources
+                for g in s(conn, account_id)
+            )
+            grants = tuple(dict.fromkeys((*grants, *extra)))
+        return Principal(account_id, grants, blocked=blocked - allowed, **kwargs)
 
     def account_blocked(self, conn: Any, account_id: str) -> bool:
         """Return True if any module says this account must not act now."""
