@@ -1,0 +1,56 @@
+name: CodeQL
+
+# Static analysis of our own code (Python and JavaScript/TypeScript).
+# Runs only when source files exist: CodeQL fails on a repository with no code.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "23 4 * * 1"   # weekly, Monday 04:23 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      python: ${{ steps.d.outputs.python }}
+      javascript: ${{ steps.d.outputs.javascript }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: d
+        run: |
+          if [ -n "$(git ls-files '*.py' | head -n 1)" ]; then echo "python=true" >> "$GITHUB_OUTPUT"; else echo "python=false" >> "$GITHUB_OUTPUT"; fi
+          if [ -n "$(git ls-files '*.js' '*.jsx' '*.ts' '*.tsx' | head -n 1)" ]; then echo "javascript=true" >> "$GITHUB_OUTPUT"; else echo "javascript=false" >> "$GITHUB_OUTPUT"; fi
+
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    needs: detect
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: python
+            enabled: ${{ needs.detect.outputs.python }}
+          - language: javascript-typescript
+            enabled: ${{ needs.detect.outputs.javascript }}
+    steps:
+      - uses: actions/checkout@v4
+        if: matrix.enabled == 'true'
+      - uses: github/codeql-action/init@v3
+        if: matrix.enabled == 'true'
+        with:
+          languages: ${{ matrix.language }}
+      - uses: github/codeql-action/analyze@v3
+        if: matrix.enabled == 'true'
+        with:
+          category: "/language:${{ matrix.language }}"

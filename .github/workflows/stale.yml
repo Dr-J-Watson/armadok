@@ -1,0 +1,33 @@
+name: Stale issues
+
+# Reminds, then closes, issues and pull requests waiting for an answer for a long time.
+on:
+  schedule:
+    - cron: "41 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-stale: 60
+          days-before-close: 14
+          stale-issue-label: stale
+          stale-pr-label: stale
+          only-labels: needs-info
+          exempt-issue-labels: security,confirmed,help wanted,good first issue
+          stale-issue-message: >
+            This issue has been waiting for more information for 60 days.
+            It will be closed in 14 days if there is no answer.
+          close-issue-message: >
+            Closed for lack of an answer. Feel free to reopen it with the missing information.
+          stale-pr-message: >
+            This pull request has had no activity for 60 days.
+            It will be closed in 14 days if there is no update.

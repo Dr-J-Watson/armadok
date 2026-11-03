@@ -1,0 +1,110 @@
+name: CI
+
+# Tests, lint and build on every pull request and every push to main/develop.
+# The jobs for a part of the project (backend, frontend, image) only run once
+# that part exists, so the pipeline is green on a repository that only has docs.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Detect parts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.d.outputs.backend }}
+      frontend: ${{ steps.d.outputs.frontend }}
+      docker: ${{ steps.d.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: d
+        run: |
+          [ -f backend/requirements.txt ]  && echo "backend=true"  >> "$GITHUB_OUTPUT" || echo "backend=false"  >> "$GITHUB_OUTPUT"
+          [ -f frontend/package-lock.json ] && echo "frontend=true" >> "$GITHUB_OUTPUT" || echo "frontend=false" >> "$GITHUB_OUTPUT"
+          [ -f Dockerfile ]                && echo "docker=true"   >> "$GITHUB_OUTPUT" || echo "docker=false"   >> "$GITHUB_OUTPUT"
+
+  backend:
+    name: Backend (lint + tests)
+    needs: detect
+    if: needs.detect.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      # git is needed by the tests of the Git integration
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq git
+      - run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+      - name: Lint
+        run: ruff check .
+        working-directory: backend
+      - name: Tests
+        run: python -m pytest -q
+        working-directory: backend
+
+  frontend:
+    name: Frontend (lint + tests + build)
+    needs: detect
+    if: needs.detect.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # --ignore-scripts: do not run dependency install scripts (supply-chain hardening)
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: frontend
+      - run: npm run lint --if-present
+        working-directory: frontend
+      - run: npm test --if-present
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+
+  image:
+    name: Image builds
+    needs: detect
+    if: needs.detect.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build (not pushed)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha,scope=ci
+          cache-to: type=gha,mode=max,scope=ci
+
+  translations:
+    name: README parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/check_readme_parity.py
