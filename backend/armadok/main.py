@@ -18,6 +18,9 @@ from armadok.core.registry import Registry, load_registry
 from armadok.modules.enabled import ENABLED_MODULES
 from armadok.web import add_headers, mount_web
 
+# Nothing the API accepts is larger than a worker message; refuse bigger bodies up front.
+MAX_BODY_BYTES = 1024 * 1024
+
 
 def create_app(
     settings: Settings | None = None,
@@ -61,7 +64,15 @@ def create_app(
     @app.middleware("http")
     async def headers(request: Request, call_next):
         """Add caching and security headers (see `web.add_headers`)."""
-        response = await call_next(request)
+        length = request.headers.get("content-length", "")
+        if (
+            request.url.path.startswith("/api/")
+            and length.isdigit()
+            and int(length) > MAX_BODY_BYTES
+        ):
+            response = JSONResponse({"error": {"code": "common.too_large"}}, status_code=413)
+        else:
+            response = await call_next(request)
         add_headers(request, response)
         return response
 

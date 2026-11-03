@@ -36,6 +36,17 @@ from armadok.worker_protocol import channel as protocol
 router = APIRouter(tags=["workers"])
 log = logging.getLogger("armadok.workers")
 
+# Worker error codes that are the caller's situation, not a fault of the worker.
+WORKER_ERROR_STATUS = {
+    "worker.busy": 429,
+    "worker.conflict": 409,
+    "worker.not_found": 404,
+    "worker.invalid_path": 422,
+    "worker.forbidden": 422,
+    "worker.too_large": 413,
+    "worker.not_text": 415,
+    "worker.projects_not_configured": 409,
+}
 HANDSHAKE_TIMEOUT_SECONDS = 10
 MAX_HELLO_BYTES = 200
 MAX_AUTH_BYTES = 2048
@@ -173,7 +184,7 @@ async def call_operation(
     try:
         return await session.call(op, args)
     except WorkerCallError as error:
-        raise ApiError(error.code, 429 if error.code == "worker.busy" else 502) from None
+        raise ApiError(error.code, WORKER_ERROR_STATUS.get(error.code, 502)) from None
 
 
 # --- the connection workers dial ----------------------------------------------------------

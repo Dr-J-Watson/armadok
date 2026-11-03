@@ -11,12 +11,12 @@ import asyncio
 import collections
 import json
 import logging
-import re
 from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
 
 from armadok.worker_protocol.channel import Channel, ProtocolError
+from armadok.worker_protocol.error_codes import WORKER_ERROR_CODES
 
 log = logging.getLogger("armadok.workers")
 
@@ -28,8 +28,6 @@ MAX_PENDING_CALLS = 32
 ABANDONED_MEMORY = 256
 # Connections that have not finished authenticating, across all workers.
 MAX_PREAUTH_CONNECTIONS = 64
-# A worker may only report errors as `worker.<name>`: it cannot impersonate other error codes.
-_ERROR_CODE = re.compile(r"worker\.[a-z_]{1,40}", re.ASCII)
 
 
 class WorkerCallError(Exception):
@@ -123,7 +121,7 @@ class WorkerSession:
             future.set_result(message["result"])
             return
         code = message.get("error")
-        if not isinstance(code, str) or not _ERROR_CODE.fullmatch(code):
+        if not isinstance(code, str) or code not in WORKER_ERROR_CODES:
             code = "worker.error"
         future.set_exception(WorkerCallError(code))
 
