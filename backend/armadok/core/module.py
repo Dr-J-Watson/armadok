@@ -172,6 +172,12 @@ class Module:
     audit_events: tuple[str, ...] = ()
     signals: tuple[Signal, ...] = ()
     hook_actions: tuple[HookAction, ...] = ()
+    # Rights an account holds because of another account (a service account that follows the
+    # person who made it): `source(conn, account_id)` returns the extra grants.
+    grant_sources: tuple[Callable[[Any, str], tuple[Any, ...]], ...] = ()
+    # `blocker(conn, account_id)` is True when an account must not act at all right now (a
+    # service account whose responsible person is disabled): its keys and tokens stop working.
+    account_blockers: tuple[Callable[[Any, str], bool], ...] = ()
     relations: tuple[RelationProvider, ...] = ()
     search: tuple[Any, ...] = ()
     notification_events: tuple[NotificationEvent, ...] = ()

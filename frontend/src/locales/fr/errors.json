@@ -105,5 +105,9 @@
   "hooks.creator_lost_right": "La personne qui a créé ce hook n'a plus le droit de le faire.",
   "hooks.unknown_action": "Cette action de hook n'existe pas.",
   "hooks.invalid_target": "La cible du hook n'est pas valide.",
-  "hooks.invalid_expiry": "La date de fin doit être dans le futur."
+  "hooks.invalid_expiry": "La date de fin doit être dans le futur.",
+  "service_accounts.name_taken": "Un compte de service porte déjà ce nom.",
+  "service_accounts.invalid_rights": "Choisissez soit « suit vos droits », soit une liste de droits figés, pas les deux et pas aucun.",
+  "users.not_a_person": "C'est un compte de service : il n'a ni mot de passe ni second facteur.",
+  "service_accounts.closed": "Ce compte de service est fermé."
 }

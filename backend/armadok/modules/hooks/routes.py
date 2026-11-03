@@ -13,7 +13,6 @@ import hmac
 import json
 import sqlite3
 import time
-from collections import deque
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Path, Request
@@ -24,6 +23,7 @@ from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError, NotFound
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
+from armadok.core.throttle import FailureLimiter
 from armadok.modules.hooks import repository as repo
 from armadok.modules.nodes import repository as nodes_repo
 from armadok.modules.users import repository as users_repo
@@ -35,7 +35,7 @@ MIN_INTERVAL_SECONDS = 5  # a hook cannot be hammered; the project is also busy 
 FAILURES_PER_MINUTE = 10  # wrong tokens per source address
 FAILURES_PER_HOOK = 30  # wrong tokens for one hook, from anywhere
 MAX_TRACKED = 5000
-_failures: dict[str, deque[float]] = {}
+limiter = FailureLimiter({"ip": FAILURES_PER_MINUTE, "hook": FAILURES_PER_HOOK}, MAX_TRACKED)
 _audited: dict[str, float] = {}
 HookId = Path(pattern=r"^[0-9a-f]{16}$")
 
@@ -61,36 +61,6 @@ def _audit(conn, registry, actor, event, hook_id, outcome="success", **details):
         outcome=outcome,
         details=details,
     )
-
-
-def _count(key: str) -> deque[float]:
-    """Return the recent wrong-token times for a source address or a hook (last minute)."""
-    now = time.monotonic()
-    window = _failures.setdefault(key, deque())
-    while window and now - window[0] > 60:
-        window.popleft()
-    if len(_failures) > MAX_TRACKED:
-        # Forget whoever has been quiet for a minute; if that is not enough, the oldest half.
-        for stale in [k for k, v in _failures.items() if not v or now - v[-1] > 60]:
-            del _failures[stale]
-        if len(_failures) > MAX_TRACKED:
-            for old in list(_failures)[: MAX_TRACKED // 2]:
-                del _failures[old]
-        window = _failures.setdefault(key, window)
-    return window
-
-
-def _blocked(source: str, hook_id: str) -> bool:
-    """Whether wrong tokens from this address, or for this hook, are coming too fast."""
-    return (
-        len(_count(f"ip:{source}")) >= FAILURES_PER_MINUTE
-        or len(_count(f"hook:{hook_id}")) >= FAILURES_PER_HOOK
-    )
-
-
-def _remember_failure(source: str, hook_id: str) -> None:
-    _count(f"ip:{source}").append(time.monotonic())
-    _count(f"hook:{hook_id}").append(time.monotonic())
 
 
 def _audit_attempt(conn, registry, row, hook_id: str, code: str) -> None:
@@ -216,15 +186,22 @@ async def fire(
     if row is None or not matches or row["revoked"] or (expires and expires <= datetime.now(UTC)):
         # Only wrong tokens are slowed down: the right one is never locked out by someone
         # else's guessing (behind a proxy everybody may share one address).
-        if _blocked(source, hook_id):
+        if limiter.blocked(ip=source, hook=hook_id):
             raise ApiError("hooks.too_many_attempts", 429)
-        _remember_failure(source, hook_id)
+        limiter.remember(ip=source, hook=hook_id)
         _audit_attempt(conn, registry, row, hook_id, "hooks.invalid")
         raise ApiError("hooks.invalid", 401)
     actor = f"{row['created_by']} via key:hook-{hook_id}"
     action = registry.hook_actions().get(row["action"])
     creator = users_repo.get_user(conn, row["created_by"])
-    if action is None or creator is None or not creator["is_active"]:
+    # An account disabled since the hook was made takes its hooks with it for good.
+    disabled_since = creator and creator["deactivated_at"]
+    if (
+        action is None
+        or creator is None
+        or not creator["is_active"]
+        or (disabled_since and disabled_since > row["created_at"])
+    ):
         _audit(conn, registry, actor, "hook.fire", hook_id, "failure", code="hooks.unavailable")
         raise ApiError("hooks.unavailable", 403)
     target = json.loads(row["target"])

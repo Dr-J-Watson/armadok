@@ -51,7 +51,21 @@ LANGUAGE_MIGRATION = Migration(
     "ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'en';",
 )
 
+KIND_MIGRATION = Migration(
+    "users-0005-kind",
+    """
+    ALTER TABLE users ADD COLUMN kind TEXT NOT NULL DEFAULT 'person';
+    ALTER TABLE users ADD COLUMN deactivated_at TEXT;
+    -- Accounts already disabled: from now on, so what they made earlier stays dead.
+    UPDATE users SET deactivated_at = strftime('%Y-%m-%dT%H:%M:%f+00:00', 'now')
+        WHERE is_active = 0;
+    """,
+)
+
 LANGUAGES = ("en", "fr")
+# What an account is: a person who logs in, or a service account that only holds API keys.
+KINDS = ("person", "service")
+_COLUMNS = "id, username, is_active, created_at, kind, deactivated_at"
 
 TOTP_MIGRATION = Migration(
     "users-0003-totp",
@@ -110,13 +124,18 @@ def count_users(conn: sqlite3.Connection) -> int:
 
 
 def create_user(
-    conn: sqlite3.Connection, username: str, password_hash: str, *, commit: bool = True
+    conn: sqlite3.Connection,
+    username: str,
+    password_hash: str,
+    *,
+    commit: bool = True,
+    kind: str = "person",
 ) -> dict:
     """Insert a user and return it (without the password hash)."""
     user_id = uuid.uuid4().hex
     conn.execute(
-        "INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)",
-        (user_id, username, password_hash, _now().isoformat()),
+        "INSERT INTO users (id, username, password_hash, created_at, kind) VALUES (?, ?, ?, ?, ?)",
+        (user_id, username, password_hash, _now().isoformat(), kind),
     )
     if commit:
         conn.commit()
@@ -125,15 +144,13 @@ def create_user(
 
 def get_user(conn: sqlite3.Connection, user_id: str) -> dict | None:
     """Return a user without the password hash, or None."""
-    row = conn.execute(
-        "SELECT id, username, is_active, created_at FROM users WHERE id = ?", (user_id,)
-    ).fetchone()
+    row = conn.execute(f"SELECT {_COLUMNS} FROM users WHERE id = ?", (user_id,)).fetchone()
     return _public(row) if row else None
 
 
 def list_users(conn: sqlite3.Connection) -> list[dict]:
     """Return all users without password hashes."""
-    rows = conn.execute("SELECT id, username, is_active, created_at FROM users ORDER BY username")
+    rows = conn.execute(f"SELECT {_COLUMNS} FROM users ORDER BY username")
     return [_public(r) for r in rows]
 
 
@@ -152,6 +169,11 @@ def set_active(conn: sqlite3.Connection, user_id: str, active: bool) -> None:
     """Enable or disable an account; disabling also ends all its sessions at once."""
     conn.execute("UPDATE users SET is_active = ? WHERE id = ?", (int(active), user_id))
     if not active:
+        # Kept when the account is enabled again: what was made under it before (an incoming
+        # hook, say) must not wake up with it.
+        conn.execute(
+            "UPDATE users SET deactivated_at = ? WHERE id = ?", (_now().isoformat(), user_id)
+        )
         conn.execute("UPDATE sessions SET revoked = 1 WHERE user_id = ?", (user_id,))
     conn.commit()
 
@@ -212,7 +234,8 @@ def user_for_access_token(conn: sqlite3.Connection, token: str) -> str | None:
     """Return the user id for a valid access token, or None."""
     row = conn.execute(
         "SELECT s.user_id, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id"
-        " WHERE s.token_hash = ? AND s.kind = 'access' AND s.revoked = 0 AND u.is_active = 1",
+        " WHERE s.token_hash = ? AND s.kind = 'access' AND s.revoked = 0 AND u.is_active = 1"
+        " AND u.kind = 'person'",
         (token_hash(token),),
     ).fetchone()
     if row is None or datetime.fromisoformat(row["expires_at"]) <= _now():
@@ -227,11 +250,12 @@ def rotate_refresh(conn: sqlite3.Connection, token: str) -> dict | None:
     copied, so every session of that user is revoked.
     """
     row = conn.execute(
-        "SELECT s.*, u.is_active FROM sessions s JOIN users u ON u.id = s.user_id"
+        "SELECT s.*, u.is_active, u.kind AS account_kind FROM sessions s"
+        " JOIN users u ON u.id = s.user_id"
         " WHERE s.token_hash = ? AND s.kind = 'refresh'",
         (token_hash(token),),
     ).fetchone()
-    if row is None or row["revoked"] or not row["is_active"]:
+    if row is None or row["revoked"] or not row["is_active"] or row["account_kind"] != "person":
         return None
     if datetime.fromisoformat(row["expires_at"]) <= _now():
         return None

@@ -29,5 +29,7 @@
   "grants.expires": "Until (optional)",
   "grants.add": "Give the right",
   "scope.everywhere": "Everywhere",
-  "scope.node": "Node: {{name}}"
+  "scope.node": "Node: {{name}}",
+  "service": "service",
+  "serviceHint": "A service account: an identity for a tool, with keys and no password."
 }

@@ -67,10 +67,14 @@ def _existing(conn: sqlite3.Connection, user_id: str) -> dict:
     return user
 
 
-def _outranks(conn: sqlite3.Connection, who: Principal, user_id: str, catalogue: dict) -> bool:
-    """Return True if every active grant of the target is covered by `who`'s own rights."""
+def _outranks(conn: sqlite3.Connection, who: Principal, user_id: str, registry: Registry) -> bool:
+    """Return True if every active grant of the target is covered by `who`'s own rights.
+
+    The target's grants include those it borrows (a service account follows its person).
+    """
+    catalogue = registry.rights()
     now = datetime.now(UTC)
-    for g in grants.load_grants(conn, user_id):
+    for g in registry.grants_of(conn, user_id):
         if g.expires_at is not None and g.expires_at <= now:
             continue
         if not can_grant(who, g, catalogue):
@@ -117,6 +121,9 @@ def create_user(
 ) -> dict:
     """Create an account with no rights. Requires `users.create`."""
     who.require("users.create", registry.rights())
+    # The prefix belongs to service accounts, so a person cannot take a name one will need.
+    if body.username.lower().startswith("svc-"):
+        raise ApiError("users.username_taken", 409)
     try:
         user = repository.create_user(conn, body.username, hash_password(body.password))
     except sqlite3.IntegrityError:
@@ -139,13 +146,16 @@ def update_user(
     catalogue = registry.rights()
     who.require("users.update", catalogue)
     _existing(conn, user_id)
+    target = _existing(conn, user_id)
+    if target["kind"] != "person" and body.password is not None:
+        raise ApiError("users.not_a_person", 409)  # a service account has no password
     if body.password is not None:
         who.require("users.reset_password", catalogue)
     if body.is_active is False and user_id == who.id:
         raise ApiError("users.cannot_disable_self", 409)
     # Acting on someone else's account must not be a way around "no more than you hold":
     # you may only touch accounts whose every right you could have granted yourself.
-    if user_id != who.id and not _outranks(conn, who, user_id, catalogue):
+    if user_id != who.id and not _outranks(conn, who, user_id, registry):
         raise MissingRight()
     if body.is_active is not None:
         repository.set_active(conn, user_id, body.is_active)
@@ -171,8 +181,9 @@ def reset_2fa(
     """
     catalogue = registry.rights()
     who.require("users.reset_2fa", catalogue)
-    _existing(conn, user_id)
-    if user_id != who.id and not _outranks(conn, who, user_id, catalogue):
+    if _existing(conn, user_id)["kind"] != "person":
+        raise ApiError("users.not_a_person", 409)
+    if user_id != who.id and not _outranks(conn, who, user_id, registry):
         raise MissingRight()
     repository.disable_totp(conn, user_id)
     repository.revoke_other_sessions(conn, user_id, None)

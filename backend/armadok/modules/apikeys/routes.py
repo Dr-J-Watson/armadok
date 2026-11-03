@@ -7,17 +7,16 @@ key cannot create more keys or outlive its own revocation.
 from __future__ import annotations
 
 import sqlite3
-from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
 from pydantic import AwareDatetime, BaseModel, Field
 
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
-from armadok.core.errors import ApiError, MissingRight, NotFound
+from armadok.core.errors import MissingRight, NotFound
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
-from armadok.modules.apikeys import repository
+from armadok.modules.apikeys import repository, service
 
 router = APIRouter(prefix="/apikeys", tags=["apikeys"])
 
@@ -63,18 +62,10 @@ def create_key(
     """
     _own_keys_only(who, registry)
     catalogue = registry.rights()
-    now = datetime.now(UTC)
-    held = {g.right for g in who.grants if g.expires_at is None or g.expires_at > now}
-    requested = set(body.rights)
-    for right in requested:
-        if right not in catalogue or catalogue[right].sensitive or right not in held:
-            raise ApiError("apikeys.invalid_right", 422)
-        if not set(catalogue[right].depends_on) <= requested:
-            raise ApiError("apikeys.dependency_missing", 422)
-    if body.expires_at is not None and body.expires_at <= now:
-        raise ApiError("apikeys.invalid_expiry", 422)
+    rights = service.check_rights(service.held_rights(who.grants), catalogue, body.rights)
+    service.check_expiry(body.expires_at)
     full_key, record = repository.create_key(
-        conn, who.id, body.name, sorted(requested), body.read_only, body.expires_at
+        conn, who.id, body.name, rights, body.read_only, body.expires_at
     )
     audit.record(
         conn,

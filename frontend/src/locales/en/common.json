@@ -23,5 +23,6 @@
   "live.connecting.hint": "Connecting to live updates…",
   "live.offline.label": "Offline",
   "live.offline.hint": "Live updates are interrupted. Pages still reload when you return to them.",
-  "nav.integrations": "Integrations"
+  "nav.integrations": "Integrations",
+  "nav.serviceAccounts": "Service accounts"
 }

@@ -51,7 +51,10 @@ def _eligible(conn, registry, event, node_id: str | None, only: list[str] | None
     catalogue = registry.rights()
     scope = f"node:{node_id}" if node_id else "*"
     right = event.right or ("nodes.read" if node_id else None)
-    users = [u["id"] for u in users_repo.list_users(conn) if u["is_active"]]
+    # Service accounts have no inbox: only people are told.
+    users = [
+        u["id"] for u in users_repo.list_users(conn) if u["is_active"] and u["kind"] == "person"
+    ]
     if only is not None:
         users = [u for u in users if u in only]
     if right is None:

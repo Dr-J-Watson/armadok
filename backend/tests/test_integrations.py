@@ -35,7 +35,7 @@ def box(tmp_path, caplog, monkeypatch):
     from armadok.worker import compose_ops
 
     compose_ops._tasks.clear()
-    hook_routes._failures.clear()
+    hook_routes.limiter.clear()
     monkeypatch.setattr(hook_routes, "MIN_INTERVAL_SECONDS", 0)
     with caplog.at_level(logging.WARNING, logger="armadok.setup"):
         app = create_app(
@@ -149,7 +149,7 @@ def test_guessing_at_one_hook_from_many_addresses_is_also_slowed(box):
     client, admin, node, _ = box
     hook = new_hook(client, admin, node).json()
     for i in range(hook_routes.FAILURES_PER_HOOK):
-        hook_routes._remember_failure(f"10.0.0.{i}", hook["id"])
+        hook_routes.limiter.remember(ip=f"10.0.0.{i}", hook=hook["id"])
     assert fire(client, hook["id"], "wrong").status_code == 429
     assert fire(client, hook["id"], hook["token"]).status_code == 202
 
@@ -186,10 +186,10 @@ def test_a_call_refused_for_coming_too_soon_is_audited_and_does_not_postpone_the
 
 
 def test_the_failure_memory_stays_bounded(box, monkeypatch):
-    monkeypatch.setattr(hook_routes, "MAX_TRACKED", 50)
+    monkeypatch.setattr(hook_routes.limiter, "max_tracked", 50)
     for i in range(500):
-        hook_routes._remember_failure(f"203.0.113.{i}", f"{i:016x}")
-    assert len(hook_routes._failures) <= 60
+        hook_routes.limiter.remember(ip=f"203.0.113.{i}", hook=f"{i:016x}")
+    assert hook_routes.limiter.size() <= 120  # each kind keeps its own bounded table
 
 
 def test_a_revoked_or_expired_hook_stops_working(box):
@@ -367,3 +367,27 @@ def test_a_metrics_key_works_as_a_bearer_token(box):
     assert key.status_code == 201, key.text
     got = client.get("/api/v1/metrics", headers={"Authorization": f"Bearer {key.json()['key']}"})
     assert got.status_code == 200 and "armadok_info" in got.text
+
+
+def test_a_hook_does_not_wake_up_when_its_creator_is_enabled_again(box):
+    client, admin, node, _ = box
+    bob_id = client.post(
+        "/api/v1/users", headers=admin, json={"username": "bob", "password": PASSWORD}
+    ).json()["id"]
+    for right, scope in (
+        ("hooks.manage", "*"),
+        ("nodes.read", f"node:{node}"),
+        ("projects.read", f"node:{node}"),
+        ("projects.deploy", f"node:{node}"),
+    ):
+        client.post(
+            f"/api/v1/users/{bob_id}/grants", headers=admin, json={"right": right, "scope": scope}
+        )
+    hook = new_hook(client, login(client, "bob"), node).json()
+    client.patch(f"/api/v1/users/{bob_id}", headers=admin, json={"is_active": False})
+    client.patch(f"/api/v1/users/{bob_id}", headers=admin, json={"is_active": True})
+    refused = fire(client, hook["id"], hook["token"])
+    assert refused.status_code == 403 and refused.json()["error"]["code"] == "hooks.unavailable"
+    # A hook made after the account came back works.
+    fresh = new_hook(client, login(client, "bob"), node).json()
+    assert fire(client, fresh["id"], fresh["token"]).status_code == 202

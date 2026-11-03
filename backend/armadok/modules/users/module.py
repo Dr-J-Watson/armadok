@@ -37,6 +37,7 @@ module = Module(
         repository.THROTTLE_MIGRATION,
         repository.TOTP_MIGRATION,
         repository.LANGUAGE_MIGRATION,
+        repository.KIND_MIGRATION,
     ),
     authenticator=authenticate,
     startup=(setup.ensure_install_code,),

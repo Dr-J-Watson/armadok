@@ -31,6 +31,19 @@ MIGRATION = Migration(
     """,
 )
 
+OAUTH_MIGRATION = Migration(
+    "apikeys-0002-oauth-tokens",
+    """
+    CREATE TABLE oauth_tokens (
+        token_hash TEXT PRIMARY KEY,
+        key_id TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    );
+    CREATE INDEX oauth_tokens_key ON oauth_tokens (key_id);
+    """,
+)
+
 _PUBLIC = "id, owner_id, name, rights, read_only, expires_at, last_used_at, revoked, created_at"
 
 
@@ -104,6 +117,12 @@ def touch(conn: sqlite3.Connection, key_id: str) -> None:
     conn.execute(
         "UPDATE api_keys SET last_used_at = ? WHERE id = ?", (datetime.now(UTC).isoformat(), key_id)
     )
+    conn.commit()
+
+
+def revoke_all(conn: sqlite3.Connection, owner_id: str) -> None:
+    """Revoke every key of an account at once (it is being closed)."""
+    conn.execute("UPDATE api_keys SET revoked = 1 WHERE owner_id = ?", (owner_id,))
     conn.commit()
 
 

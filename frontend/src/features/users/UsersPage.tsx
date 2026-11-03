@@ -12,6 +12,7 @@ export interface Account {
   username: string
   is_active: boolean
   created_at: string
+  kind?: 'person' | 'service'
 }
 
 export function UsersPage() {
@@ -48,6 +49,12 @@ export function UsersPage() {
           <li key={account.id}>
             <Link to={`/users/${account.id}`}>
               <strong>{account.username}</strong>
+              {account.kind === 'service' && (
+                <span className="badge" title={t('users:serviceHint')}>
+                  {'⚙ '}
+                  {t('users:service')}
+                </span>
+              )}
               {!account.is_active && <span className="badge off">{t('users:disabled')}</span>}
             </Link>
           </li>

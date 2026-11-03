@@ -27,6 +27,7 @@ SUPERADMIN_RIGHTS = (
     "nodes.create",
     "hooks.manage",
     "metrics.read",
+    "service_accounts.manage",
 )
 
 

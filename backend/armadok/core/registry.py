@@ -55,6 +55,20 @@ class Registry:
         """Return every relation provider declared by the modules."""
         return tuple(r for m in self.modules for r in m.relations)
 
+    def grants_of(self, conn: Any, account_id: str) -> tuple[Any, ...]:
+        """Return an account's grants: its own, those of its roles, and borrowed ones."""
+        from armadok.core.grants import load_grants
+
+        own = load_grants(conn, account_id)
+        extra = (
+            g for m in self.modules for source in m.grant_sources for g in source(conn, account_id)
+        )
+        return tuple(dict.fromkeys((*own, *extra)))
+
+    def account_blocked(self, conn: Any, account_id: str) -> bool:
+        """Return True if any module says this account must not act now."""
+        return any(b(conn, account_id) for m in self.modules for b in m.account_blockers)
+
     def hook_actions(self) -> dict[str, HookAction]:
         """Return what incoming hooks can trigger, by name."""
         return {a.name: a for m in self.modules for a in m.hook_actions}

@@ -29,5 +29,7 @@
   "grants.expires": "Jusqu'au (facultatif)",
   "grants.add": "Donner le droit",
   "scope.everywhere": "Partout",
-  "scope.node": "Nœud : {{name}}"
+  "scope.node": "Nœud : {{name}}",
+  "service": "service",
+  "serviceHint": "Un compte de service : une identité pour un outil, avec des clés et sans mot de passe."
 }

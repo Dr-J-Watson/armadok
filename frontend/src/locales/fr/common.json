@@ -23,5 +23,6 @@
   "live.connecting.hint": "Connexion aux mises à jour en direct…",
   "live.offline.label": "Hors ligne",
   "live.offline.hint": "Les mises à jour en direct sont interrompues. Les pages se rechargent quand vous y revenez.",
-  "nav.integrations": "Intégrations"
+  "nav.integrations": "Intégrations",
+  "nav.serviceAccounts": "Comptes de service"
 }

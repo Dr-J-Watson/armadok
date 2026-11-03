@@ -25,7 +25,7 @@ log = logging.getLogger("armadok.signals")
 CHANGING_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 # Starts with a letter, digit, "_" or "-": "." and ".." are path tricks, never ids.
 _ID = re.compile(r"[A-Za-z0-9_-][A-Za-z0-9_.-]{0,63}")
-_AREA = re.compile(r"[a-z_]{1,30}")
+_AREA = re.compile(r"[a-z_-]{1,30}")
 API_PREFIX = "/api/v1/"
 # Requests that use POST only to carry their input (they change nothing): no signal.
 READ_ONLY_ENDINGS = ("/preview", "/check", "/test", "/verify", "/search", "/lookup", "/dry-run")

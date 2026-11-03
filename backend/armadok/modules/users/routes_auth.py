@@ -132,7 +132,7 @@ def login(
         raise ApiError("auth.too_many_attempts", 429)
     row = repository.get_user_by_username(conn, body.username)
     ok = verify_password(body.password, row["password_hash"] if row else DUMMY_HASH)
-    if row is None or not ok or not row["is_active"]:
+    if row is None or not ok or not row["is_active"] or row["kind"] != "person":
         repository.record_failure(conn, body.username)
         audit.record(conn, registry.audit_events(), "anonymous", "auth.login", outcome="denied")
         raise ApiError("auth.invalid_credentials", 401)
