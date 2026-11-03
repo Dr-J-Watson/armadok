@@ -38,7 +38,9 @@ def current_code(secret, offset=0):
 
 def enable_2fa(client):
     _, headers = login(client)
-    secret = client.post("/api/v1/auth/2fa/enroll", headers=headers).json()["secret"]
+    secret = client.post(
+        "/api/v1/auth/2fa/enroll", headers=headers, json={"password": PASSWORD}
+    ).json()["secret"]
     r = client.post(
         "/api/v1/auth/2fa/confirm", headers=headers, json={"code": current_code(secret)}
     )
@@ -108,5 +110,51 @@ def test_enrolment_without_encryption_key_is_a_clear_503(tmp_path, caplog):
     c = TestClient(app)
     c.post("/api/v1/setup", json={"install_code": code, "username": "admin", "password": PASSWORD})
     _, headers = login(c)
-    r = c.post("/api/v1/auth/2fa/enroll", headers=headers)
+    r = c.post("/api/v1/auth/2fa/enroll", headers=headers, json={"password": PASSWORD})
     assert r.status_code == 503 and r.json()["error"]["code"] == "crypto.key_missing"
+
+
+def test_enrol_needs_the_password_and_is_throttled(client):
+    _, headers = login(client)
+    url = "/api/v1/auth/2fa/enroll"
+    for _ in range(5):
+        assert (
+            client.post(url, headers=headers, json={"password": "wrong password!"}).status_code
+            == 401
+        )
+    blocked = client.post(url, headers=headers, json={"password": PASSWORD})
+    assert blocked.status_code == 429
+
+
+def test_enrolment_cannot_overwrite_a_confirmed_secret(client):
+    _, _, headers = enable_2fa(client)
+    again = client.post("/api/v1/auth/2fa/enroll", headers=headers, json={"password": PASSWORD})
+    assert again.status_code == 409
+    assert login(client)[0].json()["error"]["code"] == "auth.totp_required"
+
+
+def test_confirm_ends_other_sessions(client):
+    _, old_headers = login(client)
+    secret = client.post(
+        "/api/v1/auth/2fa/enroll", headers=old_headers, json={"password": PASSWORD}
+    ).json()["secret"]
+    _, new_headers = login(client)
+    client.post(
+        "/api/v1/auth/2fa/confirm", headers=new_headers, json={"code": current_code(secret)}
+    )
+    assert client.get("/api/v1/auth/me", headers=old_headers).status_code == 401
+    assert client.get("/api/v1/auth/me", headers=new_headers).status_code == 200
+
+
+def test_odd_code_input_never_causes_a_500(client):
+    secret, _, _ = enable_2fa(client)
+    for bad in ("٠٠٠٠٠٠", "123456\n", "x" * 32, "123-456"):
+        assert login(client, totp_code=bad)[0].status_code in (401, 429)
+
+
+def test_admin_can_reset_2fa_but_only_with_the_right(client):
+    secret, _, _ = enable_2fa(client)
+    ok, admin = login(client, totp_code=current_code(secret, 1))
+    uid = client.get("/api/v1/auth/me", headers=admin).json()["id"]
+    assert client.delete(f"/api/v1/users/{uid}/2fa", headers=admin).status_code == 204
+    assert login(client)[0].status_code == 200

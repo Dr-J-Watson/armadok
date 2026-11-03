@@ -7,7 +7,7 @@ local run; production values come from the container environment.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -21,7 +21,7 @@ class Settings:
     cookie_secure: bool = True
     # Key that encrypts secrets stored in the database (Fernet, urlsafe base64, 32 bytes).
     # Kept apart from the database; never logged or returned by the API.
-    encryption_key: str | None = None
+    encryption_key: str | None = field(default=None, repr=False)
 
     @property
     def db_path(self) -> Path:

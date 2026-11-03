@@ -38,6 +38,16 @@ class Principal:
 
     id: str
     grants: tuple[Grant, ...] = ()
+    # "session" for a logged-in person, "api_key" for a key acting on behalf of `id`.
+    kind: str = "session"
+    key_id: str | None = None
+    # A read-only key may only use safe HTTP methods (enforced in `get_principal`).
+    read_only: bool = False
+
+    @property
+    def actor(self) -> str:
+        """Identity written to the audit log: the account, plus the key if one was used."""
+        return f"{self.id} via key:{self.key_id}" if self.key_id else self.id
 
     def has(
         self,

@@ -42,7 +42,7 @@ def matching_step(secret: str, code: str, now: float | None = None) -> int | Non
     """
     current = int((now if now is not None else time.time()) // STEP_SECONDS)
     for step in range(current - WINDOW, current + WINDOW + 1):
-        if hmac.compare_digest(code_at(secret, step), code):
+        if hmac.compare_digest(code_at(secret, step).encode(), code.encode()):
             return step
     return None
 
@@ -55,4 +55,5 @@ def provisioning_uri(secret: str, account: str, issuer: str = "Armadok") -> str:
 
 def new_backup_codes() -> list[str]:
     """Return fresh single-use backup codes (shown once, stored hashed)."""
-    return [f"{secrets.token_hex(3)}-{secrets.token_hex(3)}" for _ in range(BACKUP_CODE_COUNT)]
+    # 2 x 40 bits: enough that even an unsalted SHA-256 of a leaked hash cannot be brute-forced.
+    return [f"{secrets.token_hex(5)}-{secrets.token_hex(5)}" for _ in range(BACKUP_CODE_COUNT)]

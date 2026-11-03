@@ -8,7 +8,7 @@ from collections.abc import Callable, Iterator
 from fastapi import Request
 
 from armadok.core.db import connect
-from armadok.core.errors import Unauthenticated
+from armadok.core.errors import ApiError, Unauthenticated
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 
@@ -36,4 +36,6 @@ def get_principal(request: Request) -> Principal:
     principal = authenticator(request) if authenticator else None
     if principal is None:
         raise Unauthenticated()
+    if principal.read_only and request.method not in ("GET", "HEAD", "OPTIONS"):
+        raise ApiError("auth.read_only_key", 403)
     return principal

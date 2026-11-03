@@ -90,7 +90,13 @@ def run_setup(
     Closed for good as soon as an account exists.
     """
     try:
-        user = setup.run_setup(conn, body.install_code, body.username, hash_password(body.password))
+        user = setup.run_setup(
+            conn,
+            body.install_code,
+            body.username,
+            hash_password(body.password),
+            registry.baseline_rights(),
+        )
     except setup.SetupClosed:
         raise ApiError("setup.closed", 409) from None
     if user is None:

@@ -42,6 +42,10 @@ class Registry:
         """All declared rights, keyed by id."""
         return {r.id: r for m in self.modules for r in m.rights}
 
+    def baseline_rights(self) -> tuple[str, ...]:
+        """Return the rights every new account receives."""
+        return tuple(r.id for r in self.rights().values() if r.baseline)
+
     def audit_events(self) -> set[str]:
         """Return every audit event type declared by the modules."""
         return {e for m in self.modules for e in m.audit_events}
@@ -51,9 +55,22 @@ class Registry:
         return {p.name: p for m in self.modules for p in m.providers if p.kind == kind}
 
     def authenticator(self) -> Callable[[Any], Any] | None:
-        """Return the request authenticator provided by a module, if any."""
+        """Return one authenticator trying every module's authenticator in turn, if any.
+
+        The first that recognises the credentials wins (sessions, API keys, ...).
+        """
         found = [m.authenticator for m in self.modules if m.authenticator is not None]
-        return found[0] if found else None
+        if not found:
+            return None
+
+        def chained(request: Any) -> Any:
+            for authenticate in found:
+                principal = authenticate(request)
+                if principal is not None:
+                    return principal
+            return None
+
+        return chained
 
     def _validate(self) -> None:
         """Run every start-up check; the first failure aborts."""
@@ -69,8 +86,6 @@ class Registry:
             "provider", [f"{p.kind}/{p.name}" for m in self.modules for p in m.providers]
         )
         self._check_right_dependencies()
-        if sum(m.authenticator is not None for m in self.modules) > 1:
-            raise RegistryError("more than one module provides an authenticator")
 
     def _check_requires(self) -> None:
         for module in self.modules:

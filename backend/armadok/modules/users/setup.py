@@ -21,6 +21,7 @@ SUPERADMIN_RIGHTS = (
     "users.create",
     "users.update",
     "users.reset_password",
+    "users.reset_2fa",
     "grants.manage",
     "nodes.create",
 )
@@ -40,7 +41,11 @@ def ensure_install_code(conn: sqlite3.Connection) -> None:
 
 
 def run_setup(
-    conn: sqlite3.Connection, code: str, username: str, password_hash: str
+    conn: sqlite3.Connection,
+    code: str,
+    username: str,
+    password_hash: str,
+    baseline: tuple[str, ...] = (),
 ) -> dict | None:
     """Burn the install code and create the super-administrator, all or nothing.
 
@@ -60,7 +65,7 @@ def run_setup(
             conn.rollback()
             return None
         user = repository.create_user(conn, username, password_hash, commit=False)
-        for right in SUPERADMIN_RIGHTS:
+        for right in (*SUPERADMIN_RIGHTS, *baseline):
             add_grant(conn, user["id"], Grant(right), granted_by="setup", commit=False)
         conn.commit()
         return user

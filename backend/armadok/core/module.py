@@ -25,6 +25,11 @@ class Right:
 
     id: str
     depends_on: tuple[str, ...] = ()
+    # Sensitive rights (terminal, reading secrets, managing rights or keys) are never
+    # available to API keys and are flagged in red in the interface.
+    sensitive: bool = False
+    # Baseline rights are granted to every new account (e.g. managing one's own API keys).
+    baseline: bool = False
 
 
 @dataclass(frozen=True)
@@ -75,7 +80,7 @@ class Module:
     worker_ops: tuple[str, ...] = ()
     settings: tuple[Any, ...] = ()
     providers: tuple[Provider, ...] = ()
-    # Turns a request into a `Principal` (or None). At most one module provides it.
+    # Turns a request into a `Principal`, or None if the credentials are not its kind.
     authenticator: Callable[[Any], Any] | None = None
     # Run once after migrations at start-up (e.g. generate a one-time install code).
     startup: tuple[Callable[[sqlite3.Connection], None], ...] = ()

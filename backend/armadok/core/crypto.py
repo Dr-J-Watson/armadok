@@ -17,6 +17,15 @@ def generate_key() -> str:
     return Fernet.generate_key().decode()
 
 
+def validate(settings: Settings) -> None:
+    """Fail fast at start-up if a key is configured but unusable."""
+    if settings.encryption_key:
+        try:
+            Fernet(settings.encryption_key.encode())
+        except ValueError:
+            raise ValueError("ARMADOK_ENCRYPTION_KEY is not a valid Fernet key") from None
+
+
 def _fernet(settings: Settings) -> Fernet:
     if not settings.encryption_key:
         # A server error, not the caller's fault: the operator must configure the key.

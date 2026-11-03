@@ -239,6 +239,19 @@ def rotate_refresh(conn: sqlite3.Connection, token: str) -> dict | None:
     return {**issue_tokens(conn, row["user_id"], row["family"]), "user_id": row["user_id"]}
 
 
+def revoke_other_sessions(conn: sqlite3.Connection, user_id: str, access_token: str | None) -> None:
+    """End every session of the user except the one that owns `access_token`."""
+    keep = conn.execute(
+        "SELECT family FROM sessions WHERE token_hash = ?",
+        (token_hash(access_token or ""),),
+    ).fetchone()
+    conn.execute(
+        "UPDATE sessions SET revoked = 1 WHERE user_id = ? AND family != ?",
+        (user_id, keep["family"] if keep else ""),
+    )
+    conn.commit()
+
+
 def revoke_family_of_access_token(conn: sqlite3.Connection, token: str) -> None:
     """End the session (access and refresh tokens) that issued this access token."""
     conn.execute(
@@ -257,25 +270,43 @@ def get_totp(conn: sqlite3.Connection, user_id: str) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM user_totp WHERE user_id = ?", (user_id,)).fetchone()
 
 
-def save_totp(conn: sqlite3.Connection, user_id: str, secret_enc: str) -> None:
-    """Store a new, not yet confirmed TOTP secret (replaces an unconfirmed one)."""
-    conn.execute(
-        "INSERT OR REPLACE INTO user_totp (user_id, secret_enc, confirmed, last_step)"
-        " VALUES (?, ?, 0, 0)",
+def save_totp(conn: sqlite3.Connection, user_id: str, secret_enc: str) -> bool:
+    """Store a new, not yet confirmed TOTP secret; False if 2FA is already confirmed.
+
+    One atomic statement: a confirmed secret is never overwritten, even by a concurrent
+    enrolment.
+    """
+    cur = conn.execute(
+        "INSERT INTO user_totp (user_id, secret_enc, confirmed, last_step) VALUES (?, ?, 0, 0)"
+        " ON CONFLICT(user_id) DO UPDATE SET secret_enc = excluded.secret_enc, last_step = 0"
+        " WHERE user_totp.confirmed = 0",
         (user_id, secret_enc),
     )
     conn.commit()
+    return cur.rowcount == 1
 
 
-def confirm_totp(conn: sqlite3.Connection, user_id: str, backup_hashes: list[str]) -> None:
-    """Switch 2FA on and store the hashed backup codes, in one transaction."""
-    conn.execute("UPDATE user_totp SET confirmed = 1 WHERE user_id = ?", (user_id,))
+def confirm_totp(
+    conn: sqlite3.Connection, user_id: str, secret_enc: str, backup_hashes: list[str]
+) -> bool:
+    """Switch 2FA on for exactly the secret that was verified, and store the backup codes.
+
+    False (and nothing changed) if the secret was replaced or 2FA was already on.
+    """
+    cur = conn.execute(
+        "UPDATE user_totp SET confirmed = 1 WHERE user_id = ? AND confirmed = 0 AND secret_enc = ?",
+        (user_id, secret_enc),
+    )
+    if cur.rowcount != 1:
+        conn.rollback()
+        return False
     conn.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
     conn.executemany(
         "INSERT INTO backup_codes (id, user_id, code_hash) VALUES (?, ?, ?)",
         [(uuid.uuid4().hex, user_id, h) for h in backup_hashes],
     )
     conn.commit()
+    return True
 
 
 def disable_totp(conn: sqlite3.Connection, user_id: str) -> None:

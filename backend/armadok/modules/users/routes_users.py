@@ -50,7 +50,7 @@ def _audit(conn, registry, who, event, user_id, **details):
     audit.record(
         conn,
         registry.audit_events(),
-        who.id,
+        who.actor,
         event,
         object_type="user",
         object_id=user_id,
@@ -100,6 +100,8 @@ def create_user(
         user = repository.create_user(conn, body.username, hash_password(body.password))
     except sqlite3.IntegrityError:
         raise ApiError("users.username_taken", 409) from None
+    for right in registry.baseline_rights():
+        grants.add_grant(conn, user["id"], Grant(right), granted_by=who.id)
     _audit(conn, registry, who, "user.create", user["id"])
     return user
 
@@ -132,6 +134,28 @@ def update_user(
     changed = [k for k, v in body.model_dump().items() if v is not None]
     _audit(conn, registry, who, "user.update", user_id, fields=",".join(changed))
     return _existing(conn, user_id)
+
+
+@router.delete("/{user_id}/2fa", status_code=204, summary="Reset the 2FA of an account")
+def reset_2fa(
+    user_id: str,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> None:
+    """Remove the second factor of an account whose owner lost their device.
+
+    Requires `users.reset_2fa`, and only for accounts whose rights the caller could have
+    granted. The account's sessions are ended; the action is audited.
+    """
+    catalogue = registry.rights()
+    who.require("users.reset_2fa", catalogue)
+    _existing(conn, user_id)
+    if user_id != who.id and not _outranks(conn, who, user_id, catalogue):
+        raise MissingRight()
+    repository.disable_totp(conn, user_id)
+    repository.revoke_other_sessions(conn, user_id, None)
+    _audit(conn, registry, who, "user.2fa_reset", user_id)
 
 
 @router.get("/{user_id}/grants", summary="List the rights of an account")

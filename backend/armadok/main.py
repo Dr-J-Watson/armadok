@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from armadok.core import crypto
 from armadok.core.audit import AUDIT_MIGRATION
 from armadok.core.config import Settings, load_settings
 from armadok.core.db import apply_migrations, connect
@@ -29,6 +30,7 @@ def create_app(
     settings = settings or load_settings()
     registry = registry or load_registry(ENABLED_MODULES)
 
+    crypto.validate(settings)
     conn = connect(settings.db_path)
     apply_migrations(
         conn,
@@ -52,6 +54,13 @@ def create_app(
     app.state.registry = registry
     app.state.settings = settings
     app.state.authenticator = authenticator or registry.authenticator()
+
+    @app.middleware("http")
+    async def no_store(request: Request, call_next):
+        """Forbid caching of API responses: they can carry tokens, secrets and personal data."""
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.exception_handler(ApiError)
     def api_error(_: Request, exc: ApiError) -> JSONResponse:

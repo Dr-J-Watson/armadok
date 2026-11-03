@@ -60,7 +60,7 @@ def _audit(
     conn: sqlite3.Connection, registry: Registry, who: Principal, event: str, node_id: str
 ) -> None:
     audit.record(
-        conn, registry.audit_events(), who.id, event, object_type="node", object_id=node_id
+        conn, registry.audit_events(), who.actor, event, object_type="node", object_id=node_id
     )
 
 
