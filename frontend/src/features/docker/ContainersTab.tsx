@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
@@ -29,6 +30,23 @@ function publishedPorts(ports: Port[]): string {
 
 export function ContainersTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['docker', 'errors'])
+  const queryClient = useQueryClient()
+  const [logsOf, setLogsOf] = useState<string | null>(null)
+  // Removing asks again first: it cannot be undone.
+  const [confirming, setConfirming] = useState<string | null>(null)
+  const act = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: string }) =>
+      api.post(`/nodes/${nodeId}/docker/containers/${encodeURIComponent(id)}/action`, { action }),
+    onSettled: () => {
+      setConfirming(null)
+      return queryClient.invalidateQueries({ queryKey: ['containers', nodeId] })
+    },
+  })
+  const logs = useQuery({
+    queryKey: ['container-logs', nodeId, logsOf],
+    enabled: logsOf !== null,
+    queryFn: () => api.get<{ output: string }>(`/nodes/${nodeId}/docker/containers/${encodeURIComponent(logsOf ?? '')}/logs?tail=200`),
+  })
   const containers = useQuery({
     queryKey: ['containers', nodeId],
     queryFn: () =>
@@ -58,6 +76,7 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
             <th>{t('docker:columns.state')}</th>
             <th>{t('docker:columns.ports')}</th>
             <th>{t('docker:columns.networks')}</th>
+            <th>{t('docker:columns.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -76,10 +95,54 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
               </td>
               <td data-label={t('docker:columns.ports')}>{publishedPorts(c.ports)}</td>
               <td data-label={t('docker:columns.networks')}>{c.networks.join(', ')}</td>
+              <td data-label={t('docker:columns.actions')}>
+                <div className="actions">
+                  {(c.state === 'running' ? ['stop', 'restart'] : ['start']).map((action) => (
+                    <button
+                      key={action}
+                      type="button"
+                      disabled={act.isPending}
+                      onClick={() => act.mutate({ id: c.id, action })}
+                    >
+                      {t(`docker:action.${action}`)}
+                    </button>
+                  ))}
+                  {c.state !== 'running' &&
+                    (confirming === c.id ? (
+                      <button type="button" className="danger" onClick={() => act.mutate({ id: c.id, action: 'remove' })}>
+                        {t('docker:action.confirmRemove')}
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => setConfirming(c.id)}>
+                        {t('docker:action.remove')}
+                      </button>
+                    ))}
+                  <button type="button" onClick={() => setLogsOf(logsOf === c.id ? null : c.id)}>
+                    {t('docker:action.logs')}
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+      {act.isError && (
+        <p role="alert" className="error">
+          {errorMessage(t, act.error)}
+        </p>
+      )}
+      {logsOf && (
+        <section aria-label={t('docker:logsTitle')}>
+          <h3>{t('docker:logsTitle')}</h3>
+          {logs.isError ? (
+            <p role="alert" className="error">
+              {errorMessage(t, logs.error)}
+            </p>
+          ) : (
+            <pre className="output">{logs.data?.output ?? t('loading')}</pre>
+          )}
+        </section>
+      )}
     </>
   )
 }

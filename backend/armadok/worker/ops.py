@@ -9,7 +9,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from armadok.worker import certs_ops, compose_ops, docker_ops, projects_ops, traefik_ops
+from armadok.worker import (
+    certs_ops,
+    compose_ops,
+    docker_control,
+    docker_ops,
+    projects_ops,
+    traefik_ops,
+)
 from armadok.worker.operation import Operation, OperationError
 
 __all__ = ["OPERATIONS", "Operation", "OperationError"]
@@ -23,6 +30,7 @@ def ping(args: dict[str, Any]) -> dict[str, Any]:
 OPERATIONS: dict[str, Operation] = {
     "ping": ping,
     **docker_ops.OPERATIONS,
+    **docker_control.OPERATIONS,
     **projects_ops.OPERATIONS,
     **traefik_ops.OPERATIONS,
     **certs_ops.OPERATIONS,

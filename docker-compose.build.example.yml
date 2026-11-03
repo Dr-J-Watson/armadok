@@ -8,6 +8,9 @@ services:
   armadok:
     build: .
     image: armadok:local
+    labels:
+      # Armadok never stops, restarts or removes a container carrying this label.
+      armadok.protect: "true"
     restart: unless-stopped
     environment:
       ARMADOK_ENCRYPTION_KEY: ${ARMADOK_ENCRYPTION_KEY:?set it in .env}

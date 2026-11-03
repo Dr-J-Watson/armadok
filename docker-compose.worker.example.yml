@@ -7,6 +7,9 @@
 services:
   armadok-worker:
     image: ghcr.io/dr-j-watson/armadok:edge
+    labels:
+      # Armadok never stops, restarts or removes a container carrying this label.
+      armadok.protect: "true"
     command: ["python", "-m", "armadok.worker"]
     restart: unless-stopped
     environment:

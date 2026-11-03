@@ -1,5 +1,6 @@
 import type { Feature } from '../../core/registry'
 import { ContainersTab } from './ContainersTab'
+import { ResourcesTab } from './ResourcesTab'
 
 export const dockerFeature: Feature = {
   name: 'docker',
@@ -10,6 +11,12 @@ export const dockerFeature: Feature = {
       labelKey: 'docker:tab',
       nodeTypes: ['docker', 'full'],
       render: ({ nodeId }) => <ContainersTab nodeId={nodeId} />,
+    },
+    {
+      id: 'docker-resources',
+      labelKey: 'docker:resourcesTab',
+      nodeTypes: ['docker', 'full'],
+      render: ({ nodeId }) => <ResourcesTab nodeId={nodeId} />,
     },
   ],
 }

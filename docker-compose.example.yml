@@ -21,6 +21,8 @@ services:
     networks:
       - proxy
     labels:
+      # Armadok never stops, restarts or removes a container carrying this label.
+      armadok.protect: "true"
       traefik.enable: "true"
       traefik.docker.network: proxy
       traefik.http.routers.armadok.rule: Host(`armadok.example.com`)

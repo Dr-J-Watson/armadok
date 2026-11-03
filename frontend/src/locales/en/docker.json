@@ -7,5 +7,18 @@
   "columns.state": "State",
   "columns.ports": "Published ports",
   "columns.networks": "Networks",
-  "relations": "Relations"
+  "relations": "Relations",
+  "columns.actions": "Actions",
+  "action.start": "Start",
+  "action.stop": "Stop",
+  "action.restart": "Restart",
+  "action.remove": "Remove",
+  "action.confirmRemove": "Confirm removal",
+  "action.logs": "Logs",
+  "logsTitle": "Logs (last 200 lines)",
+  "resourcesTab": "Images, networks, volumes",
+  "resources.images": "Images",
+  "resources.networks": "Networks",
+  "resources.volumes": "Volumes",
+  "resources.none": "None."
 }

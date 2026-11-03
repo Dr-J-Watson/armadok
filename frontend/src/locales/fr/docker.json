@@ -7,5 +7,18 @@
   "columns.state": "État",
   "columns.ports": "Ports publiés",
   "columns.networks": "Réseaux",
-  "relations": "Relations"
+  "relations": "Relations",
+  "columns.actions": "Actions",
+  "action.start": "Démarrer",
+  "action.stop": "Arrêter",
+  "action.restart": "Redémarrer",
+  "action.remove": "Supprimer",
+  "action.confirmRemove": "Confirmer la suppression",
+  "action.logs": "Journaux",
+  "logsTitle": "Journaux (200 dernières lignes)",
+  "resourcesTab": "Images, réseaux, volumes",
+  "resources.images": "Images",
+  "resources.networks": "Réseaux",
+  "resources.volumes": "Volumes",
+  "resources.none": "Aucun."
 }

@@ -234,17 +234,18 @@ def test_hub_refuses_loose_or_oversized_worker_data_and_refilters_labels():
     from armadok.modules.docker import schemas
 
     ok = {
-        "id": "a",
+        "id": "a" * 12,
         "labels": {"traefik.enable": "true", "traefik.http.middlewares.a.basicauth.users": "x"},
     }
     parsed = schemas.Container.model_validate(ok)
     assert parsed.labels == {"traefik.enable": "true"}  # the hub filters again
     for bad in (
-        {"id": "a", "created": "5"},  # no coercion of "5" to 5
-        {"id": "a", "names": ["x" * 301]},
-        {"id": "a", "labels": {"k" * 201: "v"}},
-        {"id": "a", "networks": ["n"] * 21},
-        {"id": "a", "created": -1},
+        {"id": "../../x"},  # an id must be hex: the interface puts it in URLs
+        {"id": "a" * 12, "created": "5"},  # no coercion of "5" to 5
+        {"id": "a" * 12, "names": ["x" * 301]},
+        {"id": "a" * 12, "labels": {"k" * 201: "v"}},
+        {"id": "a" * 12, "networks": ["n"] * 21},
+        {"id": "a" * 12, "created": -1},
     ):
         with pytest.raises(ValidationError):
             schemas.Container.model_validate(bad)
