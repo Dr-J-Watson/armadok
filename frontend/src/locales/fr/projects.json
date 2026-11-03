@@ -2,5 +2,21 @@
   "tab": "Projets",
   "list": "Projets et leurs fichiers",
   "empty": "Aucun projet Compose trouvé dans le dossier des projets de cette machine.",
-  "pickOne": "Choisissez un fichier pour le lire ou le modifier."
+  "pickOne": "Choisissez un fichier pour le lire ou le modifier.",
+  "run.title": "Exécuter {{project}}",
+  "run.action.up": "Déployer (up)",
+  "run.action.down": "Arrêter et supprimer (down)",
+  "run.action.stop": "Arrêter",
+  "run.action.start": "Démarrer",
+  "run.action.restart": "Redémarrer",
+  "run.action.pull": "Récupérer les images",
+  "run.action.build": "Construire",
+  "run.state.running": "En cours : {{action}}…",
+  "run.state.success": "Terminé : {{action}}",
+  "run.state.failed": "Échec : {{action}}",
+  "run.services": "Services",
+  "run.noServices": "Aucun conteneur pour ce projet.",
+  "run.showLogs": "Afficher les journaux",
+  "run.hideLogs": "Masquer les journaux",
+  "run.logs": "Journaux (200 dernières lignes)"
 }

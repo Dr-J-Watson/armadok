@@ -37,6 +37,9 @@ RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin arma
  && mkdir /data && chown 10001:10001 /data && chmod 700 /data
 
 COPY --from=build /opt/venv /opt/venv
+# Docker CLI and Compose plugin only (no daemon): `docker compose` runs the deployments.
+COPY --from=docker:29-cli /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=docker:29-cli /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/libexec/docker/cli-plugins/docker-compose
 COPY backend/armadok /app/armadok
 COPY --from=web /web/dist /app/web
 WORKDIR /app

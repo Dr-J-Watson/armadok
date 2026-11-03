@@ -326,6 +326,8 @@ graph LR
 
 > [!IMPORTANT]
 > Armadok pilote le démon Docker, ce qui équivaut à un accès root sur la machine. Restreignez l'accès à l'interface (liste d'IP, SSO, VPN) et activez la double authentification.
+>
+> Le droit de déployer, combiné au droit de modifier les fichiers d'un projet, donne le même pouvoir sur ce nœud. Sur la machine qui héberge le hub, il atteint aussi le dossier de données du hub (base et clés). Accordez ces deux droits avec parcimonie.
 
 **Droits fins**
 - Un catalogue unique de droits couvrant Docker, Git, Traefik, DNS, trafic, notes et administration.

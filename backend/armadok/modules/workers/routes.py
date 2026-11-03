@@ -53,6 +53,8 @@ WORKER_ERROR_STATUS = {
     "worker.traefik_not_configured": 409,
     "worker.acme_not_configured": 409,
     "worker.acme_invalid": 502,
+    "worker.project_busy": 409,
+    "worker.compose_failed": 502,
 }
 HANDSHAKE_TIMEOUT_SECONDS = 10
 MAX_HELLO_BYTES = 200

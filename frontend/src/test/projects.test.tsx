@@ -100,3 +100,46 @@ describe('projects tab', () => {
     expect(await screen.findByText(/No Compose project found/)).toBeInTheDocument()
   })
 })
+
+describe('running a project', () => {
+  it('starts an action, follows the task to its end and shows the output', async () => {
+    const posts: unknown[] = []
+    let reads = 0
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const path = String(input).replace('/api/v1', '')
+      const method = (init?.method ?? 'GET').toUpperCase()
+      if (path === '/nodes/n1/projects') return json({ projects: [{ name: 'blog', files: ['compose.yaml'] }] })
+      if (path === '/nodes/n1/projects/blog/status')
+        return json({ services: [{ service: 'web', name: 'blog-web-1', state: 'running', status: 'Up', image: 'nginx:1' }] })
+      if (path === '/nodes/n1/projects/blog/actions' && method === 'POST') {
+        posts.push(JSON.parse(String(init?.body)))
+        return json({ task_id: 't1', state: 'running' }, 202)
+      }
+      if (path === '/nodes/n1/tasks/t1') {
+        reads += 1
+        return json({ task_id: 't1', project: 'blog', action: 'up', state: 'success', exit_code: 0, output: 'Started ok' })
+      }
+      return json({ content: '', sha256: SHA1, size: 0 })
+    })
+    renderTab('/nodes/n1?tab=projects&project=blog&file=compose.yaml')
+    expect(await screen.findByText(/nginx:1/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Deploy (up)' }))
+    expect(await screen.findByText('Started ok')).toBeInTheDocument()
+    expect(posts).toEqual([{ action: 'up' }])
+    expect(reads).toBeGreaterThan(0)
+  })
+
+  it('shows the error of a refused action', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const path = String(input).replace('/api/v1', '')
+      if (path === '/nodes/n1/projects') return json({ projects: [{ name: 'blog', files: ['compose.yaml'] }] })
+      if (path.endsWith('/actions') && init?.method === 'POST')
+        return json({ error: { code: 'worker.project_busy' } }, 409)
+      if (path.endsWith('/status')) return json({ services: [] })
+      return json({ content: '', sha256: SHA1, size: 0 })
+    })
+    renderTab('/nodes/n1?tab=projects&project=blog&file=compose.yaml')
+    await userEvent.click(await screen.findByRole('button', { name: 'Restart' }))
+    expect(await screen.findByText('An action is already running for this project.')).toBeInTheDocument()
+  })
+})

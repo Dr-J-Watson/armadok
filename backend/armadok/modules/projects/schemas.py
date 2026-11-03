@@ -71,3 +71,77 @@ class WriteIn(BaseModel):
         if len(self.content.encode()) > MAX_FILE_BYTES:
             raise ValueError("file too large")
         return self
+
+
+class Started(BaseModel):
+    """Answer of `compose.start`: the worker's task id."""
+
+    model_config = _STRICT
+    task: str = Field(pattern=r"^[0-9a-f]{16}$")
+
+
+class TaskState(BaseModel):
+    """Answer of `compose.task`. The output is a bounded tail of what the command printed."""
+
+    model_config = _STRICT
+    project: str = Field(pattern=PROJECT_PATTERN)
+    action: str = Field(max_length=20)
+    state: str = Field(pattern="^(running|success|failed)$")
+    exit_code: int | None = None
+    output: str = Field(max_length=70 * 1024)
+    truncated: bool = False
+
+
+class ServiceState(BaseModel):
+    """One container of a project, as shown to people."""
+
+    model_config = _STRICT
+    service: str = Field(max_length=64)
+    name: str = Field(max_length=128)
+    state: str = Field(max_length=30)
+    status: str = Field(max_length=200)
+    image: str = Field(max_length=300)
+
+
+class ProjectStatus(BaseModel):
+    """Answer of `compose.ps`."""
+
+    model_config = _STRICT
+    services: list[ServiceState] = Field(max_length=200)
+
+
+class ProjectLogs(BaseModel):
+    """Answer of `compose.logs`."""
+
+    model_config = _STRICT
+    output: str = Field(max_length=140 * 1024)
+    truncated: bool = False
+
+
+class ComposeCheck(BaseModel):
+    """Answer of `compose.check`."""
+
+    model_config = _STRICT
+    valid: bool
+    errors: str = Field(max_length=4200)
+
+
+class ActionIn(BaseModel):
+    """An action to run on a project. Flags only apply to the actions they make sense for."""
+
+    action: str = Field(pattern="^(up|down|stop|start|restart|pull|build)$")
+    files: list[str] | None = Field(default=None, max_length=5)
+    service: str | None = Field(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
+    build: bool = False
+    pull: bool = False
+
+    @model_validator(mode="after")
+    def valid_files(self) -> ActionIn:
+        """Compose files are names in the project folder, checked like everywhere else."""
+        import re
+
+        if self.files is not None and not (
+            self.files and all(re.fullmatch(FILE_PATTERN, f) for f in self.files)
+        ):
+            raise ValueError("invalid compose file name")
+        return self

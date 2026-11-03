@@ -326,6 +326,8 @@ graph LR
 
 > [!IMPORTANT]
 > Armadok drives the Docker daemon, which is equivalent to root access on the machine. Restrict access to the interface (IP allow-list, SSO, VPN) and enable two-factor authentication.
+>
+> The right to deploy combined with the right to edit project files gives the same power on that node. On the machine that runs the hub, it also reaches the hub's own data folder (database and keys). Grant both rights sparingly.
 
 **Fine-grained rights**
 - A single rights catalogue covering Docker, Git, Traefik, DNS, traffic, notes and administration.

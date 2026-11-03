@@ -24,7 +24,7 @@
   "crypto.key_missing": "The server has no encryption key configured.",
   "crypto.key_invalid": "The server encryption key is not valid.",
   "worker.not_connected": "No worker is connected for this node.",
-  "worker.timeout": "The worker took too long to answer.",
+  "worker.timeout": "The command took too long and was stopped.",
   "worker.disconnected": "The worker disconnected.",
   "worker.busy": "The worker is busy. Try again in a moment.",
   "worker.error": "The worker reported an error.",
@@ -84,5 +84,7 @@
   "dns.rate_limited": "The provider is limiting requests. Try again shortly.",
   "dns.failed": "The DNS change failed.",
   "worker.acme_not_configured": "No acme.json is configured on this machine (ARMADOK_ACME_FILE).",
-  "worker.acme_invalid": "The acme.json file could not be read as Traefik certificates."
+  "worker.acme_invalid": "The acme.json file could not be read as Traefik certificates.",
+  "worker.project_busy": "An action is already running for this project.",
+  "worker.compose_failed": "The Compose command could not be started."
 }

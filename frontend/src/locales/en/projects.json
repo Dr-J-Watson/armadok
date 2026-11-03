@@ -2,5 +2,21 @@
   "tab": "Projects",
   "list": "Projects and their files",
   "empty": "No Compose project found in this machine's projects folder.",
-  "pickOne": "Choose a file to read or edit it."
+  "pickOne": "Choose a file to read or edit it.",
+  "run.title": "Run {{project}}",
+  "run.action.up": "Deploy (up)",
+  "run.action.down": "Stop and remove (down)",
+  "run.action.stop": "Stop",
+  "run.action.start": "Start",
+  "run.action.restart": "Restart",
+  "run.action.pull": "Pull images",
+  "run.action.build": "Build",
+  "run.state.running": "Running: {{action}}…",
+  "run.state.success": "Finished: {{action}}",
+  "run.state.failed": "Failed: {{action}}",
+  "run.services": "Services",
+  "run.noServices": "No container for this project.",
+  "run.showLogs": "Show logs",
+  "run.hideLogs": "Hide logs",
+  "run.logs": "Logs (last 200 lines)"
 }

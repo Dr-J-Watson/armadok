@@ -24,7 +24,7 @@
   "crypto.key_missing": "Le serveur n'a pas de clé de chiffrement configurée.",
   "crypto.key_invalid": "La clé de chiffrement du serveur n'est pas valide.",
   "worker.not_connected": "Aucun worker n'est connecté pour ce nœud.",
-  "worker.timeout": "Le worker a mis trop de temps à répondre.",
+  "worker.timeout": "La commande a duré trop longtemps et a été arrêtée.",
   "worker.disconnected": "Le worker s'est déconnecté.",
   "worker.busy": "Le worker est occupé. Réessayez dans un instant.",
   "worker.error": "Le worker a signalé une erreur.",
@@ -84,5 +84,7 @@
   "dns.rate_limited": "Le fournisseur limite les requêtes. Réessayez dans un instant.",
   "dns.failed": "La modification du DNS a échoué.",
   "worker.acme_not_configured": "Aucun acme.json n'est configuré sur cette machine (ARMADOK_ACME_FILE).",
-  "worker.acme_invalid": "Le fichier acme.json n'a pas pu être lu comme des certificats Traefik."
+  "worker.acme_invalid": "Le fichier acme.json n'a pas pu être lu comme des certificats Traefik.",
+  "worker.project_busy": "Une action est déjà en cours pour ce projet.",
+  "worker.compose_failed": "La commande Compose n'a pas pu démarrer."
 }

@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
 import { FileEditor } from '../../shell/FileEditor'
+import { ProjectRun } from './ProjectRun'
 
 interface Project {
   name: string
@@ -63,6 +64,7 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
         </ul>
       </nav>
       <div>
+        {project && <ProjectRun key={project} nodeId={nodeId} project={project} />}
         {project && file ? (
           // Changing file starts a fresh editor: no draft leaks from one file to another.
           <FileEditor

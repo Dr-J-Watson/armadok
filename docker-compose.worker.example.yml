@@ -31,7 +31,7 @@ services:
       - ${PROJECTS_DIR:?set it in .env}:/stacks
       # - ${TRAEFIK_DYNAMIC_DIR:?set it in .env}:/traefik-dynamic
       # - ${ACME_DIR:?set it in .env}:/acme:ro
-      # Read access to Docker. Prefer a docker-socket-proxy limited to GET requests if you can.
+      # Full Docker control, which is root on this machine: deployments (`docker compose up`) need it.
       - /var/run/docker.sock:/var/run/docker.sock
     # The group that owns the Docker socket (find it with: stat -c %g /var/run/docker.sock).
     # Groups the worker joins: the one owning the Docker socket, and one with write access to

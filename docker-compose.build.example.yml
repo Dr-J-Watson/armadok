@@ -25,7 +25,7 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - armadok-data:/data
-      # Read access to Docker for the local node.
+      # Full Docker control, which is root on this machine: deployments (`docker compose up`) need it.
       - /var/run/docker.sock:/var/run/docker.sock
       # - ${PROJECTS_DIR}:/stacks
       # - ${TRAEFIK_DYNAMIC_DIR}:/traefik-dynamic
