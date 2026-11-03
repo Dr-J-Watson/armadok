@@ -86,5 +86,11 @@
   "worker.acme_not_configured": "No acme.json is configured on this machine (ARMADOK_ACME_FILE).",
   "worker.acme_invalid": "The acme.json file could not be read as Traefik certificates.",
   "worker.project_busy": "An action is already running for this project.",
-  "worker.compose_failed": "The Compose command could not be started."
+  "worker.compose_failed": "The Compose command could not be started.",
+  "traefik.name_taken": "A router or service with this name already exists.",
+  "traefik.modified_by_hand": "This site's file was edited by hand. Change it in the files view.",
+  "traefik.site_paused": "This site is paused. Resume it first.",
+  "traefik.site_not_found": "This site does not exist.",
+  "traefik.invalid_site": "The site description does not match its name.",
+  "traefik.snapshot_incomplete": "Some configuration files could not be read in full, so the name cannot be checked. Try again after removing unused files."
 }

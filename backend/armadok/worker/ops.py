@@ -15,6 +15,7 @@ from armadok.worker import (
     docker_control,
     docker_ops,
     projects_ops,
+    sites_ops,
     traefik_ops,
 )
 from armadok.worker.operation import Operation, OperationError
@@ -33,6 +34,7 @@ OPERATIONS: dict[str, Operation] = {
     **docker_control.OPERATIONS,
     **projects_ops.OPERATIONS,
     **traefik_ops.OPERATIONS,
+    **sites_ops.OPERATIONS,
     **certs_ops.OPERATIONS,
     **compose_ops.OPERATIONS,
 }

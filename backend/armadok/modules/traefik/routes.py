@@ -29,6 +29,16 @@ def _checked_path(path: str) -> str:
     return path
 
 
+def require_for_sites_folder(who: Principal, registry: Registry, node_id: str, path: str) -> None:
+    """Files of `sites/` route real traffic: writing them takes the sites right as well.
+
+    Otherwise a holder of the plain file-editing right (which API keys may carry) could do
+    through the generic editor what the sensitive sites right forbids.
+    """
+    if path.split("/", 1)[0] == "sites":
+        who.require("traefik.sites.write", registry.rights(), f"node:{node_id}")
+
+
 @router.get("/files", summary="Traefik configuration files")
 async def list_files(
     node_id: str,
@@ -114,6 +124,7 @@ async def write_file(
     """
     authorise(conn, registry, who, node_id, "traefik.files.write")
     _checked_path(path)
+    require_for_sites_folder(who, registry, node_id, path)
     try:
         await asyncio.to_thread(parse.load, body.content)
     except parse.YamlError:

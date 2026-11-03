@@ -4,15 +4,17 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
 import { FileEditor } from '../../shell/FileEditor'
+import { ManagedSites } from './ManagedSites'
 import { SitesView } from './SitesView'
 
-type View = 'sites' | 'files'
+type View = 'sites' | 'managed' | 'files'
 
 export function TraefikTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['traefik', 'errors'])
   const [params, setParams] = useSearchParams()
   // View and open file live in the address: shareable, and kept on reload.
-  const view: View = params.get('view') === 'files' ? 'files' : 'sites'
+  const asked = params.get('view')
+  const view: View = asked === 'files' || asked === 'managed' ? asked : 'sites'
   const file = params.get('file')
 
   function go(next: Record<string, string | null>) {
@@ -27,7 +29,7 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
   return (
     <>
       <div className="actions">
-        {(['sites', 'files'] as const).map((name) => (
+        {(['sites', 'managed', 'files'] as const).map((name) => (
           <button
             key={name}
             type="button"
@@ -39,7 +41,9 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
           </button>
         ))}
       </div>
-      {view === 'sites' ? (
+      {view === 'managed' ? (
+        <ManagedSites nodeId={nodeId} />
+      ) : view === 'sites' ? (
         <SitesView nodeId={nodeId} onOpenFile={(path) => go({ view: 'files', file: path })} />
       ) : (
         <FilesView nodeId={nodeId} file={file} onPick={(path) => go({ file: path })} />

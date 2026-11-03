@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from armadok.worker import safefs
+from armadok.worker import history, safefs
 from armadok.worker.operation import Operation, OperationError
 
 DIR_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
@@ -155,9 +155,15 @@ def file_write(args: dict[str, Any]) -> dict[str, Any]:
         raise OperationError("worker.invalid_path")
     root_fd, parent_fd = _open_parent(folders)
     try:
+        try:
+            previous = safefs.read_regular(parent_fd, name, MAX_FILE_BYTES)[0]
+        except OperationError:
+            previous = None  # a new file (or one that cannot be read: the write decides)
         result = safefs.write_regular(
             parent_fd, name, content.encode("utf-8"), expected, MAX_FILE_BYTES, TEMP_FILE
         )
+        if previous is not None and previous != content.encode("utf-8"):
+            history.save(root_fd, "/".join([*folders, name]), previous)
         if folders:
             _touch_reload(root_fd)
         return result

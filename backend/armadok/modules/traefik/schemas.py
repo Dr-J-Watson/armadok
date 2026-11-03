@@ -7,6 +7,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
+from armadok.modules.traefik.sitebuilder import SiteName, SiteSpec
+
 NAME = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}"
 PATH_PATTERN = rf"^(?:{NAME}/){{0,4}}{NAME}\.ya?ml$"
 SHA_PATTERN = r"^[0-9a-f]{64}$"
@@ -91,3 +93,70 @@ class WriteIn(BaseModel):
         if len(self.content.encode()) > MAX_FILE_BYTES:
             raise ValueError("file too large")
         return self
+
+
+class SiteBody(BaseModel):
+    """Body of a site creation or preview."""
+
+    model_config = ConfigDict(extra="forbid")
+    spec: SiteSpec
+
+
+class SiteUpdate(SiteBody):
+    """Body of a site update: the description and the version being replaced."""
+
+    expected_sha256: str = Field(pattern=SHA_PATTERN)
+
+
+class SiteRename(BaseModel):
+    """Body of a site rename."""
+
+    model_config = ConfigDict(extra="forbid")
+    new_name: SiteName
+    expected_sha256: str = Field(pattern=SHA_PATTERN)
+
+
+class SiteFile(FileContent):
+    """One site file of the `sites/` folder, as the worker reports it."""
+
+    name: SiteName
+    paused: bool
+
+
+class SiteFiles(BaseModel):
+    """Answer of `traefik.sites.list`."""
+
+    model_config = _STRICT
+    files: list[SiteFile] = Field(max_length=200)
+    truncated: bool = False
+
+
+class Done(BaseModel):
+    """Answer of the pause, resume and delete operations."""
+
+    model_config = _STRICT
+    done: bool
+
+
+class Version(BaseModel):
+    """A kept version of a file."""
+
+    model_config = _STRICT
+    version: str = Field(pattern=r"^[0-9]{13}\.[0-9a-f]{8}$")
+    at: int = Field(ge=0)
+    size: int = Field(ge=0, le=MAX_FILE_BYTES)
+
+
+class Versions(BaseModel):
+    """Answer of `traefik.history.list`."""
+
+    model_config = _STRICT
+    versions: list[Version] = Field(max_length=20)
+
+
+class RestoreIn(BaseModel):
+    """Body of a restore: which version, and the current version it replaces."""
+
+    model_config = ConfigDict(extra="forbid")
+    version: str = Field(pattern=r"^[0-9]{13}\.[0-9a-f]{8}$")
+    expected_sha256: str | None = Field(default=None, pattern=SHA_PATTERN)
