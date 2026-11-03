@@ -20,7 +20,7 @@ _HOST = re.compile(r"Host\(`([^`]+)`\)")
 MAX_OBJECTS = 5000
 
 
-async def provide(app: Any, node_id: str) -> RelationData:
+async def provide(app: Any, node_id: str, viewer: Any) -> RelationData:
     """Return the Docker objects and links of a node, from its worker's container list."""
     result = await call_operation(app, app.state.registry, node_id, "docker.containers.list", {})
     try:
@@ -48,12 +48,14 @@ async def provide(app: Any, node_id: str) -> RelationData:
                 links.append(RelationLink(container, add("volume", mount.name), "mounts"))
         for key, value in c.labels.items():
             if match := _ROUTER_RULE.fullmatch(key):
-                router = add("router", match.group(1))
+                router = add("router", f"{match.group(1)}@docker")
                 links.append(RelationLink(router, container, "routes_to"))
                 for host in _HOST.findall(value):
                     links.append(RelationLink(router, add("domain", host), "serves"))
             elif match := _ROUTER_MIDDLEWARES.fullmatch(key):
-                router = add("router", match.group(1))
+                router = add("router", f"{match.group(1)}@docker")
                 for name in filter(None, (v.strip() for v in value.split(","))):
-                    links.append(RelationLink(router, add("middleware", name), "uses"))
+                    # A name without a provider belongs to the same one as the router.
+                    full = name if "@" in name else f"{name}@docker"
+                    links.append(RelationLink(router, add("middleware", full), "uses"))
     return RelationData(tuple(objects.values()), tuple(links))

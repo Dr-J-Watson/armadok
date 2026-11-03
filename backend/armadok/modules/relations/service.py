@@ -7,6 +7,7 @@ they see, and a link is shown only when both of its ends are visible.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -14,6 +15,8 @@ from armadok.core.errors import ApiError
 from armadok.core.module import RelationLink, RelationObject
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
+
+log = logging.getLogger("armadok.relations")
 
 
 @dataclass
@@ -57,9 +60,14 @@ async def build_graph(
         if node_type not in provider.node_types or not who.has(provider.right, catalogue, scope):
             continue
         try:
-            data = await provider.provide(app, node_id)
+            data = await provider.provide(app, node_id, who)
         except ApiError as error:
             graph.unavailable[provider.name] = error.code
+            continue
+        except Exception:  # noqa: BLE001
+            # One provider failing on odd data must not take the whole map down.
+            log.exception("relation provider %s failed", provider.name)
+            graph.unavailable[provider.name] = "common.unknown"
             continue
         for obj in data.objects:
             graph.objects.setdefault((obj.type, obj.id), obj)

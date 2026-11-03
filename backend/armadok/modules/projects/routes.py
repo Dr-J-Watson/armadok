@@ -7,16 +7,14 @@ import re
 import sqlite3
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import ValidationError
 
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
-from armadok.core.errors import ApiError, NotFound
+from armadok.core.errors import ApiError
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
-from armadok.modules.nodes import repository as nodes_repo
 from armadok.modules.projects import schemas
-from armadok.modules.workers.routes import call_operation
+from armadok.modules.workers.access import ask, audit_failure, authorise
 
 router = APIRouter(prefix="/nodes/{node_id}/projects", tags=["projects"])
 
@@ -24,47 +22,10 @@ _PROJECT = re.compile(schemas.PROJECT_PATTERN)
 _FILE = re.compile(schemas.FILE_PATTERN)
 
 
-def _authorise(
-    conn: sqlite3.Connection, registry: Registry, who: Principal, node_id: str, right: str
-) -> None:
-    """Allow only callers who can see the node and hold `right` on it."""
-    scope = f"node:{node_id}"
-    catalogue = registry.rights()
-    if nodes_repo.get_node(conn, node_id) is None or not who.has("nodes.read", catalogue, scope):
-        raise NotFound()
-    who.require(right, catalogue, scope)
-
-
 def _names(project: str, file: str) -> None:
     """Refuse a malformed name before it goes anywhere near a worker."""
     if not _PROJECT.fullmatch(project) or not _FILE.fullmatch(file):
         raise ApiError("projects.invalid_name", 422)
-
-
-async def _ask(request: Request, registry: Registry, node_id: str, op: str, args: dict, model):
-    result = await call_operation(request.app, registry, node_id, op, args)
-    try:
-        return model.model_validate(result)
-    except ValidationError:
-        raise ApiError("worker.invalid_answer", 502) from None
-
-
-def _audit_failure(conn, registry, who, event, node_id, project, file, error: ApiError) -> None:
-    """Record a refused or failed attempt: a symlink refusal or a timeout is worth a trace.
-
-    A write that times out may still have happened on the machine, so it must be recorded
-    even though the caller got an error.
-    """
-    audit.record(
-        conn,
-        registry.audit_events(),
-        who.actor,
-        event,
-        object_type="node",
-        object_id=node_id,
-        outcome="failure",
-        details={"project": project, "file": file, "code": error.code},
-    )
 
 
 @router.get("", summary="Compose projects of the machine")
@@ -76,8 +37,8 @@ async def list_projects(
     who: Principal = Depends(get_principal),
 ) -> dict:
     """Return the project folders found in the machine's allowed folder, with their files."""
-    _authorise(conn, registry, who, node_id, "projects.read")
-    answer = await _ask(request, registry, node_id, "projects.list", {}, schemas.ProjectList)
+    authorise(conn, registry, who, node_id, "projects.read")
+    answer = await ask(request, registry, node_id, "projects.list", {}, schemas.ProjectList)
     return answer.model_dump()
 
 
@@ -92,10 +53,10 @@ async def read_file(
     who: Principal = Depends(get_principal),
 ) -> dict:
     """Return the file's text and its version hash. Reads are audited (files can hold secrets)."""
-    _authorise(conn, registry, who, node_id, "projects.files.read")
+    authorise(conn, registry, who, node_id, "projects.files.read")
     _names(project, file)
     try:
-        answer = await _ask(
+        answer = await ask(
             request,
             registry,
             node_id,
@@ -104,7 +65,15 @@ async def read_file(
             schemas.FileContent,
         )
     except ApiError as error:
-        _audit_failure(conn, registry, who, "project.file_read", node_id, project, file, error)
+        audit_failure(
+            conn,
+            registry,
+            who,
+            "project.file_read",
+            node_id,
+            {"project": project, "file": file},
+            error,
+        )
         raise
     audit.record(
         conn,
@@ -133,11 +102,11 @@ async def write_file(
 
     The audit entry records which file and how many bytes, never the content.
     """
-    _authorise(conn, registry, who, node_id, "projects.files.write")
+    authorise(conn, registry, who, node_id, "projects.files.write")
     _names(project, file)
     sent = body.content.encode()
     try:
-        answer = await _ask(
+        answer = await ask(
             request,
             registry,
             node_id,
@@ -154,7 +123,15 @@ async def write_file(
         if answer.size != len(sent) or answer.sha256 != hashlib.sha256(sent).hexdigest():
             raise ApiError("worker.invalid_answer", 502)
     except ApiError as error:
-        _audit_failure(conn, registry, who, "project.file_write", node_id, project, file, error)
+        audit_failure(
+            conn,
+            registry,
+            who,
+            "project.file_write",
+            node_id,
+            {"project": project, "file": file},
+            error,
+        )
         raise
     audit.record(
         conn,

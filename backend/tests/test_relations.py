@@ -21,7 +21,7 @@ def test_map_links_container_network_volume_image_project_router_domain(live):  
         ("project", "demo"),
         ("network", "demo_default"),
         ("volume", "data"),
-        ("router", "web"),
+        ("router", "web@docker"),
         ("domain", "app.example.com"),
         ("middleware", "auth@docker"),
     } <= kinds
@@ -54,7 +54,7 @@ def test_panel_shows_links_in_both_directions(live):  # noqa: F811
         ("incoming", "routes_to", "router"),  # the router points at the container
     }
     # From the other end, the same link is visible too (container <- router <- domain).
-    router = client.get(f"{base}/router/web", headers=headers).json()
+    router = client.get(f"{base}/router/web@docker", headers=headers).json()
     assert {(k["direction"], k["kind"]) for k in router["links"]} >= {
         ("outgoing", "routes_to"),
         ("outgoing", "serves"),
@@ -64,7 +64,7 @@ def test_panel_shows_links_in_both_directions(live):  # noqa: F811
         {
             "direction": "incoming",
             "kind": "serves",
-            "object": {"type": "router", "id": "web", "label": "web"},
+            "object": {"type": "router", "id": "web@docker", "label": "web@docker"},
         }
     ]
     assert client.get(f"{base}/container/nope", headers=headers).status_code == 404

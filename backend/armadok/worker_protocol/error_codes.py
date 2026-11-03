@@ -15,6 +15,7 @@ WORKER_ERROR_CODES = frozenset(
         "worker.docker_unavailable",
         "worker.docker_error",
         "worker.projects_not_configured",
+        "worker.traefik_not_configured",
         "worker.invalid_path",
         "worker.not_found",
         "worker.forbidden",

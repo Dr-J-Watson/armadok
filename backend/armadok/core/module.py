@@ -70,14 +70,16 @@ class RelationData:
 class RelationProvider:
     """Tells the relations service how to discover objects and links on a node.
 
-    `provide(app, node_id)` is async. `right` is what the viewer needs on the node to see
-    this provider's objects; `node_types` limits it to the machines it applies to.
+    `provide(app, node_id, viewer)` is async and receives the `Principal` looking at the map, so
+    a provider that enriches its answer with another module's data can check the viewer's
+    right to that data. `right` is what the viewer needs on the node to see this provider's
+    objects; `node_types` limits it to the machines it applies to.
     """
 
     name: str
     right: str
     node_types: tuple[str, ...]
-    provide: Callable[[Any, str], Awaitable[RelationData]]
+    provide: Callable[[Any, str, Any], Awaitable[RelationData]]
 
 
 @dataclass(frozen=True)

@@ -46,6 +46,7 @@ WORKER_ERROR_STATUS = {
     "worker.too_large": 413,
     "worker.not_text": 415,
     "worker.projects_not_configured": 409,
+    "worker.traefik_not_configured": 409,
 }
 HANDSHAKE_TIMEOUT_SECONDS = 10
 MAX_HELLO_BYTES = 200
