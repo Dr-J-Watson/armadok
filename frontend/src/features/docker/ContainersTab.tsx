@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
@@ -62,7 +63,12 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
         <tbody>
           {list.map((c) => (
             <tr key={c.id}>
-              <td data-label={t('docker:columns.name')}>{c.names[0] ?? c.id.slice(0, 12)}</td>
+              <td data-label={t('docker:columns.name')}>
+                {c.names[0] ?? c.id.slice(0, 12)}{' '}
+                <Link to={`/nodes/${nodeId}?tab=map&focus=${encodeURIComponent(`container:${c.id}`)}`}>
+                  {t('docker:relations')}
+                </Link>
+              </td>
               <td data-label={t('docker:columns.image')}>{c.image}</td>
               <td data-label={t('docker:columns.state')}>
                 <span className={`badge ${c.state === 'running' ? 'ok' : 'off'}`}>{c.state}</span>{' '}

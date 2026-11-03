@@ -6,5 +6,6 @@
   "columns.image": "Image",
   "columns.state": "État",
   "columns.ports": "Ports publiés",
-  "columns.networks": "Réseaux"
+  "columns.networks": "Réseaux",
+  "relations": "Relations"
 }
