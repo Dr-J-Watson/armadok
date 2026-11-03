@@ -22,6 +22,8 @@ class Settings:
     # Key that encrypts secrets stored in the database (Fernet, urlsafe base64, 32 bytes).
     # Kept apart from the database; never logged or returned by the API.
     encryption_key: str | None = field(default=None, repr=False)
+    # Folder holding the built web interface. Absent in development (the dev server is used).
+    web_dir: Path | None = None
 
     @property
     def db_path(self) -> Path:
@@ -35,4 +37,5 @@ def load_settings() -> Settings:
         data_dir=Path(os.environ.get("ARMADOK_DATA_DIR", "data")),
         cookie_secure=os.environ.get("ARMADOK_COOKIE_SECURE", "true").lower() != "false",
         encryption_key=os.environ.get("ARMADOK_ENCRYPTION_KEY") or None,
+        web_dir=Path(os.environ["ARMADOK_WEB_DIR"]) if os.environ.get("ARMADOK_WEB_DIR") else None,
     )

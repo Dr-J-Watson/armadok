@@ -2,6 +2,14 @@
 # One image for the hub and the workers: the hub runs the default command, a worker runs
 # `python -m armadok.worker` (see docker-compose.worker.example.yml).
 
+FROM node:22-slim AS web
+WORKDIR /web
+# Locked install without dependency scripts (supply-chain hardening), then the production build.
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --ignore-scripts --no-audit --no-fund
+COPY frontend/ .
+RUN npm run build
+
 FROM python:3.12-slim AS build
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
 WORKDIR /build
@@ -21,7 +29,8 @@ ENV PATH=/opt/venv/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
     ARMADOK_VERSION=${APP_VERSION} \
     ARMADOK_DATA_DIR=/data \
-    ARMADOK_WORKER_DIR=/data
+    ARMADOK_WORKER_DIR=/data \
+    ARMADOK_WEB_DIR=/app/web
 
 # Not root, no shell, no home. The data folder is private to this user (it holds keys).
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin armadok \
@@ -29,6 +38,7 @@ RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin arma
 
 COPY --from=build /opt/venv /opt/venv
 COPY backend/armadok /app/armadok
+COPY --from=web /web/dist /app/web
 WORKDIR /app
 USER 10001
 VOLUME /data

@@ -16,6 +16,7 @@ from armadok.core.errors import ApiError
 from armadok.core.grants import GRANTS_MIGRATION
 from armadok.core.registry import Registry, load_registry
 from armadok.modules.enabled import ENABLED_MODULES
+from armadok.web import add_headers, mount_web
 
 
 def create_app(
@@ -58,10 +59,10 @@ def create_app(
     app.state.authenticator = authenticator or registry.authenticator()
 
     @app.middleware("http")
-    async def no_store(request: Request, call_next):
-        """Forbid caching of API responses: they can carry tokens, secrets and personal data."""
+    async def headers(request: Request, call_next):
+        """Add caching and security headers (see `web.add_headers`)."""
         response = await call_next(request)
-        response.headers["Cache-Control"] = "no-store"
+        add_headers(request, response)
         return response
 
     @app.exception_handler(ApiError)
@@ -82,5 +83,8 @@ def create_app(
     for module in registry.modules:
         for router in module.routes:
             app.include_router(router, prefix="/api/v1")
+
+    # Last, so that every API route wins over the interface's catch-all.
+    mount_web(app, settings.web_dir)
 
     return app
