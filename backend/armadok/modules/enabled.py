@@ -10,5 +10,11 @@ ENABLED_MODULES: tuple[str, ...] = (
     "workers",
     "docker",
     "projects",
+    "traefik",
+    "audit",
+    "notes",
+    "notifications",
     "relations",
+    "dns",
+    "certs",
 )
