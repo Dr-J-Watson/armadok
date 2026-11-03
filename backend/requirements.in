@@ -1,0 +1,4 @@
+# Runtime dependencies (direct). The hashed lock file requirements.txt is generated from this file:
+#   pip-compile --generate-hashes --strip-extras -o requirements.txt requirements.in
+fastapi>=0.115,<1
+uvicorn>=0.32,<1

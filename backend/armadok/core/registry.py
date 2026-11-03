@@ -24,6 +24,7 @@ class Registry:
     """
 
     def __init__(self, modules: Iterable[Module]) -> None:
+        """Index the modules and validate them; raise `RegistryError` on any inconsistency."""
         self._modules: dict[str, Module] = {}
         for module in modules:
             if module.name in self._modules:
@@ -41,7 +42,7 @@ class Registry:
         return {r.id: r for m in self.modules for r in m.rights}
 
     def providers(self, kind: str) -> dict[str, Provider]:
-        """Providers of one kind (e.g. "dns"), keyed by name."""
+        """Return the providers of one kind (e.g. "dns"), keyed by name."""
         return {p.name: p for m in self.modules for p in m.providers if p.kind == kind}
 
     def _validate(self) -> None:

@@ -28,3 +28,9 @@ data/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Tool caches and virtual environments
+.ruff_cache/
+.pytest_cache/
+.venv/
+venv/
