@@ -13,14 +13,14 @@ Design (a Noise-style handshake built from standard primitives):
    channel is closed. The worker proves its identity inside the encrypted channel, so
    it reveals nothing before the hub has been authenticated.
 
-The enrolment token secret never travels: the worker proves it knows it with an HMAC over
-the transcript, which is bound to this very connection and therefore cannot be replayed.
+The enrolment token secret never travels: the worker signs the transcript with a key derived
+from it. The signature is bound to this very connection, so it cannot be replayed, and the hub
+keeps only the public key, so a stolen database cannot enrol anyone.
 """
 
 from __future__ import annotations
 
 import hashlib
-import hmac
 import os
 import struct
 
@@ -218,16 +218,32 @@ def verify_worker_signature(
     return True
 
 
-def enrolment_key(token_secret: str) -> bytes:
-    """Derive the HMAC key for an enrolment token. The hub stores only this, not the secret."""
-    return hashlib.sha256(b"armadok-enrol-v1" + token_secret.encode()).digest()
+def enrolment_private_key(token_secret: str) -> Ed25519PrivateKey:
+    """Derive an Ed25519 key from the token secret (worker side only).
+
+    The hub stores just the public half, so a copy of its database cannot be used to enrol:
+    it can check a proof but not make one.
+    """
+    seed = hashlib.sha256(b"armadok-enrol-v1" + token_secret.encode()).digest()
+    return Ed25519PrivateKey.from_private_bytes(seed)
 
 
-def enrolment_proof(key: bytes, transcript: bytes) -> bytes:
-    """Prove knowledge of the token for this connection only (bound to the transcript)."""
-    return hmac.new(key, b"enroll" + transcript, hashlib.sha256).digest()
+def enrolment_public_hex(token_secret: str) -> str:
+    """Return the public half of the enrolment key, which is what the hub stores."""
+    return public_key_bytes(enrolment_private_key(token_secret)).hex()
 
 
-def verify_enrolment_proof(key: bytes, proof: bytes, transcript: bytes) -> bool:
-    """Constant-time check of an enrolment proof."""
-    return hmac.compare_digest(enrolment_proof(key, transcript), proof)
+def enrolment_proof(token_secret: str, transcript: bytes) -> bytes:
+    """Prove knowledge of the token for this connection only (signature over the transcript)."""
+    return enrolment_private_key(token_secret).sign(b"armadok-enrol-proof " + transcript)
+
+
+def verify_enrolment_proof(public_key_hex: str, proof: bytes, transcript: bytes) -> bool:
+    """Check an enrolment proof against the stored public key; never raises."""
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(public_key_hex)).verify(
+            proof, b"armadok-enrol-proof " + transcript
+        )
+    except (InvalidSignature, ValueError):
+        return False
+    return True

@@ -30,6 +30,8 @@ class Right:
     sensitive: bool = False
     # Baseline rights are granted to every new account (e.g. managing one's own API keys).
     baseline: bool = False
+    # Rights the creator of a node receives on it (scope `node:<id>`), whichever module owns them.
+    node_owner: bool = False
 
 
 @dataclass(frozen=True)
@@ -81,6 +83,8 @@ class Module:
     settings: tuple[Any, ...] = ()
     providers: tuple[Provider, ...] = ()
     # Turns a request into a `Principal`, or None if the credentials are not its kind.
+    # Event listeners: pairs of (event name, async handler(app, **payload)).
+    listeners: tuple[tuple[str, Callable[..., Any]], ...] = ()
     authenticator: Callable[[Any], Any] | None = None
     # Run once after migrations at start-up (e.g. generate a one-time install code).
     startup: tuple[Callable[[sqlite3.Connection], None], ...] = ()

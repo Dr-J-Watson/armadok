@@ -9,11 +9,11 @@ module = Module(
     requires=("users",),
     routes=(router,),
     rights=(
-        Right("nodes.read"),
+        Right("nodes.read", node_owner=True),
         # Creating a node must not require reading other people's nodes, hence no dependency.
         Right("nodes.create"),
-        Right("nodes.update", depends_on=("nodes.read",)),
-        Right("nodes.delete", depends_on=("nodes.read",)),
+        Right("nodes.update", depends_on=("nodes.read",), node_owner=True),
+        Right("nodes.delete", depends_on=("nodes.read",), node_owner=True),
     ),
     audit_events=("node.create", "node.update", "node.delete"),
     signals=("nodes.changed",),

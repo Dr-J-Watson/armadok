@@ -9,12 +9,13 @@ from __future__ import annotations
 import sqlite3
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import NotFound
+from armadok.core.events import emit
 from armadok.core.grants import add_grant
 from armadok.core.registry import Registry
 from armadok.core.rights import ALL_SCOPES, Grant, Principal
@@ -97,7 +98,7 @@ def create_node(
     who.require("nodes.create", registry.rights(), ALL_SCOPES)
     node = repository.create_node(conn, body.name, body.type, body.description, who.id)
     # The creator owns the node: grant them what they need on it (and nothing elsewhere).
-    for right in ("nodes.read", "nodes.update", "nodes.delete"):
+    for right in registry.node_owner_rights():
         add_grant(conn, who.id, Grant(right, _scope(node["id"])), granted_by=who.id)
     _audit(conn, registry, who, "node.create", node["id"])
     return node
@@ -131,8 +132,9 @@ def update_node(
 
 
 @router.delete("/{node_id}", status_code=204, summary="Delete a node (recoverable)")
-def delete_node(
+async def delete_node(
     node_id: str,
+    request: Request,
     conn: sqlite3.Connection = Depends(get_db),
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
@@ -142,3 +144,5 @@ def delete_node(
     who.require("nodes.delete", registry.rights(), _scope(node_id))
     repository.soft_delete_node(conn, node_id)
     _audit(conn, registry, who, "node.delete", node_id)
+    # Other modules (workers...) react, e.g. by cutting the machine's worker off.
+    await emit(request.app, "node.deleted", node_id=node_id)

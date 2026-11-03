@@ -71,14 +71,19 @@ def test_malformed_hello_and_oversized_frames():
 
 
 def test_enrolment_proof_is_bound_to_the_connection_and_the_secret():
-    key = ch.enrolment_key("secret-token-value")
-    c1, *_ = pair()
-    c2, *_ = pair()
+    stored = ch.enrolment_public_hex("secret-token-value")
     t1 = pair()[1].transcript
-    proof = ch.enrolment_proof(key, t1)
-    assert ch.verify_enrolment_proof(key, proof, t1)
-    assert not ch.verify_enrolment_proof(key, proof, pair()[1].transcript)  # other connection
-    assert not ch.verify_enrolment_proof(ch.enrolment_key("other"), proof, t1)  # other secret
+    proof = ch.enrolment_proof("secret-token-value", t1)
+    assert ch.verify_enrolment_proof(stored, proof, t1)
+    assert not ch.verify_enrolment_proof(stored, proof, pair()[1].transcript)  # other connection
+    assert not ch.verify_enrolment_proof(stored, ch.enrolment_proof("other", t1), t1)
+    assert not ch.verify_enrolment_proof("zz", proof, t1)  # garbage never raises
+
+
+def test_a_stored_enrolment_key_cannot_make_proofs():
+    # What the hub stores is a public key: it verifies proofs but contains no secret.
+    stored = ch.enrolment_public_hex("secret-token-value")
+    assert "secret-token-value" not in stored and len(stored) == 64
 
 
 def test_worker_signature_roundtrip_and_purpose_binding():

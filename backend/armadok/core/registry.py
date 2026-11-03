@@ -42,6 +42,14 @@ class Registry:
         """All declared rights, keyed by id."""
         return {r.id: r for m in self.modules for r in m.rights}
 
+    def node_owner_rights(self) -> tuple[str, ...]:
+        """Return the rights a node's creator receives on that node."""
+        return tuple(r.id for r in self.rights().values() if r.node_owner)
+
+    def worker_ops(self) -> set[str]:
+        """Return the closed list of operations modules allow workers to run."""
+        return {o for m in self.modules for o in m.worker_ops}
+
     def baseline_rights(self) -> tuple[str, ...]:
         """Return the rights every new account receives."""
         return tuple(r.id for r in self.rights().values() if r.baseline)
