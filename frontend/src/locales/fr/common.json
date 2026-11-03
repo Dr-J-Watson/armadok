@@ -12,5 +12,7 @@
   "prefs.themes.light": "Clair",
   "prefs.themes.dark": "Sombre",
   "nav.account": "Mon compte",
-  "nav.users": "Équipe"
+  "nav.users": "Équipe",
+  "nav.audit": "Audit",
+  "nav.notes": "Mes notes"
 }

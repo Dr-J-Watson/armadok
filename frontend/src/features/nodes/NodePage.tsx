@@ -7,6 +7,7 @@ import { errorMessage } from '../../core/errors'
 import { useModules } from '../../core/modules'
 import type { NodeTab } from '../../core/registry'
 import { features } from '../enabled'
+import { useFeatures } from '../../core/useFeatures'
 import type { Node } from './types'
 
 export function NodePage() {
@@ -17,6 +18,7 @@ export function NodePage() {
   const queryClient = useQueryClient()
   const modules = useModules()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const sections = useFeatures().flatMap((f) => f.objectSections ?? [])
 
   const node = useQuery({
     queryKey: ['nodes', nodeId],
@@ -100,6 +102,12 @@ export function NodePage() {
             </dd>
           </dl>
         )}
+        {!current &&
+          sections.map((section) => (
+            <div key={section.id}>
+              {section.render({ nodeId, objectType: 'node', objectId: nodeId, objectLabel: node.data.name })}
+            </div>
+          ))}
       </section>
 
       <section className="danger">

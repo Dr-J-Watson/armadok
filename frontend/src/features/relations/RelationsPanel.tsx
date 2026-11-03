@@ -4,6 +4,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
+import { useFeatures } from '../../core/useFeatures'
 import { errorMessage } from '../../core/errors'
 import { objectKey } from './graph'
 import type { RelationObject } from './graph'
@@ -23,6 +24,7 @@ interface Props {
 
 export function RelationsPanel({ nodeId, object, onSelect, extra }: Props) {
   const { t } = useTranslation(['relations', 'errors'])
+  const sections = useFeatures().flatMap((f) => f.objectSections ?? [])
   const panel = useQuery({
     queryKey: ['relations', nodeId, object.type, object.id],
     queryFn: () =>
@@ -62,6 +64,11 @@ export function RelationsPanel({ nodeId, object, onSelect, extra }: Props) {
           ))}
         </ul>
       )}
+      {sections.map((section) => (
+        <div key={section.id}>
+          {section.render({ nodeId, objectType: object.type, objectId: object.id, objectLabel: object.label })}
+        </div>
+      ))}
     </aside>
   )
 }

@@ -45,5 +45,7 @@
   "common.too_large": "The request is too large.",
   "traefik.invalid_path": "This file path is not valid.",
   "traefik.invalid_yaml": "This is not valid YAML, so it was not saved (Traefik would ignore the whole file).",
-  "worker.traefik_not_configured": "No Traefik folder is configured on this machine (ARMADOK_TRAEFIK_DIR)."
+  "worker.traefik_not_configured": "No Traefik folder is configured on this machine (ARMADOK_TRAEFIK_DIR).",
+  "notes.conflict": "This note was changed elsewhere. Reload it.",
+  "notes.too_many": "You have reached the maximum number of notes."
 }

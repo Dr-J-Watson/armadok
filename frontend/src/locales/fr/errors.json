@@ -45,5 +45,7 @@
   "common.too_large": "La requête est trop volumineuse.",
   "traefik.invalid_path": "Ce chemin de fichier n'est pas valide.",
   "traefik.invalid_yaml": "Ce n'est pas du YAML valide : il n'a pas été enregistré (Traefik ignorerait tout le fichier).",
-  "worker.traefik_not_configured": "Aucun dossier Traefik n'est configuré sur cette machine (ARMADOK_TRAEFIK_DIR)."
+  "worker.traefik_not_configured": "Aucun dossier Traefik n'est configuré sur cette machine (ARMADOK_TRAEFIK_DIR).",
+  "notes.conflict": "Cette note a été modifiée ailleurs. Rechargez-la.",
+  "notes.too_many": "Vous avez atteint le nombre maximum de notes."
 }

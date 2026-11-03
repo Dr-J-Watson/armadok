@@ -78,6 +78,20 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T)
 }
 
+// Download a file the API produces (an export): same authentication as any other call, then the
+// browser is asked to save the result. Nothing is kept in memory longer than the click.
+export async function download(path: string, filename: string): Promise<void> {
+  let response = await send(path, { method: 'GET' })
+  if (response.status === 401 && (await refreshSession())) response = await send(path, { method: 'GET' })
+  if (!response.ok) throw new ApiError('common.unknown', response.status)
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),

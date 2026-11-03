@@ -26,6 +26,20 @@ export interface NodeTab {
   render: (props: NodeTabProps) => ReactNode
 }
 
+// A section shown for any object (node, container, router...), contributed by a feature: the
+// notes panel is one. Objects are identified by their node, a type and an id.
+export interface ObjectSectionProps {
+  nodeId: string
+  objectType: string
+  objectId: string
+  objectLabel: string
+}
+
+export interface ObjectSection {
+  id: string
+  render: (props: ObjectSectionProps) => ReactNode
+}
+
 export interface Feature {
   name: string
   // Backend module that must be enabled for this feature to appear.
@@ -33,4 +47,5 @@ export interface Feature {
   routes?: RouteObject[]
   nav?: NavItem[]
   nodeTabs?: NodeTab[]
+  objectSections?: ObjectSection[]
 }
