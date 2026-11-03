@@ -38,7 +38,11 @@ def _visibility(who: Principal, registry: Registry) -> tuple[bool, list[str]]:
     if who.has("audit.read", registry.rights(), ALL_SCOPES):
         return True, []
     grants = [g for g in who.grants if g.right == "audit.read" and still_valid(g.expires_at)]
-    nodes = [g.scope[5:] for g in grants if g.scope.startswith("node:")][:MAX_SCOPED_NODES]
+    # A suspended node's log is shut like the rest of it (those who read everything still can:
+    # the suspension itself has to stay auditable).
+    nodes = [
+        g.scope[5:] for g in grants if g.scope.startswith("node:") and g.scope not in who.blocked
+    ][:MAX_SCOPED_NODES]
     if not nodes:
         raise MissingRight()
     return False, nodes

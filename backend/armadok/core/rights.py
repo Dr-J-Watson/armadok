@@ -43,6 +43,8 @@ class Principal:
     key_id: str | None = None
     # A read-only key may only use safe HTTP methods (enforced in `get_principal`).
     read_only: bool = False
+    # Scopes this principal may not use right now (a suspended node), whatever it holds.
+    blocked: frozenset[str] = frozenset()
 
     @property
     def actor(self) -> str:
@@ -55,14 +57,19 @@ class Principal:
         catalogue: dict[str, Right],
         scope: str = ALL_SCOPES,
         now: datetime | None = None,
+        *,
+        ignore_blocked: bool = False,
     ) -> bool:
         """Return True if `right` is held for `scope`, with all its dependencies.
+
+        A blocked scope (a suspended node) answers False unless `ignore_blocked` is set, which
+        only exists so owners can be told that their node is suspended.
 
         A right whose dependencies are missing is unusable even if granted,
         e.g. "write" without "read".
         """
         now = now or datetime.now(UTC)
-        if right not in catalogue:
+        if right not in catalogue or (scope in self.blocked and not ignore_blocked):
             return False
         needed = (right, *catalogue[right].depends_on)
         return all(self._holds(name, scope, now) for name in needed)

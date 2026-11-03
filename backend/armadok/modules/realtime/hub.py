@@ -17,7 +17,6 @@ from typing import Any
 
 from fastapi import WebSocket
 
-from armadok.core import grants
 from armadok.core.module import Signal
 from armadok.core.rights import Principal
 
@@ -90,7 +89,7 @@ class RealtimeHub:
         def load() -> Principal:
             conn = app.state.settings.open_db()
             try:
-                return Principal(user_id, grants.load_grants(conn, user_id))
+                return app.state.registry.principal_for(conn, user_id)
             finally:
                 conn.close()
 

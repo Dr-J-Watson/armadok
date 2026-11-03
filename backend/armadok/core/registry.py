@@ -65,6 +65,24 @@ class Registry:
         )
         return tuple(dict.fromkeys((*own, *extra)))
 
+    def unblocked_for(self, conn: Any, account_id: str) -> frozenset[str]:
+        """Return the blocked scopes this account may use all the same (an emergency session)."""
+        return frozenset().union(
+            *(u(conn, account_id) for m in self.modules for u in m.scope_unblockers)
+        )
+
+    def principal_for(self, conn: Any, account_id: str, **kwargs: Any) -> Any:
+        """Return the principal of an account: its grants and the scopes it may not use now."""
+        from armadok.core.rights import Principal
+
+        blocked = frozenset().union(*(b(conn) for m in self.modules for b in m.scope_blockers))
+        allowed = frozenset().union(
+            *(u(conn, account_id) for m in self.modules for u in m.scope_unblockers)
+        )
+        return Principal(
+            account_id, self.grants_of(conn, account_id), blocked=blocked - allowed, **kwargs
+        )
+
     def account_blocked(self, conn: Any, account_id: str) -> bool:
         """Return True if any module says this account must not act now."""
         return any(b(conn, account_id) for m in self.modules for b in m.account_blockers)

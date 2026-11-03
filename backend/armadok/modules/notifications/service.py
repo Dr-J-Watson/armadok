@@ -23,9 +23,7 @@ from typing import Any
 
 from armadok.core import crypto
 from armadok.core.errors import ApiError
-from armadok.core.grants import load_grants
 from armadok.core.outbound import OutboundError
-from armadok.core.rights import Principal
 from armadok.modules.notifications import delivery, repository
 from armadok.modules.users import repository as users_repo
 
@@ -59,7 +57,7 @@ def _eligible(conn, registry, event, node_id: str | None, only: list[str] | None
         users = [u for u in users if u in only]
     if right is None:
         return users
-    return [u for u in users if Principal(u, load_grants(conn, u)).has(right, catalogue, scope)]
+    return [u for u in users if registry.principal_for(conn, u).has(right, catalogue, scope)]
 
 
 def _targets(

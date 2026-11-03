@@ -8,4 +8,6 @@ export interface Node {
   owner: string
   created_at: string
   local?: boolean
+  suspended?: boolean
+  suspended_reason?: string | null
 }

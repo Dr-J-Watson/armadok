@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import re
 import sqlite3
-from collections.abc import Iterator
-from contextlib import contextmanager
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
@@ -19,12 +17,14 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from armadok.core import audit, grants
 from armadok.core.deps import get_db, get_principal, get_registry
-from armadok.core.errors import ApiError, MissingRight, NotFound
+from armadok.core.errors import ApiError, NotFound
 from armadok.core.registry import Registry
-from armadok.core.rights import Grant, Principal, can_grant
+from armadok.core.rights import Principal
 from armadok.modules.nodes import repository as nodes_repo
 from armadok.modules.roles import builtin
 from armadok.modules.roles import repository as repo
+from armadok.modules.roles.service import atomic as _atomic
+from armadok.modules.roles.service import may_give as _may_give
 from armadok.modules.users import repository as users_repo
 
 router = APIRouter(tags=["roles"])
@@ -86,17 +86,6 @@ def _audit(conn, registry, who, event, object_type, object_id, **details):
     )
 
 
-@contextmanager
-def _atomic(conn: sqlite3.Connection) -> Iterator[None]:
-    """Hold the write lock from the checks to the change, so nothing slips in between."""
-    conn.execute("BEGIN IMMEDIATE")
-    try:
-        yield
-    except BaseException:
-        conn.rollback()
-        raise
-
-
 def _visible(who: Principal, catalogue: dict, scope: str) -> bool:
     """Whether a scope may be shown to `who`: everywhere, or a node they can see."""
     return scope == "*" or who.has("nodes.read", catalogue, scope)
@@ -111,13 +100,6 @@ def _manage(who: Principal, registry: Registry) -> dict:
     catalogue = registry.rights()
     who.require("grants.manage", catalogue)
     return catalogue
-
-
-def _may_give(who, catalogue, rights, scope, expires_at) -> None:
-    """Refuse unless `who` could give every right of the list on that scope and duration."""
-    for right in rights:
-        if not can_grant(who, Grant(right, scope, expires_at), catalogue):
-            raise MissingRight()
 
 
 def _custom_rights(catalogue: dict, rights: list[str]) -> list[str]:

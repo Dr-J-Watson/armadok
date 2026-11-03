@@ -206,11 +206,19 @@ async def _run_locally(op: str, args: dict[str, Any]) -> dict:
 
 
 async def call_operation(
-    app: Any, registry: Registry, node_id: str, op: str, args: dict[str, Any]
+    app: Any,
+    registry: Registry,
+    node_id: str,
+    op: str,
+    args: dict[str, Any],
+    actor_id: str | None = None,
 ) -> dict:
     """Run one operation on a node's worker. Other modules call this, never the socket.
 
-    Only operations declared by a module (the closed list) can be sent.
+    Only operations declared by a module (the closed list) can be sent. A suspended node takes
+    none, whoever asks (a background job included), except for someone who may use it all the
+    same (`actor_id` with an emergency session). The worker itself stays connected: suspension
+    shuts people out, it does not touch the machine.
     """
     declared = registry.worker_ops().get(op)
     if declared is None:
@@ -218,10 +226,13 @@ async def call_operation(
     conn = app.state.settings.open_db()
     try:
         node = nodes_repo.get_node(conn, node_id)
+        allowed = registry.unblocked_for(conn, actor_id) if actor_id else frozenset()
     finally:
         conn.close()
     if node is None:
         raise NotFound()
+    if node["suspended"] and f"node:{node_id}" not in allowed:
+        raise ApiError("node.suspended", 423)
     if node["type"] not in declared.node_types:
         raise ApiError("worker.op_not_for_node_type", 409)
     if node["local"]:

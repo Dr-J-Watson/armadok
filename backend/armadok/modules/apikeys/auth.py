@@ -9,6 +9,7 @@ import hmac
 import json
 import re
 import sqlite3
+from dataclasses import replace
 from datetime import UTC, datetime
 
 from fastapi import Request
@@ -56,15 +57,15 @@ def principal_for_key(
     if registry.account_blocked(conn, row["owner_id"]):
         return None
     allowed = set(json.loads(row["rights"]))
-    held = registry.grants_of(conn, row["owner_id"])
     repository.touch(conn, row["id"])
-    return Principal(
+    full = registry.principal_for(
+        conn,
         row["owner_id"],
-        tuple(g for g in held if g.right in allowed),
         kind="api_key",
         key_id=row["id"],
         read_only=bool(row["read_only"]),
     )
+    return replace(full, grants=tuple(g for g in full.grants if g.right in allowed))
 
 
 def authenticate(request: Request) -> Principal | None:

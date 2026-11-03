@@ -45,7 +45,8 @@ async def ask(
     model: type[BaseModel],
 ):
     """Run an operation on the node's worker and validate the answer against `model`."""
-    result = await call_operation(request.app, registry, node_id, op, args)
+    actor = getattr(request.state, "actor_id", None)
+    result = await call_operation(request.app, registry, node_id, op, args, actor)
     try:
         return model.model_validate(result)
     except ValidationError:

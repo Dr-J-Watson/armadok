@@ -1,0 +1,20 @@
+{
+  "title": "Machines (administration)",
+  "explain": "Vous voyez que les machines existent, à qui elles sont et leur état, jamais ce qu'elles contiennent. Chaque action demande le nom de la machine et un code de second facteur tout neuf.",
+  "state.active": "Active",
+  "state.suspended": "Suspendue",
+  "state.deleted": "Supprimée",
+  "until": "récupérable jusqu'au {{date}}",
+  "suspend": "Suspendre",
+  "resume": "Reprendre",
+  "restore": "Restaurer",
+  "reason": "Motif (le propriétaire le lira)",
+  "typeName": "Tapez le nom de la machine",
+  "code": "Code de second facteur",
+  "confirm": "Confirmer",
+  "cancel": "Annuler",
+  "impact": "{{members}} membre(s) perdront l'accès.",
+  "workerOn": "Son worker est connecté.",
+  "workerOff": "Son worker n'est pas connecté.",
+  "reasonShared": "Le motif est montré à toutes les personnes qui voient la machine."
+}

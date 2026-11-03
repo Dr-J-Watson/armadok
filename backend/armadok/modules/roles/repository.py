@@ -184,6 +184,8 @@ def add_assignment(
     scope: str,
     expires_at: datetime | None,
     who: str,
+    *,
+    commit: bool = True,
 ) -> str:
     """Store an assignment and return its id."""
     aid = uuid.uuid4().hex
@@ -201,11 +203,13 @@ def add_assignment(
             _now(),
         ),
     )
-    conn.commit()
+    if commit:
+        conn.commit()
     return aid
 
 
-def remove_assignment(conn: sqlite3.Connection, assignment_id: str) -> None:
+def remove_assignment(conn: sqlite3.Connection, assignment_id: str, *, commit: bool = True) -> None:
     """Delete one assignment."""
     conn.execute("DELETE FROM assignments WHERE id = ?", (assignment_id,))
-    conn.commit()
+    if commit:
+        conn.commit()

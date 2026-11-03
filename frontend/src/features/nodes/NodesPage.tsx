@@ -49,6 +49,11 @@ export function NodesPage() {
               <strong>{node.name}</strong>
               <span className="badge">{t(`nodes:types.${node.type}`)}</span>
               {node.local && <span className="badge ok">{t('nodes:local')}</span>}
+              {node.suspended && (
+                <span className="badge off" title={node.suspended_reason ?? undefined}>
+                  {t('nodes:suspended')}
+                </span>
+              )}
             </Link>
             {node.description && <p>{node.description}</p>}
           </li>

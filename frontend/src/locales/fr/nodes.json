@@ -21,5 +21,6 @@
   "delete.button": "Supprimer le nœud",
   "delete.confirm": "Oui, le supprimer",
   "delete.cancel": "Annuler",
-  "local": "Cette machine"
+  "local": "Cette machine",
+  "suspended": "suspendue"
 }

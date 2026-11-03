@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from fastapi import Request
 
-from armadok.core.grants import load_grants
 from armadok.core.rights import Principal
 from armadok.modules.users import repository
 
@@ -29,6 +28,6 @@ def authenticate(request: Request) -> Principal | None:
         user_id = repository.user_for_access_token(conn, token)
         if user_id is None:
             return None
-        return Principal(user_id, load_grants(conn, user_id))
+        return request.app.state.registry.principal_for(conn, user_id)
     finally:
         conn.close()

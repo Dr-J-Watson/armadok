@@ -177,6 +177,11 @@ class Module:
     grant_sources: tuple[Callable[[Any, str], tuple[Any, ...]], ...] = ()
     # `blocker(conn, account_id)` is True when an account must not act at all right now (a
     # service account whose responsible person is disabled): its keys and tokens stop working.
+    # Scopes nobody may use at the moment (suspended nodes): `blocker(conn)` lists them. An
+    # unblocker `(conn, account_id)` lists the ones this account may use all the same (an
+    # emergency session).
+    scope_blockers: tuple[Callable[[Any], frozenset[str]], ...] = ()
+    scope_unblockers: tuple[Callable[[Any, str], frozenset[str]], ...] = ()
     account_blockers: tuple[Callable[[Any, str], bool], ...] = ()
     relations: tuple[RelationProvider, ...] = ()
     search: tuple[Any, ...] = ()

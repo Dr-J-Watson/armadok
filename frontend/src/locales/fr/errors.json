@@ -109,5 +109,15 @@
   "service_accounts.name_taken": "Un compte de service porte déjà ce nom.",
   "service_accounts.invalid_rights": "Choisissez soit « suit vos droits », soit une liste de droits figés, pas les deux et pas aucun.",
   "users.not_a_person": "C'est un compte de service : il n'a ni mot de passe ni second facteur.",
-  "service_accounts.closed": "Ce compte de service est fermé."
+  "service_accounts.closed": "Ce compte de service est fermé.",
+  "node.suspended": "Cette machine est suspendue par un administrateur.",
+  "nodeadmin.confirm_mismatch": "Le nom saisi n'est pas celui de la machine.",
+  "nodeadmin.wrong_state": "La machine n'est pas dans un état où cela est possible.",
+  "nodeadmin.restore_expired": "Cette machine a été supprimée il y a plus de 30 jours et ne peut plus être restaurée.",
+  "nodeadmin.local_not_suspendable": "La machine sur laquelle tourne Armadok ne peut pas être suspendue.",
+  "auth.2fa_required": "Activez d'abord la double authentification sur votre compte.",
+  "nodes.local_not_transferable": "La machine sur laquelle tourne Armadok ne peut pas être transmise.",
+  "nodes.transfer_to_self": "Cette machine est déjà la vôtre.",
+  "members.too_many_searches": "Trop de recherches. Réessayez dans une minute.",
+  "members.not_with_key": "Une clé ne peut pas transmettre une machine. Faites-le depuis votre propre session."
 }

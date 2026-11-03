@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, Path, Request
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
-from armadok.core import audit, grants
+from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError, NotFound
 from armadok.core.registry import Registry
@@ -205,12 +205,7 @@ async def fire(
         _audit(conn, registry, actor, "hook.fire", hook_id, "failure", code="hooks.unavailable")
         raise ApiError("hooks.unavailable", 403)
     target = json.loads(row["target"])
-    who = Principal(
-        row["created_by"],
-        grants.load_grants(conn, row["created_by"]),
-        kind="api_key",
-        key_id=f"hook-{hook_id}",
-    )
+    who = registry.principal_for(conn, row["created_by"], kind="api_key", key_id=f"hook-{hook_id}")
     # The creator may have lost the right since the hook was made.
     if not who.has(action.right, registry.rights(), f"node:{target.get('node_id')}"):
         repo.set_result(conn, hook_id, "hooks.creator_lost_right")

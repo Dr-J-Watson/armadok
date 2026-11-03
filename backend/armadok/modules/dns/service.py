@@ -8,7 +8,6 @@ from typing import Any
 
 from armadok.core import crypto
 from armadok.core.errors import ApiError
-from armadok.core.grants import load_grants
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.dns import repository
@@ -78,7 +77,7 @@ def access(
     if node_id is None or nodes_repo.get_node(conn, node_id) is None:
         return None
     owner = users_repo.get_user(conn, domain["owner_id"])
-    owner_principal = Principal(domain["owner_id"], load_grants(conn, domain["owner_id"]))
+    owner_principal = registry.principal_for(conn, domain["owner_id"])
     if (
         owner is None
         or not owner["is_active"]

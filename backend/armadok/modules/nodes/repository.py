@@ -32,13 +32,84 @@ LOCAL_MIGRATION = Migration(
     """,
 )
 
-_COLUMNS = "id, name, type, description, owner, created_at, is_local AS local"
+SUSPEND_MIGRATION = Migration(
+    "nodes-0003-suspend",
+    """
+    ALTER TABLE nodes ADD COLUMN suspended_at TEXT;
+    ALTER TABLE nodes ADD COLUMN suspended_reason TEXT;
+    """,
+)
+
+# Deleted nodes can be restored for this long, then they may be purged.
+RESTORE_DAYS = 30
+
+_COLUMNS = (
+    "id, name, type, description, owner, created_at, is_local AS local,"
+    " suspended_at IS NOT NULL AS suspended, suspended_reason"
+)
 
 
 def _row(row: sqlite3.Row) -> dict:
     data = dict(row)
     data["local"] = bool(data["local"])
+    data["suspended"] = bool(data["suspended"])
     return data
+
+
+def suspended_scopes(conn: sqlite3.Connection) -> frozenset[str]:
+    """Return the scopes of the suspended nodes: nobody may use them (see `Principal.blocked`)."""
+    rows = conn.execute(
+        "SELECT id FROM nodes WHERE suspended_at IS NOT NULL AND deleted_at IS NULL"
+    )
+    return frozenset(f"node:{r['id']}" for r in rows)
+
+
+def set_suspended(conn: sqlite3.Connection, node_id: str, reason: str | None) -> None:
+    """Suspend a node (with the reason) or, with `reason` None, lift the suspension."""
+    if reason is None:
+        conn.execute(
+            "UPDATE nodes SET suspended_at = NULL, suspended_reason = NULL WHERE id = ?",
+            (node_id,),
+        )
+    else:
+        conn.execute(
+            "UPDATE nodes SET suspended_at = ?, suspended_reason = ? WHERE id = ?",
+            (datetime.now(UTC).isoformat(), reason, node_id),
+        )
+    conn.commit()
+
+
+def list_all_for_admin(conn: sqlite3.Connection) -> list[dict]:
+    """Return every node, deleted ones included, with only what an administrator may see.
+
+    Name, type, owner and state; never any content of the machine.
+    """
+    rows = conn.execute(
+        "SELECT n.id, n.name, n.type, n.owner, n.created_at, n.deleted_at, n.suspended_at,"
+        " n.suspended_reason, n.is_local, u.username AS owner_name"
+        " FROM nodes n LEFT JOIN users u ON u.id = n.owner ORDER BY n.created_at, n.id"
+    )
+    return [dict(r) for r in rows]
+
+
+def get_any(conn: sqlite3.Connection, node_id: str) -> dict | None:
+    """Return a node whether or not it is deleted (administration only)."""
+    row = conn.execute(
+        "SELECT id, name, owner, deleted_at, suspended_at, is_local FROM nodes WHERE id = ?",
+        (node_id,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def set_owner(conn: sqlite3.Connection, node_id: str, owner_id: str) -> None:
+    """Record who owns a node (their rights are moved by the caller)."""
+    conn.execute("UPDATE nodes SET owner = ? WHERE id = ?", (owner_id, node_id))
+
+
+def restore(conn: sqlite3.Connection, node_id: str) -> None:
+    """Bring a deleted node back."""
+    conn.execute("UPDATE nodes SET deleted_at = NULL WHERE id = ?", (node_id,))
+    conn.commit()
 
 
 def list_nodes(conn: sqlite3.Connection) -> list[dict]:

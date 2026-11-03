@@ -1,0 +1,18 @@
+{
+  "tab": "Members",
+  "owner": "Owner",
+  "person": "Person",
+  "role": "Role",
+  "add": "Add a member",
+  "invite": "Invite",
+  "none": "Nobody else works on this machine yet.",
+  "remove": "Remove",
+  "changeRole": "Role of {{name}}",
+  "until": "until {{date}}",
+  "notAllowed": "You cannot manage the members of this machine.",
+  "transfer.title": "Hand the machine over",
+  "transfer.explain": "The person you choose becomes its owner. You stay on as an administrator. Only the owner can do this.",
+  "transfer.confirm": "Type the name of the machine ({{name}}) to confirm",
+  "transfer.go": "Hand it over",
+  "transfer.code": "Second-factor code"
+}

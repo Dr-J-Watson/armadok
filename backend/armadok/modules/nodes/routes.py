@@ -52,6 +52,8 @@ class NodeOut(BaseModel):
     owner: str
     created_at: str
     local: bool = False
+    suspended: bool = False
+    suspended_reason: str | None = None
 
 
 def _scope(node_id: str) -> str:
@@ -71,8 +73,13 @@ def _visible_or_404(
 ) -> dict:
     """Return the node if the caller may read it; raise `NotFound` otherwise."""
     node = repository.get_node(conn, node_id)
-    if node is None or not who.has("nodes.read", registry.rights(), _scope(node_id)):
+    if node is None or not who.has(
+        "nodes.read", registry.rights(), _scope(node_id), ignore_blocked=True
+    ):
         raise NotFound()
+    if node["suspended"] and _scope(node_id) in who.blocked:
+        # Told to those who would see it, so an owner learns why nothing works.
+        raise ApiError("node.suspended", 423)
     return node
 
 
@@ -85,7 +92,8 @@ def list_nodes(
     """Return the nodes for which the caller holds `nodes.read`."""
     rights = registry.rights()
     nodes = repository.list_nodes(conn)
-    return [n for n in nodes if who.has("nodes.read", rights, _scope(n["id"]))]
+    # A suspended node stays in the list for those who would see it, flagged as suspended.
+    return [n for n in nodes if who.has("nodes.read", rights, _scope(n["id"]), ignore_blocked=True)]
 
 
 @router.post("", response_model=NodeOut, status_code=201, summary="Create a node")

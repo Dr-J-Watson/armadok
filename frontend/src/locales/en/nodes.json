@@ -21,5 +21,6 @@
   "delete.button": "Delete the node",
   "delete.confirm": "Yes, delete it",
   "delete.cancel": "Cancel",
-  "local": "This machine"
+  "local": "This machine",
+  "suspended": "suspended"
 }

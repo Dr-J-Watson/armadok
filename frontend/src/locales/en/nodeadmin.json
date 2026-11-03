@@ -1,0 +1,20 @@
+{
+  "title": "Machines (administration)",
+  "explain": "You see that machines exist, who owns them and their state, never what is on them. Each action asks for the machine's name and a fresh second-factor code.",
+  "state.active": "Active",
+  "state.suspended": "Suspended",
+  "state.deleted": "Deleted",
+  "until": "restorable until {{date}}",
+  "suspend": "Suspend",
+  "resume": "Resume",
+  "restore": "Restore",
+  "reason": "Reason (the owner will read it)",
+  "typeName": "Type the machine's name",
+  "code": "Second-factor code",
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "impact": "{{members}} member(s) will lose access.",
+  "workerOn": "Its worker is connected.",
+  "workerOff": "Its worker is not connected.",
+  "reasonShared": "The reason is shown to everyone who can see the machine."
+}
