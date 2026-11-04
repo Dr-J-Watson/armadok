@@ -261,6 +261,7 @@ def remove_member(
             grants.parse_expiry(current["expires_at"]),
         )
         roles_repo.remove_assignment(conn, assignment_id, commit=False)
+    registry.access_changed(conn)
     _audit(
         conn,
         registry,

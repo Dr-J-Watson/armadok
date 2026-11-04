@@ -268,3 +268,30 @@ def shared_to(conn: sqlite3.Connection, settings: Settings, user_id: str) -> lis
         note.pop("pinned", None)
         note["read_only"] = True
     return out
+
+
+def hand_over(conn: sqlite3.Connection, change: Any) -> None:
+    """Move the giver's own notes on an object to its new owner, if the giver chose to.
+
+    Notes stay private to one author: this is the author's gift, never a seizure (taking an
+    object back never sets `with_notes`). The shares are dropped: the new author chooses afresh.
+    Part of the owner change's transaction.
+    """
+    if not change.with_notes:
+        return
+    ids = [
+        r["id"]
+        for r in conn.execute(
+            "SELECT id FROM notes WHERE owner_id = ? AND node_id = ? AND object_type = ?"
+            " AND object_id = ?",
+            (change.old_owner, change.node_id, change.object_type, change.object_id),
+        )
+    ]
+    if count(conn, change.new_owner) + len(ids) > MAX_PER_OWNER:
+        # The receiver's notes are bounded (search keeps them in memory): the gift is refused
+        # whole, and the giver can send it again without the notes.
+        raise ApiError("notes.too_many", 409)
+    for note_id in ids:
+        conn.execute("UPDATE notes SET owner_id = ? WHERE id = ?", (change.new_owner, note_id))
+        # Who the old author showed it to was their choice, not the new author's.
+        conn.execute("DELETE FROM note_shares WHERE note_id = ?", (note_id,))

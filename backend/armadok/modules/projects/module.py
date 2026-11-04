@@ -1,9 +1,10 @@
 """Declaration of the `projects` module."""
 
-from armadok.core.module import Module, NotificationEvent, Right, Signal, WorkerOp
+from armadok.core.module import Module, NotificationEvent, Ownable, Right, Signal, WorkerOp
 from armadok.modules.projects import hook, tasks
 from armadok.modules.projects.deploy import resume_watchers
 from armadok.modules.projects.deploy import router as deploy_router
+from armadok.modules.projects.owned import project_ids
 from armadok.modules.projects.routes import router
 
 _DOCKER = ("docker", "full")
@@ -37,6 +38,20 @@ module = Module(
         Right("projects.logs", depends_on=("projects.read",), node_owner=True, level="operate"),
     ),
     hook_actions=(hook.ACTION, hook.RESTART),
+    # A project can have its own owner, who then holds these rights on it alone.
+    ownable=(
+        Ownable(
+            "project",
+            (
+                "projects.read",
+                "projects.files.read",
+                "projects.files.write",
+                "projects.deploy",
+                "projects.logs",
+            ),
+            project_ids,
+        ),
+    ),
     signals=(
         Signal("projects.changed", "projects.read"),
         Signal("tasks.changed", "projects.read"),

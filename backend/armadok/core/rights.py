@@ -13,8 +13,14 @@ from datetime import UTC, datetime
 from armadok.core.errors import MissingRight
 from armadok.core.module import Right
 
-# Scope meaning "everywhere"; any other scope is a "<kind>:<id>" string, e.g. "node:abc".
+# Scope meaning "everywhere"; any other scope is a "<kind>:<id>" string, e.g. "node:abc". An
+# object inside a node adds a path segment: "node:abc/project:blog".
 ALL_SCOPES = "*"
+
+
+def within(scope: str, parent: str) -> bool:
+    """Return True if `scope` is `parent` or lies inside it ("node:a/project:b" in "node:a")."""
+    return scope == parent or scope.startswith(parent + "/")
 
 
 @dataclass(frozen=True)
@@ -29,7 +35,8 @@ class Grant:
         """Return True if this grant is still valid and applies to `scope`."""
         if self.expires_at is not None and self.expires_at <= now:
             return False
-        return self.scope == ALL_SCOPES or self.scope == scope
+        # A grant on a node also covers the objects inside it; one on an object covers only it.
+        return self.scope == ALL_SCOPES or within(scope, self.scope)
 
 
 @dataclass(frozen=True)
@@ -69,10 +76,14 @@ class Principal:
         e.g. "write" without "read".
         """
         now = now or datetime.now(UTC)
-        if right not in catalogue or (scope in self.blocked and not ignore_blocked):
+        if right not in catalogue or (self._blocked(scope) and not ignore_blocked):
             return False
         needed = (right, *catalogue[right].depends_on)
         return all(self._holds(name, scope, now) for name in needed)
+
+    def _blocked(self, scope: str) -> bool:
+        """Return True if the scope, or the node around it, is blocked (a suspended node)."""
+        return any(within(scope, b) for b in self.blocked)
 
     def _holds(self, right: str, scope: str, now: datetime) -> bool:
         return any(g.right == right and g.covers(scope, now) for g in self.grants)
@@ -104,7 +115,7 @@ def can_grant(
     for held in granter.grants:
         if held.right != grant.right:
             continue
-        if held.scope != ALL_SCOPES and held.scope != grant.scope:
+        if held.scope != ALL_SCOPES and not within(grant.scope, held.scope):
             continue
         if held.expires_at is not None and (
             grant.expires_at is None or grant.expires_at > held.expires_at

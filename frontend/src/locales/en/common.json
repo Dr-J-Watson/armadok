@@ -31,5 +31,6 @@
   "prefs.accent": "Accent colour",
   "prefs.accentReset": "Back to the default colour",
   "nav.vulns": "Vulnerabilities",
-  "nav.help": "Help"
+  "nav.help": "Help",
+  "nav.ownership": "Ownership gifts"
 }

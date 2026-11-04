@@ -21,6 +21,6 @@ module = Module(
     signals=(Signal("nodes.changed", "nodes.read", shared=True),),
     migrations=(repository.MIGRATION, repository.LOCAL_MIGRATION, repository.SUSPEND_MIGRATION),
     scope_blockers=(repository.suspended_scopes,),
-    startup=(local.ensure_local_node,),
+    startup=(local.ensure_local_node, local.ensure_owner_rights),
     listeners=(("setup.completed", local.on_setup_completed),),
 )

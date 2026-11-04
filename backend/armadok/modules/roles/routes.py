@@ -439,6 +439,7 @@ def remove_assignment(
             who, catalogue, role["rights"], found["scope"], grants.parse_expiry(found["expires_at"])
         )
         repo.remove_assignment(conn, assignment_id)
+    registry.access_changed(conn)
     _audit(
         conn,
         registry,

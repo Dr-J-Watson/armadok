@@ -21,9 +21,18 @@ from armadok.modules.workers.routes import call_operation
 
 
 def authorise(
-    conn: sqlite3.Connection, registry: Registry, who: Principal, node_id: str, right: str
+    conn: sqlite3.Connection,
+    registry: Registry,
+    who: Principal,
+    node_id: str,
+    right: str,
+    obj: tuple[str, str] | None = None,
 ) -> dict:
     """Return the node if the caller can see it and holds `right` on it.
+
+    `obj` is `(type, id)` of the one object the call is about (a project, say): the right may
+    then come from the whole machine or from owning that object. The machine must be visible
+    all the same, so a person who owns something on a machine they cannot see learns nothing.
 
     An invisible or missing node is `NotFound`, never "forbidden", so existence is not leaked.
     """
@@ -32,7 +41,7 @@ def authorise(
     node = nodes_repo.get_node(conn, node_id)
     if node is None or not who.has("nodes.read", catalogue, scope):
         raise NotFound()
-    who.require(right, catalogue, scope)
+    who.require(right, catalogue, f"{scope}/{obj[0]}:{obj[1]}" if obj else scope)
     return node
 
 

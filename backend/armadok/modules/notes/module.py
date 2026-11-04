@@ -29,4 +29,5 @@ module = Module(
         ),
     ),
     tasks=(reminder_loop,),
+    ownership_listeners=(repository.hand_over,),
 )

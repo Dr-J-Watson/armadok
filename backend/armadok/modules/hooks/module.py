@@ -13,4 +13,5 @@ module = Module(
     audit_events=("hook.create", "hook.revoke", "hook.fire"),
     signals=(Signal("hooks.changed", "hooks.manage"),),
     migrations=(repository.MIGRATION,),
+    ownership_listeners=(repository.revoke_for_object,),
 )

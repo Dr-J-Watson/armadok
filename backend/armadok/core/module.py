@@ -185,6 +185,37 @@ class NotificationEvent:
 
 
 @dataclass(frozen=True)
+class Ownable:
+    """A kind of object inside a node that can have its own owner (a project, a container...).
+
+    `rights` is what the owner holds on that one object, dependencies included (the `ownership`
+    module adds its own rights on top). `list_ids(request, registry, node_id)` returns the ids
+    of the objects that exist, for the cascade ("everything of mine on this machine"). Its
+    answer comes from a worker, so the caller checks the ids it gets.
+    """
+
+    type: str
+    rights: tuple[str, ...]
+    list_ids: Callable[[Any, Any, str], Awaitable[list[str]]]
+
+
+@dataclass(frozen=True)
+class OwnershipChange:
+    """One object that changed owner, as told to the modules that keep things attached to it.
+
+    `with_notes` is the giver's choice to hand over their private notes on the object too; an
+    expropriation never moves notes.
+    """
+
+    node_id: str
+    object_type: str
+    object_id: str
+    old_owner: str
+    new_owner: str
+    with_notes: bool = False
+
+
+@dataclass(frozen=True)
 class Provider:
     """An implementation of a provider kind (dns, git_host, notifier, scanner, template).
 
@@ -220,6 +251,9 @@ class Module:
     # Rights an account holds because of another account (a service account that follows the
     # person who made it): `source(conn, account_id)` returns the extra grants.
     grant_sources: tuple[Callable[[Any, str], tuple[Any, ...]], ...] = ()
+    # Same, for sources that need to know the other modules (the rights each kind of owned object
+    # carries): `source(registry, conn, account_id)`.
+    registry_grant_sources: tuple[Callable[[Any, Any, str], tuple[Any, ...]], ...] = ()
     # `blocker(conn, account_id)` is True when an account must not act at all right now (a
     # service account whose responsible person is disabled): its keys and tokens stop working.
     # Scopes nobody may use at the moment (suspended nodes): `blocker(conn)` lists them. An
@@ -232,6 +266,14 @@ class Module:
     session_grant_sources: tuple[Callable[[Any, str], tuple[Any, ...]], ...] = ()
     account_blockers: tuple[Callable[[Any, str], bool], ...] = ()
     relations: tuple[RelationProvider, ...] = ()
+    # Kinds of object that can have their own owner (see `Ownable`), and the handlers that tidy
+    # up what hangs on an object when it changes owner: `listener(conn, change)`, inside the
+    # change's transaction (it must not commit).
+    ownable: tuple[Ownable, ...] = ()
+    # Told, as `listener(registry, conn)`, right after a role was taken away from someone: they
+    # may no longer see a machine, so whatever was theirs there can be tidied up at once.
+    access_listeners: tuple[Callable[[Any, Any], None], ...] = ()
+    ownership_listeners: tuple[Callable[[Any, OwnershipChange], None], ...] = ()
     # Where the global search (Ctrl+K) finds this module's objects.
     search: tuple[SearchProvider, ...] = ()
     notification_events: tuple[NotificationEvent, ...] = ()

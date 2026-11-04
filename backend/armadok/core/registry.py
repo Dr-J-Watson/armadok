@@ -64,6 +64,13 @@ class Registry:
         extra = (
             g for m in self.modules for source in m.grant_sources for g in source(conn, account_id)
         )
+        derived = (
+            g
+            for m in self.modules
+            for source in m.registry_grant_sources
+            for g in source(self, conn, account_id)
+        )
+        extra = (*extra, *derived)
         return tuple(dict.fromkeys((*own, *extra)))
 
     def unblocked_for(self, conn: Any, account_id: str) -> frozenset[str]:
@@ -109,6 +116,20 @@ class Registry:
     def notification_events(self) -> dict[str, NotificationEvent]:
         """Return the notification events modules can raise, by name."""
         return {e.name: e for m in self.modules for e in m.notification_events}
+
+    def ownables(self) -> dict[str, Any]:
+        """Return the kinds of object that can have an owner, by type."""
+        return {o.type: o for m in self.modules for o in m.ownable}
+
+    def access_changed(self, conn: Any) -> None:
+        """Tell the modules that someone may have lost access to a machine."""
+        for m in self.modules:
+            for listener in m.access_listeners:
+                listener(self, conn)
+
+    def ownership_listeners(self) -> tuple[Any, ...]:
+        """Return the handlers told when an object changes owner."""
+        return tuple(h for m in self.modules for h in m.ownership_listeners)
 
     def node_tables(self) -> tuple[tuple[str, str], ...]:
         """Return the (table, action) pairs modules want handled when a node is erased."""

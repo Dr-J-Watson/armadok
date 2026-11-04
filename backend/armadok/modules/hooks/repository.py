@@ -126,3 +126,17 @@ def set_result(conn: sqlite3.Connection, hook_id: str, result: str) -> None:
     """Keep the outcome of the last call (a status word or an error code, never content)."""
     conn.execute("UPDATE hooks SET last_result = ? WHERE id = ?", (result, hook_id))
     conn.commit()
+
+
+def revoke_for_object(conn: sqlite3.Connection, change: Any) -> None:
+    """Revoke the former owner's hooks on an object that changed hands.
+
+    Their token is in the former owner's tools, so unlike a schedule it cannot just be paused:
+    the new owner makes a new hook. Part of the owner change's transaction.
+    """
+    conn.execute(
+        "UPDATE hooks SET revoked = 1, last_result = 'ownership.changed'"
+        " WHERE created_by = ? AND revoked = 0 AND json_extract(target, '$.node_id') = ?"
+        " AND json_extract(target, '$.' || ?) = ?",
+        (change.old_owner, change.node_id, change.object_type, change.object_id),
+    )

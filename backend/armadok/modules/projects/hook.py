@@ -35,7 +35,14 @@ def _runner(body: schemas.ActionIn):
         registry = app.state.registry
         conn = app.state.settings.open_db()
         try:
-            authorise(conn, registry, who, target["node_id"], "projects.deploy")
+            authorise(
+                conn,
+                registry,
+                who,
+                target["node_id"],
+                "projects.deploy",
+                ("project", target["project"]),
+            )
             await start_action(app, conn, registry, who, target["node_id"], target["project"], body)
         finally:
             conn.close()

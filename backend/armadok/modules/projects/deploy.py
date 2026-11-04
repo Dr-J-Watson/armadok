@@ -177,7 +177,7 @@ async def run_action(
     Needs `projects.deploy` on the node. The action runs in the background: follow it with
     `GET /nodes/{id}/tasks/{task_id}`.
     """
-    authorise(conn, registry, who, node_id, "projects.deploy")
+    authorise(conn, registry, who, node_id, "projects.deploy", ("project", project))
     task_id = await start_action(request.app, conn, registry, who, node_id, project, body)
     return {"task_id": task_id, "state": "running"}
 
@@ -231,11 +231,16 @@ async def get_task(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Return a task of this node, refreshed while it runs. Needs `projects.logs`."""
-    authorise(conn, registry, who, node_id, "projects.logs")
+    """Return a task of this node, refreshed while it runs. Needs `projects.logs`.
+
+    The right may come from the whole machine or from owning the task's project.
+    """
+    authorise(conn, registry, who, node_id, "nodes.read")
     row = tasks.get(conn, node_id, task_id)
     if row is None:
+        authorise(conn, registry, who, node_id, "projects.logs")
         raise NotFound()
+    authorise(conn, registry, who, node_id, "projects.logs", ("project", row["project"]))
     row = await sync_task(request.app, node_id, row)
     audit.record(
         conn,
@@ -259,7 +264,9 @@ def list_tasks(
     who: Principal = Depends(get_principal),
 ) -> list[dict]:
     """Return the latest tasks (without their output). Needs `projects.logs`."""
-    authorise(conn, registry, who, node_id, "projects.logs")
+    authorise(
+        conn, registry, who, node_id, "projects.logs", ("project", project) if project else None
+    )
     shown = []
     for row in tasks.recent(conn, node_id, project):
         item = tasks.view(request.app.state.settings, row)
@@ -278,7 +285,7 @@ async def project_status(
     who: Principal = Depends(get_principal),
 ) -> dict:
     """Return each container of the project with its state. Needs `projects.read`."""
-    authorise(conn, registry, who, node_id, "projects.read")
+    authorise(conn, registry, who, node_id, "projects.read", ("project", project))
     answer = await ask(
         request, registry, node_id, "compose.ps", _args(project), schemas.ProjectStatus
     )
@@ -297,7 +304,7 @@ async def project_logs(
     who: Principal = Depends(get_principal),
 ) -> dict:
     """Return the last log lines. Needs `projects.logs`. Reads are audited."""
-    authorise(conn, registry, who, node_id, "projects.logs")
+    authorise(conn, registry, who, node_id, "projects.logs", ("project", project))
     args = {**_args(project), "service": service, "tail": tail}
     try:
         answer = await ask(request, registry, node_id, "compose.logs", args, schemas.ProjectLogs)
@@ -331,7 +338,7 @@ async def check_project(
 
     Compose error messages can quote file content, so this is as sensitive as logs.
     """
-    authorise(conn, registry, who, node_id, "projects.logs")
+    authorise(conn, registry, who, node_id, "projects.logs", ("project", project))
     answer = await ask(
         request, registry, node_id, "compose.check", _args(project), schemas.ComposeCheck
     )

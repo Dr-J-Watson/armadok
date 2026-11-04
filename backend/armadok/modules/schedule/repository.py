@@ -213,3 +213,17 @@ def set_result(conn: sqlite3.Connection, task_id: str, result: str) -> None:
         (_now().isoformat(), result, task_id),
     )
     conn.commit()
+
+
+def pause_for_object(conn: sqlite3.Connection, change: Any) -> None:
+    """Switch off the former owner's tasks on an object that changed hands.
+
+    Their target names the object under its kind (`{"project": "blog"}`). The new owner can
+    switch a task back on after reading it. Part of the owner change's transaction.
+    """
+    conn.execute(
+        "UPDATE scheduled_tasks SET enabled = 0, last_result = 'ownership.changed'"
+        " WHERE node_id = ? AND created_by = ? AND enabled = 1"
+        " AND json_extract(target, '$.' || ?) = ?",
+        (change.node_id, change.old_owner, change.object_type, change.object_id),
+    )

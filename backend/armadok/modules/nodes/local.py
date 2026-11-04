@@ -33,6 +33,21 @@ def give_owner_rights(conn: sqlite3.Connection, registry: Registry, user_id: str
             add_grant(conn, user_id, Grant(right, scope), granted_by="system")
 
 
+def ensure_owner_rights(conn: sqlite3.Connection, settings: Any, registry: Registry) -> None:
+    """Start-up hook: every machine's owner holds the owner rights of every enabled module.
+
+    A module added after a machine was made declares new owner rights; without this, only the
+    local node's owner would ever receive them. Idempotent.
+    """
+    rights = registry.node_owner_rights()
+    for node in conn.execute("SELECT id, owner FROM nodes WHERE deleted_at IS NULL").fetchall():
+        scope = f"node:{node['id']}"
+        held = {g["right"] for g in list_grants(conn, node["owner"]) if g["scope"] == scope}
+        for right in rights:
+            if right not in held:
+                add_grant(conn, node["owner"], Grant(right, scope), granted_by="system")
+
+
 def ensure_local_node(conn: sqlite3.Connection, settings: Any, registry: Registry) -> None:
     """Start-up hook: create the local node if enabled, and give it to the first account."""
     if not settings.local_node:

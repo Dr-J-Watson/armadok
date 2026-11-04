@@ -200,5 +200,14 @@
   "notes.not_with_key": "Sharing a note needs your own session, not an API key.",
   "imagescan.too_soon": "A scan just ran on this machine. Try again in a moment.",
   "imagescan.busy": "This image is already being scanned.",
-  "imagescan.invalid_image": "This is not a valid image id."
+  "imagescan.invalid_image": "This is not a valid image id.",
+  "ownership.unknown_object": "Unknown kind of object or invalid name.",
+  "ownership.nothing_to_give": "You own nothing here that can be given.",
+  "ownership.give_to_self": "You cannot give an object to yourself.",
+  "ownership.too_many_offers": "Too many gifts are waiting for an answer.",
+  "ownership.offer_void": "This gift is no longer valid and was cancelled.",
+  "ownership.not_with_key": "Ownership needs your own session, not an API key.",
+  "ownership.unknown_mode": "Unknown mode.",
+  "ownership.list_truncated": "The list of objects is too long to be sure of \"everything\". Give or take them one by one.",
+  "ownership.inbox_full": "This person already has too many gifts waiting."
 }

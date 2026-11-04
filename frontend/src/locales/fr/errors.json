@@ -200,5 +200,14 @@
   "notes.not_with_key": "Partager une note demande votre propre session, pas une clé d'API.",
   "imagescan.too_soon": "Une analyse vient d'avoir lieu sur cette machine. Réessayez dans un instant.",
   "imagescan.busy": "Cette image est déjà en cours d'analyse.",
-  "imagescan.invalid_image": "Ce n'est pas un identifiant d'image valide."
+  "imagescan.invalid_image": "Ce n'est pas un identifiant d'image valide.",
+  "ownership.unknown_object": "Type d'objet inconnu ou nom invalide.",
+  "ownership.nothing_to_give": "Vous ne possédez ici rien qui puisse être légué.",
+  "ownership.give_to_self": "Vous ne pouvez pas léguer un objet à vous-même.",
+  "ownership.too_many_offers": "Trop de legs attendent une réponse.",
+  "ownership.offer_void": "Ce legs n'est plus valable et a été annulé.",
+  "ownership.not_with_key": "La propriété demande votre propre session, pas une clé d'API.",
+  "ownership.unknown_mode": "Mode inconnu.",
+  "ownership.list_truncated": "La liste d'objets est trop longue pour garantir « tout ». Léguez ou reprenez-les un par un.",
+  "ownership.inbox_full": "Cette personne a déjà trop de legs en attente."
 }

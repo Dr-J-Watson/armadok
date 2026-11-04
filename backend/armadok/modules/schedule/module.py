@@ -81,4 +81,5 @@ module = Module(
     ),
     migrations=(repository.MIGRATION, repository.MISSED),
     tasks=(watch_loop,),
+    ownership_listeners=(repository.pause_for_object,),
 )

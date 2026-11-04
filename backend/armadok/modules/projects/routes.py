@@ -53,8 +53,8 @@ async def read_file(
     who: Principal = Depends(get_principal),
 ) -> dict:
     """Return the file's text and its version hash. Reads are audited (files can hold secrets)."""
-    authorise(conn, registry, who, node_id, "projects.files.read")
     _names(project, file)
+    authorise(conn, registry, who, node_id, "projects.files.read", ("project", project))
     try:
         answer = await ask(
             request,
@@ -102,8 +102,8 @@ async def write_file(
 
     The audit entry records which file and how many bytes, never the content.
     """
-    authorise(conn, registry, who, node_id, "projects.files.write")
     _names(project, file)
+    authorise(conn, registry, who, node_id, "projects.files.write", ("project", project))
     sent = body.content.encode()
     try:
         answer = await ask(
