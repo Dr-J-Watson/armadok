@@ -3,9 +3,10 @@
 Run it with the hub stopped (it refuses if the database is in use). It decrypts the backup with
 `ARMADOK_STATE_BACKUP_KEY` or `ARMADOK_ENCRYPTION_KEY` (the key the backup was made with),
 checks the database inside it (integrity, and that it does not come from a newer Armadok),
-and only then writes the database and the identity key into the data folder. What was there is not deleted: it is moved aside
-with a `.before-restore-<time>` suffix, **in clear text**, so a wrong choice can be undone by
-hand and the old files should be removed once you are sure. The key itself is never printed.
+and only then writes the database and the identity key into the data folder. What was there is
+not deleted: it is moved aside with a `.before-restore-<time>` suffix, **in clear text**, so a
+wrong choice can be undone by hand and the old files should be removed once you are sure. The
+key itself is never printed.
 """
 
 from __future__ import annotations
