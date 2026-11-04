@@ -5,6 +5,7 @@ import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
 import { FileEditor } from '../../shell/FileEditor'
 import { Coherence } from './Coherence'
+import { DomainSwitch } from './DomainSwitch'
 import { ManagedSites } from './ManagedSites'
 import { Middlewares } from './Middlewares'
 import { SitesView } from './SitesView'
@@ -44,7 +45,10 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
         ))}
       </div>
       {view === 'managed' ? (
-        <ManagedSites nodeId={nodeId} />
+        <>
+          <ManagedSites nodeId={nodeId} />
+          <DomainSwitch nodeId={nodeId} />
+        </>
       ) : view === 'middlewares' ? (
         <Middlewares nodeId={nodeId} />
       ) : view === 'coherence' ? (

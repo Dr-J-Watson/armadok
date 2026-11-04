@@ -774,3 +774,83 @@ def test_a_failed_rename_puts_everything_back(hub, monkeypatch):
     assert (folder / "middlewares" / "lan.yml").exists()
     assert not (folder / "middlewares" / "office.yml").exists()
     assert (folder / "sites" / "blog.yml").read_text() == site_before
+
+
+# --- pausing a whole domain -----------------------------------------------------------------------
+
+
+def make_site(client, admin, node, name, hosts):
+    spec = {"name": name, "hosts": hosts, "container": f"{name}-web", "port": 80}
+    made = client.post(f"/api/v1/nodes/{node}/traefik/sites", headers=admin, json={"spec": spec})
+    assert made.status_code == 201, made.text
+
+
+def domain_url(node, domain, action):
+    return f"/api/v1/nodes/{node}/traefik/domains/{domain}/{action}"
+
+
+def test_pausing_a_domain_pauses_its_sites_and_leaves_shared_ones_alone(hub):
+    client, admin, node, folder = hub
+    make_site(client, admin, node, "blog", ["blog.example.com"])
+    make_site(client, admin, node, "shop", ["shop.example.com", "www.example.com"])
+    make_site(client, admin, node, "mixed", ["a.example.com", "a.example.org"])
+    make_site(client, admin, node, "other", ["site.example.org"])
+    # A site edited by hand still counts: it is found from its router's rule.
+    text = (
+        (folder / "sites" / "other.yml").read_text().replace("site.example.org", "hand.example.com")
+    )
+    (folder / "sites" / "other.yml").write_text(text)
+
+    plan = client.post(
+        domain_url(node, "example.com", "pause"), headers=admin, json={"dry_run": True}
+    )
+    assert plan.json() == {"sites": ["blog", "other", "shop"], "shared": ["mixed"]}
+    assert (folder / "sites" / "blog.yml").exists()  # a dry run changes nothing
+
+    done = client.post(domain_url(node, "example.com", "pause"), headers=admin, json={})
+    assert done.status_code == 200 and done.json()["sites"] == ["blog", "other", "shop"]
+    assert (folder / "sites" / "blog.yml.paused").exists()
+    assert (folder / "sites" / "mixed.yml").exists()  # also serves another domain: untouched
+    assert not (folder / "sites" / "shop.yml").exists()
+
+    back = client.post(domain_url(node, "example.com", "resume"), headers=admin, json={})
+    assert back.json()["sites"] == ["blog", "other", "shop"]
+    assert (folder / "sites" / "blog.yml").exists() and not (
+        folder / "sites" / "blog.yml.paused"
+    ).exists()
+    log = client.get("/api/v1/audit", headers=admin).text
+    assert "traefik.domain_pause" in log and "traefik.domain_resume" in log
+
+
+def test_a_domain_name_that_is_not_a_domain_is_refused_and_a_failure_undoes_the_pauses(
+    hub, monkeypatch
+):
+    from armadok.core.errors import ApiError
+    from armadok.modules.traefik import domain_routes
+
+    client, admin, node, folder = hub
+    make_site(client, admin, node, "blog", ["blog.example.com"])
+    make_site(client, admin, node, "shop", ["shop.example.com"])
+    assert (
+        client.post(domain_url(node, "not_a_domain", "pause"), headers=admin, json={}).status_code
+        == 422
+    )
+    assert (
+        client.post(
+            domain_url(node, "example.com", "pause"), headers=admin, json={"x": 1}
+        ).status_code
+        == 422
+    )
+
+    real = domain_routes.ask
+
+    async def failing(request, registry, node_id, op, args, model):
+        if op == "traefik.site.pause" and args["name"] == "shop":
+            raise ApiError("worker.unavailable", 503)
+        return await real(request, registry, node_id, op, args, model)
+
+    monkeypatch.setattr(domain_routes, "ask", failing)
+    got = client.post(domain_url(node, "example.com", "pause"), headers=admin, json={})
+    assert got.status_code == 503
+    # blog was paused first, then put back when shop failed.
+    assert (folder / "sites" / "blog.yml").exists() and (folder / "sites" / "shop.yml").exists()

@@ -138,5 +138,17 @@
   "middlewares.renameCancel": "Cancel",
   "middlewares.renameSites": "{{count}} site(s) built with the form will follow the new name: {{sites}}.",
   "middlewares.renameManual": "These files name the middleware and are never rewritten for you. Change them by hand, or the sites in them will lose it: {{files}}.",
-  "middlewares.renameGo": "Rename now"
+  "middlewares.renameGo": "Rename now",
+  "domain.title": "Pause a whole domain",
+  "domain.hint": "Stops serving every site whose addresses all belong to the domain. The DNS is not touched, and nothing is deleted.",
+  "domain.name": "Domain (for example example.com)",
+  "domain.action": "Action",
+  "domain.pause": "Pause",
+  "domain.resume": "Resume",
+  "domain.show": "Show what will change",
+  "domain.none": "No site to change for this domain.",
+  "domain.sites": "{{count}} site(s): {{sites}}.",
+  "domain.shared": "Left alone because they also answer for another domain: {{sites}}.",
+  "domain.goPause": "Pause these sites",
+  "domain.goResume": "Resume these sites"
 }
