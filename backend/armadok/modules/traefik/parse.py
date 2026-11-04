@@ -161,7 +161,18 @@ def _summarize(path: str, text: str) -> dict[str, Any]:
         if not isinstance(name, str) or not isinstance(spec, dict) or not spec:
             continue
         kind = next((k for k in spec if isinstance(k, str)), "")
-        middlewares.append({"name": name, "id": qualify(name), "type": kind[:50], "path": path})
+        chain = spec.get("chain")
+        # A chain names other middlewares: the check follows these links.
+        members = chain.get("middlewares") if isinstance(chain, dict) else None
+        middlewares.append(
+            {
+                "name": name,
+                "id": qualify(name),
+                "type": kind[:50],
+                "path": path,
+                "refs": [qualify(m) for m in _names(members)],
+            }
+        )
     return {
         "path": path,
         "error": None,

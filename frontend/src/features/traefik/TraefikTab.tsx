@@ -4,18 +4,19 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
 import { FileEditor } from '../../shell/FileEditor'
+import { Coherence } from './Coherence'
 import { ManagedSites } from './ManagedSites'
 import { Middlewares } from './Middlewares'
 import { SitesView } from './SitesView'
 
-type View = 'sites' | 'managed' | 'middlewares' | 'files'
+type View = 'sites' | 'managed' | 'middlewares' | 'coherence' | 'files'
 
 export function TraefikTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['traefik', 'errors'])
   const [params, setParams] = useSearchParams()
   // View and open file live in the address: shareable, and kept on reload.
   const asked = params.get('view')
-  const view: View = asked === 'files' || asked === 'managed' || asked === 'middlewares' ? asked : 'sites'
+  const view: View = asked === 'files' || asked === 'managed' || asked === 'middlewares' || asked === 'coherence' ? asked : 'sites'
   const file = params.get('file')
 
   function go(next: Record<string, string | null>) {
@@ -30,7 +31,7 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
   return (
     <>
       <div className="actions">
-        {(['sites', 'managed', 'middlewares', 'files'] as const).map((name) => (
+        {(['sites', 'managed', 'middlewares', 'coherence', 'files'] as const).map((name) => (
           <button
             key={name}
             type="button"
@@ -46,6 +47,8 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
         <ManagedSites nodeId={nodeId} />
       ) : view === 'middlewares' ? (
         <Middlewares nodeId={nodeId} />
+      ) : view === 'coherence' ? (
+        <Coherence nodeId={nodeId} onOpenFile={(path) => go({ view: 'files', file: path })} />
       ) : view === 'sites' ? (
         <SitesView nodeId={nodeId} onOpenFile={(path) => go({ view: 'files', file: path })} />
       ) : (

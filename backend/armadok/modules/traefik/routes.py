@@ -14,7 +14,7 @@ from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
-from armadok.modules.traefik import parse, schemas
+from armadok.modules.traefik import coherence, parse, schemas
 from armadok.modules.workers.access import ask, audit_failure, authorise
 
 router = APIRouter(prefix="/nodes/{node_id}/traefik", tags=["traefik"])
@@ -73,6 +73,31 @@ async def sites(
         "routers": [r for s in summaries for r in s["routers"]],
         "services": [x for s in summaries for x in s["services"]],
         "middlewares": [m for s in summaries for m in s["middlewares"]],
+        "errors": [{"path": s["path"], "error": s["error"]} for s in summaries if s["error"]],
+        "truncated": snapshot.truncated,
+    }
+
+
+@router.get("/coherence", summary="Check that the configuration files agree with each other")
+async def coherence_check(
+    node_id: str,
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Return broken references, loops and leftovers found across all the files.
+
+    Read-only: nothing is changed. Needs the same right as the sites view.
+    """
+    authorise(conn, registry, who, node_id, "traefik.read")
+    snapshot = await ask(request, registry, node_id, "traefik.snapshot", {}, schemas.Snapshot)
+    summaries = await asyncio.to_thread(
+        lambda: [parse.summarize(f.path, f.content, f.sha256) for f in snapshot.files]
+    )
+    issues = await asyncio.to_thread(coherence.analyse, summaries)
+    return {
+        "issues": issues,
         "errors": [{"path": s["path"], "error": s["error"]} for s in summaries if s["error"]],
         "truncated": snapshot.truncated,
     }
