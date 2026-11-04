@@ -23,5 +23,17 @@
   "resources.none": "Aucun.",
   "live.toggle": "Afficher l'utilisation en direct (processeur, mémoire)",
   "live.truncated": "Tous les conteneurs n'ont pas pu être mesurés.",
-  "columns.usage": "Utilisation"
+  "columns.usage": "Utilisation",
+  "prune.title": "Nettoyage",
+  "prune.hint": "Ne supprime que des restes. Les volumes ne sont jamais touchés, et ce qui porte l'étiquette armadok.protect=true est conservé.",
+  "prune.containers": "Supprimer les conteneurs arrêtés",
+  "prune.images": "Supprimer les images orphelines",
+  "prune.networks": "Supprimer les réseaux inutilisés",
+  "prune.confirmTitle": "Confirmer le nettoyage",
+  "prune.confirm.containers": "Les conteneurs arrêtés seront supprimés définitivement (leur couche d'écriture est perdue).",
+  "prune.confirm.images": "Les images sans nom et sans conteneur seront supprimées.",
+  "prune.confirm.networks": "Les réseaux sans conteneur rattaché seront supprimés. Le réseau d'un conteneur arrêté est conservé.",
+  "prune.go": "Nettoyer maintenant",
+  "prune.cancel": "Annuler",
+  "prune.done": "{{count}} supprimé(s), {{mib}} Mio libérés."
 }

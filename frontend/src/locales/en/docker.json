@@ -23,5 +23,17 @@
   "resources.none": "None.",
   "live.toggle": "Show live usage (processor, memory)",
   "live.truncated": "Not every container could be measured.",
-  "columns.usage": "Usage"
+  "columns.usage": "Usage",
+  "prune.title": "Clean up",
+  "prune.hint": "Removes leftovers only. Volumes are never touched, and anything labelled armadok.protect=true is kept.",
+  "prune.containers": "Remove stopped containers",
+  "prune.images": "Remove dangling images",
+  "prune.networks": "Remove unused networks",
+  "prune.confirmTitle": "Confirm the clean-up",
+  "prune.confirm.containers": "Stopped containers will be removed for good (their writable layer is lost).",
+  "prune.confirm.images": "Images with no name and no container will be removed.",
+  "prune.confirm.networks": "Networks with no container attached will be removed. The network of a stopped container is kept.",
+  "prune.go": "Clean up now",
+  "prune.cancel": "Cancel",
+  "prune.done": "{{count}} removed, {{mib}} MiB freed."
 }

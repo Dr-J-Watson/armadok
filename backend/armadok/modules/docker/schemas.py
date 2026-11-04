@@ -8,7 +8,7 @@ worker cannot make the API show more than a healthy one would.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
@@ -94,6 +94,21 @@ class Done(BaseModel):
 
     model_config = _STRICT
     done: bool
+
+
+class Pruned(BaseModel):
+    """The answer of `docker.prune`: only counts come back from the machine."""
+
+    model_config = _STRICT
+    removed: int = Field(ge=0, le=1_000_000)
+    space: int = Field(ge=0, le=10**15)
+
+
+class PruneIn(BaseModel):
+    """Which kind of leftover to remove."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["containers", "images", "networks"]
 
 
 class Logs(BaseModel):

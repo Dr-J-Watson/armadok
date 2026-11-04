@@ -249,3 +249,42 @@ def test_hub_refuses_loose_or_oversized_worker_data_and_refilters_labels():
     ):
         with pytest.raises(ValidationError):
             schemas.Container.model_validate(bad)
+
+
+# --- manual clean-up -----------------------------------------------------------------------------
+
+
+def test_a_manual_prune_asks_the_machine_and_is_audited(tmp_path, caplog, monkeypatch):
+    import logging
+    import re
+
+    from fastapi.testclient import TestClient
+
+    from armadok.modules.docker import routes as docker_routes
+
+    asked = []
+
+    async def fake_ask(request, registry, node_id, op, args, model):
+        asked.append((op, args))
+        return model.model_validate({"removed": 3, "space": 2097152})
+
+    monkeypatch.setattr(docker_routes, "ask", fake_ask)
+    with caplog.at_level(logging.WARNING, logger="armadok.setup"):
+        app = create_app(Settings(data_dir=tmp_path, cookie_secure=False, local_node=True))
+    code = re.search(r"\): (\S+)$", caplog.records[-1].getMessage()).group(1)
+    with TestClient(app) as client:
+        client.post(
+            "/api/v1/setup", json={"install_code": code, "username": "admin", "password": PASSWORD}
+        )
+        token = client.post(
+            "/api/v1/auth/login", json={"username": "admin", "password": PASSWORD}
+        ).json()["access_token"]
+        admin = {"Authorization": f"Bearer {token}"}
+        node = client.get("/api/v1/nodes", headers=admin).json()[0]["id"]
+        url = f"/api/v1/nodes/{node}/docker/prune"
+        # Volumes are never offered: their data cannot be recreated.
+        assert client.post(url, headers=admin, json={"kind": "volumes"}).status_code == 422
+        done = client.post(url, headers=admin, json={"kind": "images"})
+        assert done.status_code == 200 and done.json() == {"removed": 3, "space": 2097152}
+        assert asked == [("docker.prune", {"kind": "images"})]
+        assert "docker.prune" in json.dumps(client.get("/api/v1/audit", headers=admin).json())

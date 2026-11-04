@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
@@ -49,10 +50,63 @@ function Kind({ nodeId, kind }: { nodeId: string; kind: (typeof KINDS)[number] }
   )
 }
 
+const PRUNE_KINDS = ['containers', 'images', 'networks'] as const
+
+// Manual clean-up: one kind at a time, after an explicit confirmation. The machine keeps
+// anything labelled `armadok.protect=true`, never touches volumes, and keeps the network of a
+// stopped container.
+function Cleanup({ nodeId }: { nodeId: string }) {
+  const { t } = useTranslation(['docker', 'errors'])
+  const client = useQueryClient()
+  const [asked, setAsked] = useState<(typeof PRUNE_KINDS)[number] | null>(null)
+  const prune = useMutation({
+    mutationFn: (kind: string) => api.post<{ removed: number; space: number }>(`/nodes/${nodeId}/docker/prune`, { kind }),
+    onSuccess: () => {
+      setAsked(null)
+      return client.invalidateQueries({ queryKey: ['docker-resources', nodeId] })
+    },
+  })
+  return (
+    <section aria-label={t('docker:prune.title')}>
+      <h3>{t('docker:prune.title')}</h3>
+      <p className="hint">{t('docker:prune.hint')}</p>
+      <ul className="links">
+        {PRUNE_KINDS.map((kind) => (
+          <li key={kind}>
+            <button type="button" disabled={prune.isPending} onClick={() => setAsked(kind)}>
+              {t(`docker:prune.${kind}`)}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {asked && (
+        <div className="notice" role="alertdialog" aria-label={t('docker:prune.confirmTitle')}>
+          <p>{t(`docker:prune.confirm.${asked}`)}</p>
+          <button type="button" disabled={prune.isPending} onClick={() => prune.mutate(asked)}>
+            {t('docker:prune.go')}
+          </button>{' '}
+          <button type="button" onClick={() => setAsked(null)}>
+            {t('docker:prune.cancel')}
+          </button>
+        </div>
+      )}
+      {prune.isSuccess && (
+        <p role="status">{t('docker:prune.done', { count: prune.data.removed, mib: Math.round(prune.data.space / 1048576) })}</p>
+      )}
+      {prune.isError && (
+        <p role="alert" className="error">
+          {errorMessage(t, prune.error)}
+        </p>
+      )}
+    </section>
+  )
+}
+
 // What exists on the machine besides containers: images, networks and volumes.
 export function ResourcesTab({ nodeId }: { nodeId: string }) {
   return (
     <>
+      <Cleanup nodeId={nodeId} />
       {KINDS.map((kind) => (
         <Kind key={kind} nodeId={nodeId} kind={kind} />
       ))}

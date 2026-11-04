@@ -23,7 +23,7 @@ module = Module(
         Right("docker.logs", depends_on=("docker.read",), node_owner=True, level="operate"),
     ),
     signals=(Signal("docker.changed", "docker.read"),),
-    audit_events=("docker.container_action", "docker.logs_read"),
+    audit_events=("docker.container_action", "docker.logs_read", "docker.prune"),
     hook_actions=(prune.ACTION,),
     relations=(
         RelationProvider(

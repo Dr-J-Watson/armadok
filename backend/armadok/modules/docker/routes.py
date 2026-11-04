@@ -176,6 +176,42 @@ async def container_action(
     return {"done": True}
 
 
+@router.post("/prune", summary="Remove stopped containers, dangling images or unused networks")
+async def prune_now(
+    node_id: str,
+    body: schemas.PruneIn,
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Clean up one kind of leftover right now. Needs `docker.remove` (never for a key).
+
+    The machine applies the same protections as a scheduled clean-up: nothing labelled
+    `armadok.protect=true`, no network a stopped container still belongs to, and volumes are
+    never touched. Only counts come back. Every attempt is audited.
+    """
+    details = {"kind": body.kind}
+    _gate(conn, registry, who, node_id, "docker.remove", "docker.prune", details)
+    try:
+        answer = await ask(
+            request, registry, node_id, "docker.prune", {"kind": body.kind}, schemas.Pruned
+        )
+    except ApiError as error:
+        audit_failure(conn, registry, who, "docker.prune", node_id, details, error)
+        raise
+    audit.record(
+        conn,
+        registry.audit_events(),
+        who.actor,
+        "docker.prune",
+        object_type="node",
+        object_id=node_id,
+        details={**details, "removed": answer.removed},
+    )
+    return answer.model_dump()
+
+
 @router.get("/containers/{container}/logs", summary="Last lines of a container's logs")
 async def container_logs(
     node_id: str,
