@@ -12,6 +12,7 @@ import importlib.metadata
 import json
 import math
 import re
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -43,6 +44,37 @@ def installed_components() -> list[tuple[str, str]]:
         version = (dist.version or "").strip()
         if name and VERSION.fullmatch(version):
             found.setdefault(name, version)
+    return sorted(found.items())[:MAX_COMPONENTS]
+
+
+# Where the image build leaves the list of the web interface's production packages.
+NPM_COMPONENTS_FILE = Path("/app/npm-components.json")
+NPM_PREFIX = "npm:"
+NPM_NAME = re.compile(r"(?:@[a-z0-9][a-z0-9._-]{0,63}/)?[a-z0-9][a-z0-9._-]{0,63}")
+
+
+def npm_components(path: Path = NPM_COMPONENTS_FILE) -> list[tuple[str, str]]:
+    """Return `(name, version)` of the web interface's production packages, if the image lists them.
+
+    The file is written at build time from the locked dependency list (development tools
+    excluded). Without it (a development install) there is nothing to check, which is not an
+    error. A line that does not look like a package is ignored.
+    """
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    found: dict[str, str] = {}
+    for entry in raw if isinstance(raw, list) else []:
+        if (
+            isinstance(entry, list)
+            and len(entry) == 2
+            and isinstance(entry[0], str)
+            and isinstance(entry[1], str)
+            and NPM_NAME.fullmatch(entry[0])
+            and VERSION.fullmatch(entry[1])
+        ):
+            found.setdefault(entry[0], entry[1])
     return sorted(found.items())[:MAX_COMPONENTS]
 
 

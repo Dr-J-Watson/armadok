@@ -488,3 +488,55 @@ def test_the_answer_is_read_with_a_size_cap_while_streaming(monkeypatch):
     with pytest.raises(osv.OsvError) as error:
         asyncio.run(osv.scan([("jinja2", "2.4.1")]))
     assert error.value.args == ("vulns.too_large",)
+
+
+# --- the web interface's own packages -------------------------------------------------------------
+
+
+def test_the_web_packages_come_from_the_build_list_and_junk_is_ignored(tmp_path):
+    listing = tmp_path / "npm-components.json"
+    listing.write_text(
+        json.dumps(
+            [
+                ["react", "18.3.1"],
+                ["@tanstack/query-core", "5.105.3"],
+                ["Bad Name", "1.0.0"],
+                ["react", "17.0.0"],  # a name twice: the first wins
+                ["x", 5],
+                "nonsense",
+                ["evil/../name", "1.0.0"],
+            ]
+        )
+    )
+    assert osv.npm_components(listing) == [("@tanstack/query-core", "5.105.3"), ("react", "18.3.1")]
+    assert osv.npm_components(tmp_path / "missing.json") == []
+    listing.write_text("not json")
+    assert osv.npm_components(listing) == []
+
+
+def test_web_findings_are_prefixed_and_asked_in_the_npm_ecosystem(box, monkeypatch):
+    client, admin, app = box
+    asked = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/querybatch":
+            queries = json.loads(request.content)["queries"]
+            asked.extend((q["package"]["ecosystem"], q["package"]["name"]) for q in queries)
+            results = [
+                {"vulns": [{"id": "GHSA-aaaa-bbbb-cccc"}]}
+                if q["package"]["ecosystem"] == "npm"
+                else {}
+                for q in queries
+            ]
+            return httpx.Response(200, json={"results": results})
+        return httpx.Response(200, json=record())
+
+    fake_osv(monkeypatch, handler)
+    monkeypatch.setattr(osv, "installed_components", lambda: [("jinja2", "2.4.1")])
+    monkeypatch.setattr(osv, "npm_components", lambda: [("jinja2", "1.0.0")])
+    assert client.post("/api/v1/vulns/scan", headers=admin).status_code == 200
+    listing = client.get("/api/v1/vulns", headers=admin).json()
+    # The same name in both ecosystems stays two different components.
+    assert ("PyPI", "jinja2") in asked and ("npm", "jinja2") in asked
+    assert [f["component"] for f in listing["findings"]] == ["npm:jinja2"]
+    assert listing["scan"]["components"] == 2

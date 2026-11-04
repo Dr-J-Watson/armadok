@@ -9,6 +9,9 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY frontend/ .
 RUN npm run build
+# The production packages of the interface, from the lock file (no development tools): the hub
+# checks them against the public vulnerability database, like its Python packages.
+RUN node -e "const l=require('./package-lock.json').packages;const o=[];for(const[k,v]of Object.entries(l)){if(!k||v.dev||v.devOptional)continue;o.push([k.split('node_modules/').pop(),v.version])};require('fs').writeFileSync('npm-components.json',JSON.stringify(o))"
 
 FROM python:3.12-slim AS build
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
@@ -48,6 +51,7 @@ COPY backend/armadok /app/armadok
 # The command line (`docker exec <container> armadok nodes`): the same API as the interface.
 COPY scripts/armadok /usr/local/bin/armadok
 COPY --from=web /web/dist /app/web
+COPY --from=web /web/npm-components.json /app/npm-components.json
 WORKDIR /app
 USER 10001
 VOLUME /data

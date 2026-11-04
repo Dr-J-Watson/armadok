@@ -34,9 +34,19 @@ async def run_scan(app: Any) -> int:
     if _running.locked():
         raise ScanFailed("vulns.busy")
     async with _running:
-        components = await asyncio.to_thread(osv.installed_components)
+        python = await asyncio.to_thread(osv.installed_components)
+        web = await asyncio.to_thread(osv.npm_components)
+        # Both lists share one table: the web packages carry a prefix so that a name used by
+        # both ecosystems cannot be mistaken for the other.
+        components = [*python, *((osv.NPM_PREFIX + n, v) for n, v in web)]
         try:
-            findings, truncated = await osv.scan(components)
+            findings, truncated = await osv.scan(python)
+            if web:
+                web_findings, web_truncated = await osv.scan(web, ecosystem="npm")
+                findings += [
+                    {**f, "component": osv.NPM_PREFIX + f["component"]} for f in web_findings
+                ]
+                truncated |= {(osv.NPM_PREFIX + n, v) for n, v in web_truncated}
         except osv.OsvError as error:
             code = str(error)
         except Exception:  # noqa: BLE001  (an odd answer must never leave the scan unrecorded)
