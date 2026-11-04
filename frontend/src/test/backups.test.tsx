@@ -65,7 +65,19 @@ describe('backups tab', () => {
     expect(submit).toBeEnabled()
     await userEvent.click(submit)
     const post = spy.mock.calls.find(([, init]) => init?.method === 'POST')
-    expect(JSON.parse(String(post![1]!.body))).toEqual({ archive: archive.name, volume: 'data', confirm: 'data', other: false })
+    expect(JSON.parse(String(post![1]!.body))).toEqual({ archive: archive.name, volume: 'data', confirm: 'data', other: false, clear: false })
+  })
+
+  it('can empty the volume first, and offers a download only to those who may', async () => {
+    const spy = renderTab(overview({ can_download: true }))
+    expect(await screen.findByRole('button', { name: 'Download' })).toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: 'Restore' }))
+    await userEvent.click(await screen.findByLabelText('Empty the volume first'))
+    expect(screen.getByText(/deleted before the archive is restored/)).toBeInTheDocument()
+    await userEvent.type(await screen.findByLabelText('Type the volume name to confirm'), 'data')
+    await userEvent.click(screen.getAllByRole('button', { name: 'Restore' }).at(-1)!)
+    const post = spy.mock.calls.find(([, init]) => init?.method === 'POST')
+    expect(JSON.parse(String(post![1]!.body)).clear).toBe(true)
   })
 
   it('hides restore and delete from those who cannot manage', async () => {

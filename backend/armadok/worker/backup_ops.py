@@ -10,9 +10,9 @@ same kind and never anything else the hub asks for:
 - the command is a fixed script; the only things that vary are names the worker checked
   against a strict pattern, passed as arguments (never put into the script text);
 - a backup mounts the volume read-only; a restore mounts the backup folder read-only;
-- archives are written root-only (umask 077) into the one folder `ARMADOK_BACKUP_DIR`: the
-  worker never reads their content and never sends it anywhere, it only lists, names and
-  deletes them;
+- archives are written into the one folder `ARMADOK_BACKUP_DIR` under umask 077, then handed to
+  the folder's group (0640). The worker lists, names and deletes them, and reads one out only
+  when a person asked for it (a fresh second-factor code, checked by the hub);
 - a restore is refused while any container (running or not) uses the volume.
 
 Long actions run in the background and are followed by task id, like Compose actions.
@@ -20,6 +20,7 @@ Long actions run in the background and are followed by task id, like Compose act
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -38,7 +39,7 @@ from armadok.worker.operation import Operation, OperationError
 
 VOLUME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}")
 ARCHIVE = re.compile(
-    r"(?P<volume>[A-Za-z0-9][A-Za-z0-9_.-]{0,127})--(?P<stamp>\d{8}T\d{6}Z)\.tar\.gz"
+    r"(?P<volume>[A-Za-z0-9][A-Za-z0-9_.-]{0,127})--(?P<stamp>[0-9]{8}T[0-9]{6}Z)\.tar\.gz"
 )
 TASK_ID = re.compile(r"[0-9a-f]{16}")
 MAX_ARCHIVES = 2000
@@ -49,11 +50,21 @@ MAX_TASKS_KEPT = 50
 HELPER_MEMORY = 512 * 1024 * 1024
 
 # `$1` is the archive name. The name is never part of the script text.
+# The archive is handed to the folder's own group (0640): that group already decides what is in
+# the folder, and it is how the worker can read an archive to hand it to its owner on request.
 _BACKUP_SCRIPT = (
-    'umask 077 && exec tar -C /data -czf "/backup/$1" --numeric-owner --one-file-system .'
+    'umask 077 && tar -C /data -czf "/backup/$1" --numeric-owner --one-file-system . '
+    '&& chgrp --reference=/backup "/backup/$1" && chmod 0640 "/backup/$1"'
 )
 _RESTORE_SCRIPT = 'exec tar -C /data -xzpf "/backup/$1" --numeric-owner'
-_BACKUP_CAPS = ["DAC_READ_SEARCH", "DAC_OVERRIDE"]
+# "Empty the volume first": the archive is read through once before anything is deleted, so a
+# damaged archive never costs the volume's current content.
+_RESTORE_CLEAR_SCRIPT = (
+    'tar -tzf "/backup/$1" >/dev/null && find /data -mindepth 1 -delete '
+    '&& exec tar -C /data -xzpf "/backup/$1" --numeric-owner'
+)
+_BACKUP_CAPS = ["DAC_READ_SEARCH", "DAC_OVERRIDE", "CHOWN"]
+CHUNK_BYTES = 384 * 1024  # base64 of this still fits a worker message (1 MiB)
 _RESTORE_CAPS = ["CHOWN", "DAC_OVERRIDE", "FOWNER", "DAC_READ_SEARCH"]
 
 _lock = threading.Lock()
@@ -257,13 +268,13 @@ def _backup_work(task_id: str, volume: str, keep: int) -> None:
             os.close(folder_fd)
 
 
-def _restore_work(task_id: str, volume: str, archive: str) -> None:
+def _restore_work(task_id: str, volume: str, archive: str, clear: bool = False) -> None:
     try:
         image, source = _host_side()
         spec = _spec(
             image,
             [f"{volume}:/data", f"{source}:/backup:ro"],
-            _RESTORE_SCRIPT,
+            _RESTORE_CLEAR_SCRIPT if clear else _RESTORE_SCRIPT,
             _RESTORE_CAPS,
             archive,
         )
@@ -383,12 +394,13 @@ def backup_start(args: dict[str, Any]) -> dict[str, Any]:
 def restore_start(args: dict[str, Any]) -> dict[str, Any]:
     """Restore an archive into a volume nobody uses.
 
-    Inputs: `archive`, `volume`, and `other: true` to restore into a volume that is not the one
-    the archive was made from (mixing data up by mistake is the risk the flag guards against).
+    Inputs: `archive`, `volume`, `clear: true` to empty the volume before restoring, and
+    `other: true` to restore into a volume that is not the one the archive was made from (mixing
+    data up by mistake is the risk the flag guards against).
     """
     archive, volume = _archive(args.get("archive")), _volume(args.get("volume"))
-    other = args.get("other", False)
-    if not isinstance(other, bool):
+    other, clear = args.get("other", False), args.get("clear", False)
+    if not isinstance(other, bool) or not isinstance(clear, bool):
         raise OperationError("worker.invalid_path")
     if not other and ARCHIVE.fullmatch(archive)["volume"] != volume:  # type: ignore[index]
         raise OperationError("worker.conflict")
@@ -412,7 +424,7 @@ def restore_start(args: dict[str, Any]) -> dict[str, Any]:
         raise OperationError("worker.docker_error") from None
     if not isinstance(users, list) or users:
         raise OperationError("worker.conflict")
-    return _start(_restore_work, volume, archive, volume=volume)
+    return _start(_restore_work, volume, archive, clear, volume=volume)
 
 
 def backup_task(args: dict[str, Any]) -> dict[str, Any]:
@@ -437,6 +449,39 @@ def backup_list(args: dict[str, Any]) -> dict[str, Any]:
         os.close(folder_fd)
 
 
+def backup_read(args: dict[str, Any]) -> dict[str, Any]:
+    """Return one piece of an archive, base64-encoded, with the archive's total size.
+
+    Inputs: `archive` and `offset`. The caller fetches piece after piece; nothing is kept here.
+    An archive made before archives were group-readable cannot be read: `worker.forbidden`.
+    """
+    archive, offset = _archive(args.get("archive")), args.get("offset")
+    if type(offset) is not int or offset < 0:
+        raise OperationError("worker.invalid_path")
+    folder_fd = _open_folder()
+    try:
+        try:
+            fd = os.open(
+                archive,
+                os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC,
+                dir_fd=folder_fd,
+            )
+        except FileNotFoundError:
+            raise OperationError("worker.not_found") from None
+        except OSError:
+            raise OperationError("worker.forbidden") from None
+        try:
+            info = os.fstat(fd)
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise OperationError("worker.forbidden")
+            data = os.pread(fd, CHUNK_BYTES, offset)
+        finally:
+            os.close(fd)
+    finally:
+        os.close(folder_fd)
+    return {"data": base64.b64encode(data).decode("ascii"), "size": info.st_size}
+
+
 def backup_delete(args: dict[str, Any]) -> dict[str, Any]:
     """Delete one archive by name."""
     archive = _archive(args.get("archive"))
@@ -458,4 +503,5 @@ OPERATIONS: dict[str, Operation] = {
     "backups.task": backup_task,
     "backups.list": backup_list,
     "backups.delete": backup_delete,
+    "backups.read": backup_read,
 }

@@ -19,8 +19,8 @@ from armadok.modules.workers.routes import call_operation
 
 log = logging.getLogger("armadok.backups")
 VOLUME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
-ARCHIVE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}--\d{8}T\d{6}Z\.tar\.gz$")
-ARCHIVE_VOLUME = re.compile(r"^(?P<volume>.+)--\d{8}T\d{6}Z\.tar\.gz$")
+ARCHIVE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}--[0-9]{8}T[0-9]{6}Z\.tar\.gz$")
+ARCHIVE_VOLUME = re.compile(r"^(?P<volume>.+)--[0-9]{8}T[0-9]{6}Z\.tar\.gz$")
 DEFAULT_KEEP = 7
 
 
@@ -47,7 +47,7 @@ class Archive(BaseModel):
     model_config = ConfigDict(extra="ignore")
     name: str = Field(pattern=ARCHIVE.pattern)
     volume: str = Field(pattern=VOLUME.pattern)
-    stamp: str = Field(pattern=r"^\d{8}T\d{6}Z$")
+    stamp: str = Field(pattern=r"^[0-9]{8}T[0-9]{6}Z$")
     size: int = Field(ge=0, le=2**50)
 
 
@@ -57,6 +57,14 @@ class Archives(BaseModel):
     model_config = ConfigDict(extra="ignore")
     archives: list[Archive] = Field(max_length=2000)
     truncated: bool = False
+
+
+class Chunk(BaseModel):
+    """One piece of an archive as the worker sends it (untrusted)."""
+
+    model_config = ConfigDict(extra="ignore")
+    data: str = Field(max_length=700_000, pattern=r"^[A-Za-z0-9+/]*={0,2}$")
+    size: int = Field(ge=0, le=2**50)
 
 
 async def ask(
@@ -86,12 +94,16 @@ async def start(
     actor_id: str | None = None,
     other: bool = False,
     actor: str | None = None,
+    clear: bool = False,
 ) -> str:
     """Start a backup (`kind` "backup") or a restore ("restore"); return the job id."""
     if kind == "backup":
         op, args = "backups.start", {"volume": volume, "keep": keep}
     else:
-        op, args = "backups.restore", {"volume": volume, "archive": archive, "other": other}
+        op, args = (
+            "backups.restore",
+            {"volume": volume, "archive": archive, "other": other, "clear": clear},
+        )
     started = await ask(app, node_id, op, args, Started, actor_id)
     conn = app.state.settings.open_db()
     try:

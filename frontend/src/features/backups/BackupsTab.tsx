@@ -29,6 +29,7 @@ interface Answer {
   jobs: Job[]
   can_create: boolean
   can_manage: boolean
+  can_download: boolean
   default_keep: number
   truncated: boolean
 }
@@ -47,6 +48,9 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
   const [restoring, setRestoring] = useState<Archive | null>(null)
   const [target, setTarget] = useState('')
   const [typed, setTyped] = useState('')
+  const [clear, setClear] = useState(false)
+  const [downloading, setDownloading] = useState<Archive | null>(null)
+  const [code, setCode] = useState('')
   const base = `/nodes/${nodeId}/backups`
   const list = useQuery({
     queryKey: ['backups', nodeId],
@@ -66,10 +70,11 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
     onSuccess: refresh,
   })
   const restore = useMutation({
-    mutationFn: () => api.post(`${base}/restore`, { archive: restoring!.name, volume: target, confirm: typed, other: target !== restoring!.volume }),
+    mutationFn: () => api.post(`${base}/restore`, { archive: restoring!.name, volume: target, confirm: typed, other: target !== restoring!.volume, clear }),
     onSuccess: () => {
       setRestoring(null)
       setTyped('')
+      setClear(false)
       refresh()
     },
   })
@@ -78,7 +83,18 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
     onSuccess: refresh,
   })
 
-  const failed = list.error ?? backup.error ?? restore.error ?? remove.error
+  // A one-time address, good for a minute, then the browser downloads straight from the machine
+  // through the hub: the file is neither kept on the hub nor held in this page's memory.
+  const download = useMutation({
+    mutationFn: (a: Archive) =>
+      api.post<{ ticket: string }>(`${base}/archives/${encodeURIComponent(a.name)}/download-ticket`, { code }),
+    onSuccess: (answer, a) => {
+      window.location.assign(`/api/v1${base}/archives/${encodeURIComponent(a.name)}/download?ticket=${answer.ticket}`)
+      setDownloading(null)
+      setCode('')
+    },
+  })
+  const failed = list.error ?? backup.error ?? restore.error ?? remove.error ?? download.error
   const data = list.data
   function submitBackup(event: FormEvent) {
     event.preventDefault()
@@ -148,6 +164,13 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
                     >
                       {t('backups:restore')}
                     </button>{' '}
+                    {data.can_download && (
+                      <>
+                        <button type="button" onClick={() => setDownloading(a)}>
+                          {t('backups:download')}
+                        </button>{' '}
+                      </>
+                    )}
                     <button type="button" onClick={() => window.confirm(t('backups:confirmDelete')) && remove.mutate(a)}>
                       {t('backups:delete')}
                     </button>
@@ -156,6 +179,29 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
               </li>
             ))}
           </ul>
+          {downloading && (
+            <form
+              aria-label={t('backups:downloadTitle')}
+              className="notice"
+              onSubmit={(e) => {
+                e.preventDefault()
+                download.mutate(downloading)
+              }}
+            >
+              <h2>{t('backups:downloadTitle')}</h2>
+              <p>{t('backups:downloadWarn', { archive: downloading.name })}</p>
+              <label>
+                {t('backups:code')}
+                <input value={code} required autoComplete="one-time-code" inputMode="numeric" onChange={(e) => setCode(e.target.value)} />
+              </label>
+              <button type="submit" disabled={download.isPending}>
+                {t('backups:download')}
+              </button>{' '}
+              <button type="button" onClick={() => setDownloading(null)}>
+                {t('backups:cancel')}
+              </button>
+            </form>
+          )}
           {restoring && (
             <form onSubmit={submitRestore} aria-label={t('backups:restoreTitle')} className="notice">
               <h2>{t('backups:restoreTitle')}</h2>
@@ -164,6 +210,10 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
                 {t('backups:restoreInto')}
                 <input value={target} required pattern="[A-Za-z0-9][A-Za-z0-9_.\-]{0,127}" onChange={(e) => setTarget(e.target.value)} />
               </label>
+              <label>
+                <input type="checkbox" checked={clear} onChange={(e) => setClear(e.target.checked)} /> {t('backups:clearFirst')}
+              </label>
+              {clear && <p className="notice">{t('backups:clearWarn')}</p>}
               <label>
                 {t('backups:typeName')}
                 <input value={typed} required autoComplete="off" onChange={(e) => setTyped(e.target.value)} />

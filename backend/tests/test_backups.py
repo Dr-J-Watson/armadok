@@ -13,6 +13,7 @@ from armadok.core.crypto import generate_key
 from armadok.main import create_app
 from armadok.modules.backups import repository as repo
 from armadok.modules.backups import scheduled, service
+from armadok.modules.users import totp
 from armadok.worker import backup_ops
 from armadok.worker.operation import OperationError
 
@@ -96,7 +97,7 @@ def test_the_helper_container_is_locked_down_and_names_never_reach_the_script(fo
     assert spec["Image"] == IMAGE and spec["NetworkDisabled"] is True
     assert host["NetworkMode"] == "none" and host["ReadonlyRootfs"] is True
     assert host["Privileged"] is False and host["CapDrop"] == ["ALL"]
-    assert set(host["CapAdd"]) == {"DAC_READ_SEARCH", "DAC_OVERRIDE"}
+    assert set(host["CapAdd"]) == {"DAC_READ_SEARCH", "DAC_OVERRIDE", "CHOWN"}
     assert host["Binds"] == ["my_data:/data:ro", "/host/backups:/backup"]
     assert spec["Labels"]["armadok.protect"] == "true" and host["Memory"] > 0
     script = spec["Entrypoint"][2]
@@ -625,3 +626,190 @@ def test_the_end_of_a_job_is_audited_with_who_started_it_even_by_key_and_errors_
     monkeypatch.setattr(service, "call_operation", hostile)
     client.portal.call(service.sync_job, app, job)
     assert len(running(app)) == 1  # the free-text "code" was refused
+
+
+# --- download and clear-before-restore ------------------------------------------------------
+
+
+def test_clearing_first_reads_the_archive_through_before_deleting_anything(folder):
+    (folder["path"] / "data--20260101T000000Z.tar.gz").write_bytes(b"1")
+    args = {"archive": "data--20260101T000000Z.tar.gz", "volume": "data"}
+    wait_for(backup_ops.restore_start({**args, "clear": True})["task"])
+    script = SPECS[-1]["Entrypoint"][2]
+    assert script.index("tar -tzf") < script.index("find /data -mindepth 1 -delete")
+    assert "$1" in script
+    wait_for(backup_ops.restore_start(args)["task"])
+    assert "-delete" not in SPECS[-1]["Entrypoint"][2]
+    with pytest.raises(OperationError):
+        backup_ops.restore_start({**args, "clear": "yes"})
+
+
+def test_an_archive_is_read_in_pieces_and_symlinks_and_odd_names_are_refused(folder, monkeypatch):
+    import base64
+
+    monkeypatch.setattr(backup_ops, "CHUNK_BYTES", 4)
+    name = "data--20260101T000000Z.tar.gz"
+    (folder["path"] / name).write_bytes(b"0123456789")
+    got, offset = b"", 0
+    while True:
+        piece = backup_ops.backup_read({"archive": name, "offset": offset})
+        data = base64.b64decode(piece["data"])
+        got, offset = got + data, offset + len(data)
+        assert piece["size"] == 10
+        if not data:
+            break
+    assert got == b"0123456789"
+    (folder["path"] / "link--20260101T000000Z.tar.gz").symlink_to(folder["path"] / name)
+    for bad in ({"archive": "link--20260101T000000Z.tar.gz", "offset": 0},):
+        with pytest.raises(OperationError) as error:
+            backup_ops.backup_read(bad)
+        assert error.value.code == "worker.forbidden"
+    for bad in ({"archive": "../x", "offset": 0}, {"archive": name, "offset": -1}):
+        with pytest.raises(OperationError):
+            backup_ops.backup_read(bad)
+    with pytest.raises(OperationError) as error:
+        backup_ops.backup_read({"archive": "nope--20260101T000000Z.tar.gz", "offset": 0})
+    assert error.value.code == "worker.not_found"
+
+
+def enable_2fa(client, headers):
+    secret = client.post(
+        "/api/v1/auth/2fa/enroll", headers=headers, json={"password": PASSWORD}
+    ).json()["secret"]
+    code = totp.code_at(secret, int(time.time() // 30))
+    return client.post("/api/v1/auth/2fa/confirm", headers=headers, json={"code": code}).json()[
+        "backup_codes"
+    ]
+
+
+def test_a_download_needs_a_ticket_that_works_once_and_streams_the_whole_archive(
+    box, folder, monkeypatch
+):
+    client, admin, node, app = box
+    monkeypatch.setattr(backup_ops, "CHUNK_BYTES", 4)
+    name = "data--20260101T000000Z.tar.gz"
+    (folder["path"] / name).write_bytes(b"0123456789")
+    base = f"/api/v1/nodes/{node}/backups/archives/{name}"
+    # No second factor on the account: no ticket.
+    assert (
+        client.post(f"{base}/download-ticket", headers=admin, json={"code": "1"}).status_code == 403
+    )
+    codes = enable_2fa(client, admin)
+    assert (
+        client.post(f"{base}/download-ticket", headers=admin, json={"code": "000000"}).status_code
+        == 401
+    )
+    ticket = client.post(f"{base}/download-ticket", headers=admin, json={"code": codes[0]}).json()[
+        "ticket"
+    ]
+    # The download itself carries no token: the ticket is the proof.
+    client.headers.pop("Authorization", None)
+    page = client.get(f"{base}/download?ticket={ticket}")
+    assert page.status_code == 200 and page.content == b"0123456789"
+    assert (
+        page.headers["content-length"] == "10"
+        and "attachment" in page.headers["content-disposition"]
+    )
+    assert page.headers["cache-control"] == "no-store"
+    assert client.get(f"{base}/download?ticket={ticket}").status_code == 404  # single use
+    assert client.get(f"{base}/download?ticket={'a' * 40}").status_code == 404
+    log = client.get("/api/v1/audit?event=backup.download", headers=admin).json()["entries"]
+    assert any("size" in str(e["details"]) for e in log)
+    assert any("auth.invalid_code" in str(e["details"]) for e in log)
+
+
+def test_a_ticket_is_for_one_archive_expires_and_needs_the_right_to_still_hold(box, folder):
+    from armadok.modules.backups import tickets
+
+    client, admin, node, app = box
+    one, two = "data--20260101T000000Z.tar.gz", "data--20260102T000000Z.tar.gz"
+    (folder["path"] / one).write_bytes(b"1")
+    (folder["path"] / two).write_bytes(b"2")
+    codes = enable_2fa(client, admin)
+    url = f"/api/v1/nodes/{node}/backups/archives/{one}/download-ticket"
+    ticket = client.post(url, headers=admin, json={"code": codes[0]}).json()["ticket"]
+    assert (
+        client.get(
+            f"/api/v1/nodes/{node}/backups/archives/{two}/download?ticket={ticket}"
+        ).status_code
+        == 404
+    )
+    ticket = client.post(url, headers=admin, json={"code": codes[1]}).json()["ticket"]
+    for t in app.state.download_tickets.values():
+        object.__setattr__(t, "expires", 0)
+    assert (
+        client.get(
+            f"/api/v1/nodes/{node}/backups/archives/{one}/download?ticket={ticket}"
+        ).status_code
+        == 404
+    )
+    assert tickets.LIFETIME_SECONDS <= 120
+
+
+def test_a_key_and_an_operator_cannot_download(box, folder):
+    client, admin, node, app = box
+    scope = f"node:{node}"
+    name = "data--20260101T000000Z.tar.gz"
+    (folder["path"] / name).write_bytes(b"1")
+    operator = person(
+        client,
+        admin,
+        "operator2",
+        [
+            ("nodes.read", scope),
+            ("docker.read", scope),
+            ("backups.read", scope),
+            ("backups.manage", scope),
+        ],
+    )
+    url = f"/api/v1/nodes/{node}/backups/archives/{name}/download-ticket"
+    assert client.post(url, headers=operator, json={"code": "1"}).status_code == 403
+    key = client.post(
+        "/api/v1/apikeys",
+        headers=admin,
+        json={"name": "k", "rights": ["backups.read", "backups.download"]},
+    )
+    assert key.status_code in (403, 422)  # sensitive: a key cannot carry it
+
+
+def test_a_ticket_for_another_archive_is_not_used_up_and_a_disabled_account_gets_nothing(
+    box, folder
+):
+    client, admin, node, app = box
+    one, two = "data--20260101T000000Z.tar.gz", "data--20260102T000000Z.tar.gz"
+    (folder["path"] / one).write_bytes(b"1")
+    (folder["path"] / two).write_bytes(b"2")
+    pat = person(client, admin, "pat", [("nodes.read", f"node:{node}")])
+    pat_id = client.get("/api/v1/auth/me", headers=pat).json()["id"]
+    for right in ("docker.read", "backups.read", "backups.download"):
+        client.post(
+            f"/api/v1/users/{pat_id}/grants",
+            headers=admin,
+            json={"right": right, "scope": f"node:{node}"},
+        )
+    from armadok.modules.backups import tickets
+
+    token = tickets.issue(app, pat_id, node, one)
+    base = f"/api/v1/nodes/{node}/backups/archives"
+    assert client.get(f"{base}/{two}/download?ticket={token}").status_code == 404
+    client.patch(f"/api/v1/users/{pat_id}", headers=admin, json={"is_active": False})
+    assert client.get(f"{base}/{one}/download?ticket={token}").status_code == 404
+
+
+def test_the_start_end_and_issue_of_a_download_are_all_audited(box, folder, monkeypatch):
+    client, admin, node, app = box
+    name = "data--20260101T000000Z.tar.gz"
+    (folder["path"] / name).write_bytes(b"0123456789")
+    codes = enable_2fa(client, admin)
+    base = f"/api/v1/nodes/{node}/backups/archives/{name}"
+    ticket = client.post(f"{base}/download-ticket", headers=admin, json={"code": codes[0]}).json()[
+        "ticket"
+    ]
+    client.headers.pop("Authorization", None)
+    assert client.get(f"{base}/download?ticket={ticket}").content == b"0123456789"
+    log = client.get("/api/v1/audit?event=backup.download", headers=admin).json()["entries"]
+    assert any(
+        "'complete': True" in str(e["details"]) or '"complete": true' in str(e["details"])
+        for e in log
+    )
+    assert any("issued" in str(e["details"]) for e in log)

@@ -189,5 +189,9 @@
   "common.invalid_request": "Certains champs ne sont pas valables.",
   "notifications.email_disabled": "Le canal e-mail est désactivé sur ce serveur.",
   "nodeadmin.purge_blocked": "Cette machine est encore référencée ailleurs et ne peut pas être effacée.",
-  "nodeadmin.owner_is_admin": "Le propriétaire est un administrateur : action refusée."
+  "nodeadmin.owner_is_admin": "Le propriétaire est un administrateur : action refusée.",
+  "schedule.nothing_missed": "Rien n'a été manqué pour cette tâche, ou la décision est déjà prise.",
+  "backups.not_downloadable": "Cette archive ne peut pas être téléchargée (elle date d'avant l'option de téléchargement).",
+  "backups.too_many_downloads": "Trop de téléchargements en attente. Réessayez dans une minute.",
+  "backups.not_with_key": "Télécharger une archive demande votre propre session, pas une clé d'API."
 }

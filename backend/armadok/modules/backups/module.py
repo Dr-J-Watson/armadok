@@ -22,8 +22,16 @@ module = Module(
             node_owner=True,
             level="admin",
         ),
+        # Sensitive: it hands the whole content of a volume out of the machine. Not for API keys.
+        Right(
+            "backups.download",
+            depends_on=("backups.read",),
+            sensitive=True,
+            node_owner=True,
+            level="admin",
+        ),
     ),
-    audit_events=("backup.start", "backup.done", "backup.delete"),
+    audit_events=("backup.start", "backup.done", "backup.delete", "backup.download"),
     signals=(Signal("backups.changed", "backups.read"),),
     hook_actions=(scheduled.ACTION,),
     notification_events=(
@@ -63,6 +71,7 @@ module = Module(
             "backups.task",
             "backups.list",
             "backups.delete",
+            "backups.read",
         )
     ),
     migrations=(repository.MIGRATION, repository.ACTOR),
