@@ -407,6 +407,8 @@ def accept(
                 moved=moved,
                 skipped=skipped,
                 notes=offer["with_notes"],
+                # A gift passed on by someone who is not the machine's owner: worth a second look.
+                regift=giver["id"] != node["owner"],
                 objects=_listing(done),
             )
     return {"moved": moved, "skipped": skipped}

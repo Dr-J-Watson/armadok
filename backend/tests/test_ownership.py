@@ -448,6 +448,7 @@ def test_taking_and_giving_leave_the_objects_in_the_audit_log_and_refusals_a_tra
     conn.close()
     details = {(r["event"], r["outcome"]): json.loads(r["details"]) for r in rows}
     assert details[("ownership.accept", "success")]["objects"] == "project:blog"
+    assert details[("ownership.accept", "success")]["regift"] is False
     assert details[("ownership.take", "success")]["objects"] == "project:blog"
     assert details[("ownership.take", "success")]["from_owners"] == bob_id
 
