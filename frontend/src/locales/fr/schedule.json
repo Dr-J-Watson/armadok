@@ -12,7 +12,7 @@
   "at": "Heure ({{zone}})",
   "weekdays": "Jours",
   "everyDayHint": "Aucun jour coché : tous les jours.",
-  "warn": "La tâche s'exécutera toute seule. Un redémarrage ou un nettoyage ne s'annule pas. Nettoyer les conteneurs arrêtés supprime aussi ceux des projets arrêtés exprès, et les réseaux inutilisés incluent ceux d'un proxy arrêté, sauf s'ils portent l'étiquette armadok.protect.",
+  "warn": "La tâche s'exécutera toute seule. Redémarrer ou nettoyer est irréversible. Nettoyer les conteneurs arrêtés supprime aussi ceux des projets que vous avez arrêtés exprès. Réseaux inutilisés : seuls les réseaux auxquels aucun conteneur, en marche ou arrêté, n'est rattaché sont supprimés ; un proxy arrêté garde donc son réseau. Ajoutez l'étiquette armadok.protect=true à un réseau pour le garder à coup sûr.",
   "create": "Créer",
   "runNow": "Exécuter maintenant",
   "pause": "Mettre en pause",

@@ -12,7 +12,7 @@
   "at": "Time ({{zone}})",
   "weekdays": "Days",
   "everyDayHint": "None ticked means every day.",
-  "warn": "The task will run on its own. Restarting or pruning cannot be undone. Cleaning up stopped containers also removes those of projects you stopped on purpose, and unused networks include those of a stopped proxy unless they carry the armadok.protect label.",
+  "warn": "The task will run on its own. Restarting or pruning cannot be undone. Cleaning up stopped containers also removes those of projects you stopped on purpose. Unused networks: only networks that no container, running or stopped, is attached to are removed, so a stopped proxy keeps its network; add the armadok.protect=true label to a network to keep it for sure.",
   "create": "Create",
   "runNow": "Run now",
   "pause": "Pause",

@@ -25,8 +25,30 @@ PASSWORD = "correct horse battery"
 SEEN: list[tuple[str, str]] = []
 
 
+NETWORKS: list[dict] = []
+CONTAINERS: list[dict] = []
+DELETED: list[str] = []
+
+
 class Daemon(BaseHTTPRequestHandler):
-    """A stand-in for the Docker daemon: answers the three prune requests."""
+    """A stand-in for the Docker daemon: answers the prune requests and the network listings."""
+
+    def _send(self, status, body):
+        data = json.dumps(body).encode() if body is not None else b""
+        self.send_response(status)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_GET(self):
+        SEEN.append((self.command, self.path))
+        path = urlsplit(self.path).path
+        self._send(200, {"/networks": NETWORKS, "/containers/json": CONTAINERS}.get(path, []))
+
+    def do_DELETE(self):
+        SEEN.append((self.command, self.path))
+        DELETED.append(self.path.rsplit("/", 1)[-1])
+        self._send(204, None)
 
     def do_POST(self):
         SEEN.append((self.command, self.path))
@@ -57,6 +79,9 @@ class Server(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
 @pytest.fixture
 def daemon(tmp_path, monkeypatch):
     SEEN.clear()
+    NETWORKS.clear()
+    CONTAINERS.clear()
+    DELETED.clear()
     path = str(tmp_path / "d.sock")
     server = Server(path, Daemon)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -130,7 +155,6 @@ def test_only_dangling_images_are_pruned_and_volumes_never(daemon):
     assert docker_control.prune({"kind": "images"}) == {"removed": 1, "space": 5}
     filters = json.loads(parse_qs(urlsplit(SEEN[0][1]).query)["filters"][0])
     assert filters == {"dangling": ["true"]}
-    assert docker_control.prune({"kind": "networks"}) == {"removed": 0, "space": 0}
     with pytest.raises(OperationError):
         docker_control.prune({"kind": "volumes"})
     assert all("volumes" not in path for _, path in SEEN)
@@ -594,3 +618,39 @@ def test_a_rule_without_a_next_date_pauses_its_task_instead_of_stalling_the_othe
         conn.close()
     after = row(app, tid)
     assert after["enabled"] == 0 and after["last_result"] == "schedule.no_next_run"
+
+
+def net(name, ident, **labels):
+    return {"Name": name, "Id": ident * 12, "Labels": labels}
+
+
+def test_unused_networks_are_removed_but_never_those_a_stopped_project_will_need(daemon):
+    NETWORKS.extend(
+        [
+            net("bridge", "a"),
+            net("host", "b"),
+            net("proxy_net", "c"),  # the network of a proxy that is stopped
+            net("app_default", "d"),  # used by a running container
+            net("kept", "e", **{"armadok.protect": "true"}),
+            net("old_junk", "f"),
+        ]
+    )
+    CONTAINERS.extend(
+        [
+            {"NetworkSettings": {"Networks": {"proxy_net": {"NetworkID": "c" * 12}}}},
+            {"NetworkSettings": {"Networks": {"app_default": {"NetworkID": "d" * 12}}}},
+            {"NetworkSettings": None},
+            "not a container",
+        ]
+    )
+    assert docker_control.prune({"kind": "networks"}) == {"removed": 1, "space": 0}
+    assert DELETED == ["f" * 12]
+    # Only listings and one delete: the daemon's own "prune everything unused" is never called.
+    assert all("prune" not in path for _, path in SEEN)
+
+
+def test_a_daemon_that_answers_nonsense_removes_nothing(daemon):
+    NETWORKS.append({"Name": "x", "Id": "not-hex!", "Labels": None})
+    NETWORKS.append("junk")
+    assert docker_control.prune({"kind": "networks"}) == {"removed": 0, "space": 0}
+    assert DELETED == []

@@ -106,8 +106,11 @@ def container_action(args: dict[str, Any]) -> dict[str, Any]:
 _PRUNE: dict[str, tuple[str, dict[str, list[str]]]] = {
     "containers": ("/containers/prune", {"label!": [f"{PROTECT_LABEL}=true"]}),
     "images": ("/images/prune", {"dangling": ["true"]}),
-    "networks": ("/networks/prune", {"label!": [f"{PROTECT_LABEL}=true"]}),
 }
+# Networks are not pruned by the daemon's own call: it would remove the network of a stopped
+# proxy (a stopped container is attached to nothing as far as it can tell). See `_prune_networks`.
+_BUILTIN_NETWORKS = frozenset({"bridge", "host", "none"})
+MAX_NETWORKS_CHECKED = 500
 PRUNE_TIMEOUT_SECONDS = 25  # under the hub's call limit
 
 
@@ -118,6 +121,8 @@ def prune(args: dict[str, Any]) -> dict[str, Any]:
     Errors: `worker.invalid_path` (unknown kind), `worker.docker_error`.
     """
     kind = args.get("kind")
+    if kind == "networks":
+        return _prune_networks()
     if not isinstance(kind, str) or kind not in _PRUNE:
         raise OperationError("worker.invalid_path")
     path, filters = _PRUNE[kind]
@@ -141,6 +146,59 @@ def prune(args: dict[str, Any]) -> dict[str, Any]:
         "removed": len(names) if isinstance(names, list) else 0,
         "space": space if type(space) is int and space >= 0 else 0,
     }
+
+
+def _json_list(path: str) -> list[Any]:
+    """Ask the daemon for a JSON list; anything else is an error."""
+    status, body = docker_raw("GET", path, PRUNE_TIMEOUT_SECONDS)
+    try:
+        data = json.loads(body) if status == 200 else None
+    except ValueError:
+        data = None
+    if not isinstance(data, list):
+        raise OperationError("worker.docker_error")
+    return data
+
+
+def _prune_networks() -> dict[str, Any]:
+    """Remove networks that nothing uses, keeping what a stopped project will need again.
+
+    Kept: the built-in networks, anything labelled `armadok.protect=true`, and every network
+    that any container (running or stopped) is attached to. The last rule is what protects the
+    network of a stopped proxy or project, which the daemon's own prune would delete. A network
+    that turns out to be in use at the last moment is refused by the daemon and left alone.
+    """
+    networks = _json_list("/networks")[:MAX_NETWORKS_CHECKED]
+    kept: set[str] = set()
+    for container in _json_list("/containers/json?all=1"):
+        settings = container.get("NetworkSettings") if isinstance(container, dict) else None
+        attached = settings.get("Networks") if isinstance(settings, dict) else None
+        if not isinstance(attached, dict):
+            continue
+        for name, info in attached.items():
+            kept.add(name)
+            if isinstance(info, dict) and isinstance(info.get("NetworkID"), str):
+                kept.add(info["NetworkID"])
+    removed = 0
+    for network in networks:
+        if not isinstance(network, dict):
+            continue
+        name, ident = network.get("Name"), network.get("Id")
+        labels = network.get("Labels") if isinstance(network.get("Labels"), dict) else {}
+        if (
+            not isinstance(name, str)
+            or not isinstance(ident, str)
+            or not re.fullmatch(r"[0-9a-f]{12,64}", ident)
+            or name in _BUILTIN_NETWORKS
+            or name in kept
+            or ident in kept
+            or labels.get(PROTECT_LABEL) == "true"
+        ):
+            continue
+        status, _ = docker_raw("DELETE", f"/networks/{ident}", PRUNE_TIMEOUT_SECONDS)
+        if status in (200, 204):
+            removed += 1
+    return {"removed": removed, "space": 0}
 
 
 OPERATIONS: dict[str, Operation] = {
