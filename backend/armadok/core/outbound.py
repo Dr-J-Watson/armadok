@@ -78,13 +78,8 @@ def check_url(url: str) -> tuple[str, str, int, str]:
     return parts.scheme, host, port or (443 if parts.scheme == "https" else 80), path
 
 
-async def post(
-    url: str,
-    content: bytes,
-    headers: dict[str, str],
-    allow_private: bool = False,
-) -> int:
-    """POST `content` to `url` and return the HTTP status. Raises `OutboundError`."""
+async def _pinned(url: str, allow_private: bool) -> tuple[str, str, str]:
+    """Check a URL and return `(address URL to connect to, Host header, name for TLS)`."""
     scheme, host, port, path = check_url(url)
     address = await _resolve(host, port, allow_private)
     target = (
@@ -93,7 +88,17 @@ async def post(
         else f"{scheme}://{address}:{port}{path}"
     )
     default_port = 443 if scheme == "https" else 80
-    host_header = host if port == default_port else f"{host}:{port}"
+    return target, (host if port == default_port else f"{host}:{port}"), host
+
+
+async def post(
+    url: str,
+    content: bytes,
+    headers: dict[str, str],
+    allow_private: bool = False,
+) -> int:
+    """POST `content` to `url` and return the HTTP status. Raises `OutboundError`."""
+    target, host_header, host = await _pinned(url, allow_private)
     try:
         async with asyncio.timeout(DEADLINE_SECONDS):
             # trust_env=False: proxy variables in the environment must not reroute a request
@@ -112,6 +117,50 @@ async def post(
                     extensions={"sni_hostname": host},
                 ) as response:
                     return response.status_code
+    except (httpx.HTTPError, TimeoutError):
+        raise OutboundError("outbound.failed") from None
+
+
+async def fetch(
+    method: str,
+    url: str,
+    headers: dict[str, str],
+    *,
+    allow_private: bool = False,
+    max_bytes: int = 64 * 1024,
+) -> tuple[int, dict[str, str], bytes]:
+    """Send a GET or HEAD and return `(status, lower-cased headers, body)`.
+
+    Same guards as `post` (public addresses only unless allowed, the address that was checked,
+    no redirect, one deadline). The body is read only up to `max_bytes`: a longer one is an
+    error, never silently cut. Raises `OutboundError`.
+    """
+    if method not in ("GET", "HEAD"):
+        raise OutboundError("outbound.invalid_url")
+    target, host_header, host = await _pinned(url, allow_private)
+    try:
+        async with asyncio.timeout(DEADLINE_SECONDS):
+            async with httpx.AsyncClient(
+                timeout=TIMEOUT_SECONDS, follow_redirects=False, trust_env=False
+            ) as client:
+                async with client.stream(
+                    method,
+                    target,
+                    headers={**headers, "Host": host_header},
+                    extensions={"sni_hostname": host},
+                ) as response:
+                    chunks: list[bytes] = []
+                    size = 0
+                    async for chunk in response.aiter_bytes():
+                        size += len(chunk)
+                        if size > max_bytes:
+                            raise OutboundError("outbound.too_large")
+                        chunks.append(chunk)
+                    return (
+                        response.status_code,
+                        {k.lower(): v for k, v in response.headers.items()},
+                        b"".join(chunks),
+                    )
     except (httpx.HTTPError, TimeoutError):
         raise OutboundError("outbound.failed") from None
 

@@ -195,6 +195,48 @@ def images_list(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+_DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
+MAX_TRACKED_IMAGES = 300
+
+
+def images_digests(args: dict[str, Any]) -> dict[str, Any]:
+    """Return, for each image that has a name, the digests it was pulled with and if it is in use.
+
+    A digest is how a registry names the exact content of a tag: comparing it with the
+    registry's current one says whether a newer version exists, without downloading anything.
+    Only digests that belong to the same repository as the tag are kept.
+    """
+    images = docker_get("/images/json")
+    containers = docker_get("/containers/json?all=1")
+    if not isinstance(images, list) or not isinstance(containers, list):
+        raise OperationError("worker.docker_error")
+    used = {c.get("ImageID") for c in containers if isinstance(c, dict)}
+    out: list[dict[str, Any]] = []
+    for raw in images:
+        if not isinstance(raw, dict):
+            continue
+        digests = [d for d in (raw.get("RepoDigests") or []) if isinstance(d, str)]
+        for tag in (raw.get("RepoTags") or [])[:MAX_NAMES]:
+            if not isinstance(tag, str) or tag.startswith("<none>"):
+                continue
+            repo = tag.rsplit(":", 1)[0]
+            mine = sorted(
+                {
+                    d.split("@", 1)[1]
+                    for d in digests
+                    if d.split("@", 1)[0] == repo and _DIGEST.fullmatch(d.split("@", 1)[1])
+                }
+            )
+            out.append(
+                {
+                    "ref": _text(tag, 255),
+                    "digests": mine[:5],
+                    "in_use": raw.get("Id") in used,
+                }
+            )
+    return {"images": out[:MAX_TRACKED_IMAGES], "truncated": len(out) > MAX_TRACKED_IMAGES}
+
+
 def networks_list(args: dict[str, Any]) -> dict[str, Any]:
     """Return the networks (name, driver, scope); who uses them follows from the containers."""
     return _listing(
@@ -272,6 +314,7 @@ OPERATIONS: dict[str, Operation] = {
     "docker.info": docker_info,
     "docker.containers.list": containers_list,
     "docker.images.list": images_list,
+    "docker.images.digests": images_digests,
     "docker.networks.list": networks_list,
     "docker.volumes.list": volumes_list,
     "docker.container.logs": container_logs,

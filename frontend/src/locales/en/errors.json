@@ -210,5 +210,15 @@
   "ownership.unknown_mode": "Unknown mode.",
   "ownership.list_truncated": "The list of objects is too long to be sure of \"everything\". Give or take them one by one.",
   "ownership.inbox_full": "This person already has too many gifts waiting.",
-  "worker.history_failed": "The previous version could not be kept, so nothing was changed."
+  "worker.history_failed": "The previous version could not be kept, so nothing was changed.",
+  "images.not_found": "This tag does not exist in the registry.",
+  "images.denied": "The registry needs credentials for this image (private images are not supported yet).",
+  "images.registry_unreachable": "The registry did not answer as expected.",
+  "images.not_followed": "This reference cannot be followed (pinned by digest or unusual).",
+  "images.no_digest": "Built or loaded on this machine: there is no registry version to compare with.",
+  "imageupdates.too_soon": "Wait a minute between two checks.",
+  "imageupdates.busy": "A check is already running.",
+  "outbound.too_large": "The answer was too large.",
+  "imageupdates.timeout": "The check took too long and was stopped.",
+  "images.too_many_registries": "Too many different registries in one check: this one was left out."
 }

@@ -1,0 +1,12 @@
+{
+  "tab": "Mises à jour d'images",
+  "title": "Nouvelles versions de vos images",
+  "explain": "Compare la version de chaque image qu'un conteneur utilise avec celle que son registre propose maintenant. Rien n'est téléchargé. Pour appliquer une mise à jour, redéployez le projet (l'onglet Planification peut le faire chaque nuit, en récupérant les images).",
+  "check": "Vérifier maintenant",
+  "none": "Aucune image utilisée à suivre pour l'instant. Vérifiez pour regarder.",
+  "state.current": "À jour",
+  "state.update": "Mise à jour disponible",
+  "state.unknown": "Non suivie",
+  "state.error": "Vérification impossible",
+  "checked": "vérifié le {{at}}"
+}

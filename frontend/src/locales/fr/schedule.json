@@ -64,5 +64,6 @@
   "missed": "Cette tâche devait s'exécuter à {{at}} mais Armadok était arrêté : elle n'a pas tourné.",
   "missedRun": "La lancer maintenant",
   "missedWait": "Attendre la prochaine fois",
-  "actions.imagescan.scan": "Analyser les failles des images"
+  "actions.imagescan.scan": "Analyser les failles des images",
+  "actions.images.check": "Vérifier les mises à jour d'images"
 }

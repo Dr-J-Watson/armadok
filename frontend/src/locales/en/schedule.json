@@ -64,5 +64,6 @@
   "missed": "This task was due at {{at}} but Armadok was stopped, so it did not run.",
   "missedRun": "Run it now",
   "missedWait": "Wait for the next time",
-  "actions.imagescan.scan": "Scan images for flaws"
+  "actions.imagescan.scan": "Scan images for flaws",
+  "actions.images.check": "Check for image updates"
 }

@@ -1,0 +1,12 @@
+{
+  "tab": "Image updates",
+  "title": "Newer versions of your images",
+  "explain": "Compares the version of each image a container runs with the one its registry offers now. Nothing is downloaded. To apply an update, redeploy the project (the Schedule tab can do it every night, pulling the images).",
+  "check": "Check now",
+  "none": "No image in use to follow yet. Check now to look.",
+  "state.current": "Up to date",
+  "state.update": "Update available",
+  "state.unknown": "Not followed",
+  "state.error": "Could not check",
+  "checked": "checked {{at}}"
+}

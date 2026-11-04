@@ -25,6 +25,7 @@ import { scheduleFeature } from './schedule/feature'
 import { uptimeFeature } from './uptime/feature'
 import { imageScanFeature } from './imagescan/feature'
 import { helpFeature } from './help/feature'
+import { imageUpdatesFeature } from './imageupdates/feature'
 import { statusFeature } from './status/feature'
 import { ownershipFeature } from './ownership/feature'
 import { stateBackupFeature } from './statebackup/feature'
@@ -61,6 +62,7 @@ export const features: Feature[] = [
   stateBackupFeature,
   vulnsFeature,
   imageScanFeature,
+  imageUpdatesFeature,
   ownershipFeature,
   statusFeature,
   helpFeature,

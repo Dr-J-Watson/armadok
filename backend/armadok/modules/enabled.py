@@ -36,4 +36,5 @@ ENABLED_MODULES: tuple[str, ...] = (
     "imagescan",
     "ownership",
     "status",
+    "imageupdates",
 )
