@@ -274,7 +274,121 @@ def snapshot(args: dict[str, Any]) -> dict[str, Any]:
     return {"files": files, "truncated": truncated}
 
 
+# --- Traefik's static configuration ----------------------------------------------------------
+# The static file (entry points, certificate resolvers, API, logs, metrics) lives in its own
+# folder, mounted for the worker, not in the dynamic one. Only that one file can be read or
+# replaced, with the same safeguards as any configuration file, and each replaced version is kept.
+STATIC_NAME = re.compile(r"traefik\.ya?ml")
+
+
+def _static_dir() -> str | None:
+    configured = os.environ.get("ARMADOK_TRAEFIK_STATIC_DIR")
+    if not configured:
+        return None
+    if not os.path.isabs(configured) or configured == "/":
+        raise OperationError("worker.traefik_not_configured")
+    return configured
+
+
+def _static_file(root_fd: int) -> str:
+    """Return the name of the static file in the folder (`traefik.yml` preferred)."""
+    try:
+        safefs.read_regular(root_fd, "traefik.yml", MAX_FILE_BYTES)
+    except OperationError as error:
+        # `.yml` wins whenever it exists, even unusable (its own error is then shown): Traefik
+        # would not fall back to `.yaml` on our behalf. Only a missing `.yml` lets `.yaml` in.
+        if error.code != "worker.not_found":
+            raise
+        return "traefik.yaml"
+    return "traefik.yml"
+
+
+def static_read(args: dict[str, Any]) -> dict[str, Any]:
+    """Return the static configuration, or `{"configured": False}` if no folder is set."""
+    folder = _static_dir()
+    if folder is None:
+        return {"configured": False}
+    root_fd = safefs.open_dir(folder)
+    try:
+        name = _static_file(root_fd)
+        data, _ = safefs.read_regular(root_fd, name, MAX_FILE_BYTES)
+    finally:
+        os.close(root_fd)
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise OperationError("worker.not_text") from None
+    return {
+        "configured": True,
+        "name": name,
+        "content": text,
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "size": len(data),
+    }
+
+
+def static_write(args: dict[str, Any]) -> dict[str, Any]:
+    """Replace the static configuration, keeping the previous version, refusing a stale edit."""
+    folder = _static_dir()
+    if folder is None:
+        raise OperationError("worker.traefik_not_configured")
+    content, expected = args.get("content"), args.get("expected_sha256")
+    if not isinstance(content, str) or not (
+        isinstance(expected, str) and safefs.SHA256.fullmatch(expected)
+    ):
+        raise OperationError("worker.invalid_path")
+    root_fd = safefs.open_dir(folder)
+    try:
+        name = _static_file(root_fd)
+        previous = safefs.read_regular(root_fd, name, MAX_FILE_BYTES)[0]
+        if hashlib.sha256(previous).hexdigest() != expected:
+            raise OperationError("worker.conflict")
+        data = content.encode("utf-8")
+        if previous != data:
+            # The copy comes first and must succeed: no copy, no change.
+            history.save(root_fd, name, previous, strict=True)
+        return safefs.write_regular(root_fd, name, data, expected, MAX_FILE_BYTES, STATIC_TEMP)
+    finally:
+        os.close(root_fd)
+
+
+def static_history_list(args: dict[str, Any]) -> dict[str, Any]:
+    """Return the kept versions of the static configuration, newest first."""
+    folder = _static_dir()
+    if folder is None:
+        raise OperationError("worker.traefik_not_configured")
+    root_fd = safefs.open_dir(folder)
+    try:
+        return {"versions": history.listing(root_fd, _static_file(root_fd))}
+    finally:
+        os.close(root_fd)
+
+
+def static_history_read(args: dict[str, Any]) -> dict[str, Any]:
+    """Return the text of one kept version of the static configuration."""
+    folder = _static_dir()
+    if folder is None:
+        raise OperationError("worker.traefik_not_configured")
+    root_fd = safefs.open_dir(folder)
+    try:
+        data = history.read(root_fd, _static_file(root_fd), args.get("version"))
+    finally:
+        os.close(root_fd)
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise OperationError("worker.not_text") from None
+    return {"content": text, "sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
+
+
+STATIC_TEMP = re.compile(r"\.traefik\.ya?ml\.armadok-[0-9a-f]{16}\.tmp")
+
+
 OPERATIONS: dict[str, Operation] = {
+    "traefik.static.read": static_read,
+    "traefik.static.write": static_write,
+    "traefik.static.history.list": static_history_list,
+    "traefik.static.history.read": static_history_read,
     "traefik.files.list": files_list,
     "traefik.file.read": file_read,
     "traefik.file.write": file_write,

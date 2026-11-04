@@ -9,6 +9,8 @@ Sites are found from their routers' rules, so ones edited by hand count as well.
 from __future__ import annotations
 
 import asyncio
+import json
+import re
 import sqlite3
 from typing import Literal
 
@@ -20,12 +22,15 @@ from armadok.core.errors import ApiError
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.traefik import parse, schemas
-from armadok.modules.traefik.sites_routes import _record, _run, _sites
+from armadok.modules.traefik.sites_routes import _record, _run
 from armadok.modules.workers.access import ask, authorise
 
 router = APIRouter(prefix="/nodes/{node_id}/traefik/domains", tags=["traefik"])
 
-Domain = Path(pattern=r"^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$", max_length=253)
+Domain = Path(
+    pattern=r"^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,63}|xn--[a-z0-9-]{1,59})$",
+    max_length=253,
+)
 
 
 class DomainSwitch(BaseModel):
@@ -39,13 +44,36 @@ def _under(host: str, domain: str) -> bool:
     return host == domain or host.endswith("." + domain)
 
 
+# Matchers whose hosts cannot be read from a plain `Host(`name`)`: a site using one may answer
+# for any domain, so it is never paused as "belonging" to this one.
+_OPAQUE_HOST = re.compile(r"HostRegexp|HostSNI|HostHeader|Host\(\s*[^`\s)]")
+
+
+def _hosts_of(summary: dict) -> set[str] | None:
+    """Return the hosts a site answers for, or None if any rule hides some from us.
+
+    A router with no host at all (a path-only rule) also counts as hiding: pausing the site
+    would silence it for every domain.
+    """
+    hosts: set[str] = set()
+    for router in summary["routers"]:
+        rule = router["rule"]
+        found = parse.hosts_of(rule)
+        if _OPAQUE_HOST.search(rule) or not found:
+            return None
+        hosts.update(h.lower() for h in found)
+    return hosts
+
+
 async def _plan(
     request: Request, registry: Registry, node_id: str, domain: str, paused: bool
 ) -> tuple[list[str], list[str]]:
     """Return `(sites to switch, sites left alone because they also serve another domain)`."""
-    listing = await _sites(request, registry, node_id)
-    if len(listing) >= 200:
+    answer = await ask(request, registry, node_id, "traefik.sites.list", {}, schemas.SiteFiles)
+    # A cut list would leave sites live while the answer says the domain is paused.
+    if answer.truncated:
         raise ApiError("traefik.snapshot_incomplete", 409)
+    listing = answer.files
     names: list[str] = []
     shared: list[str] = []
     for site in listing:
@@ -54,7 +82,12 @@ async def _plan(
         summary = await asyncio.to_thread(
             parse.summarize, f"sites/{site.name}.yml", site.content, site.sha256
         )
-        hosts = {h.lower() for r in summary["routers"] for h in parse.hosts_of(r["rule"])}
+        hosts = _hosts_of(summary)
+        if hosts is None:
+            # Not readable: only named when the file does mention the domain at all.
+            if domain in json.dumps(summary["routers"]).lower():
+                shared.append(site.name)
+            continue
         if not any(_under(h, domain) for h in hosts):
             continue
         (names if all(_under(h, domain) for h in hosts) else shared).append(site.name)
@@ -81,8 +114,10 @@ async def _switch_domain(
             return {"sites": names, "shared": shared}
         done: list[str] = []
         undo = "traefik.site.pause" if action == "resume" else "traefik.site.resume"
+        current = ""
         try:
             for name in names:
+                current = name
                 await ask(
                     request,
                     registry,
@@ -93,7 +128,8 @@ async def _switch_domain(
                 )
                 done.append(name)
         except ApiError:
-            for name in reversed(done):  # all or nothing, as far as the machine lets us
+            # The one that failed may still have been switched before its answer was lost.
+            for name in reversed([*done, current]):  # all or nothing, as far as we can
                 try:
                     await ask(request, registry, node_id, undo, {"name": name}, schemas.Done)
                 except ApiError:

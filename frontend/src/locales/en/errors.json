@@ -209,5 +209,6 @@
   "ownership.not_with_key": "Ownership needs your own session, not an API key.",
   "ownership.unknown_mode": "Unknown mode.",
   "ownership.list_truncated": "The list of objects is too long to be sure of \"everything\". Give or take them one by one.",
-  "ownership.inbox_full": "This person already has too many gifts waiting."
+  "ownership.inbox_full": "This person already has too many gifts waiting.",
+  "worker.history_failed": "The previous version could not be kept, so nothing was changed."
 }

@@ -23,6 +23,9 @@ services:
       # may contain tokens). Whoever may write there can publish anything Traefik can reach.
       # Uncomment this line and the matching volume below on a machine that runs Traefik.
       # ARMADOK_TRAEFIK_DIR: /traefik-dynamic
+      # Traefik's STATIC configuration (traefik.yml): mount the FOLDER that holds it, writable
+      # (Armadok replaces the file, keeping the old copy in a hidden sub-folder). Optional.
+      # ARMADOK_TRAEFIK_STATIC_DIR: /traefik-static
       # Traefik's acme.json, to show its certificates. The file holds the PRIVATE KEYS: Armadok
       # reads it and sends only public facts (names, issuer, dates), never a key. Mount it
       # read-only, preferably on its own (a folder that holds nothing else).
@@ -38,6 +41,7 @@ services:
       # Your Compose projects, one sub-folder each. Armadok edits only the Compose files in it.
       - ${PROJECTS_DIR:?set it in .env}:/stacks
       # - ${TRAEFIK_DYNAMIC_DIR:?set it in .env}:/traefik-dynamic
+      # - ${TRAEFIK_STATIC_DIR:?set it in .env}:/traefik-static
       # - ${ACME_DIR:?set it in .env}:/acme:ro
       # - ${BACKUP_DIR:?set it in .env}:/backups
       # Full Docker control, which is root on this machine: deployments (`docker compose up`) need it.

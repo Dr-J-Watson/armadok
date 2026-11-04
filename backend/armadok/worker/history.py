@@ -44,11 +44,18 @@ def _open_history(root_fd: int, create: bool) -> int:
     return safefs.open_dir(HISTORY_DIR, root_fd)
 
 
-def save(root_fd: int, path: str, data: bytes) -> None:
-    """Keep `data` as a version of `path`. Best effort: a failure never fails the real change."""
+def save(root_fd: int, path: str, data: bytes, *, strict: bool = False) -> None:
+    """Keep `data` as a version of `path`.
+
+    Best effort by default: a failure never fails the real change. With `strict` a failure
+    raises `worker.history_failed`, for the one file where an unrecoverable change is worse than
+    a refused one (Traefik's static configuration: a bad file stops the proxy).
+    """
     try:
         hist = _open_history(root_fd, create=True)
     except (OSError, OperationError):
+        if strict:
+            raise OperationError("worker.history_failed") from None
         return
     try:
         name = f"{_flat(path)}.{int(time.time() * 1000):013d}.{secrets.token_hex(4)}.bak"
@@ -66,7 +73,8 @@ def save(root_fd: int, path: str, data: bytes) -> None:
             os.unlink(old, dir_fd=hist)
         _prune_everything(hist)
     except OSError:
-        pass
+        if strict:
+            raise OperationError("worker.history_failed") from None
     finally:
         os.close(hist)
 

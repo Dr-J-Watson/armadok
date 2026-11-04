@@ -27,6 +27,7 @@ WORKER_ERROR_CODES = frozenset(
         "worker.forbidden",
         "worker.conflict",
         "worker.not_text",
+        "worker.history_failed",
         # Volume backups (see `worker/backup_ops.py`).
         "worker.backups_not_configured",
         "worker.backup_failed",

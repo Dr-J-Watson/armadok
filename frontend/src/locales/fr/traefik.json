@@ -152,5 +152,22 @@
   "domain.goPause": "Mettre ces sites en pause",
   "domain.goResume": "Réactiver ces sites",
   "managed.search": "Chercher un site",
-  "managed.middlewares": "Middlewares"
+  "managed.middlewares": "Middlewares",
+  "views.static": "Config statique",
+  "static.title": "Configuration statique",
+  "static.notConfigured": "Cette machine n'a pas de dossier de configuration statique. Montez pour le worker le dossier qui contient traefik.yml et renseignez ARMADOK_TRAEFIK_STATIC_DIR (voir le fichier d'exemple du worker).",
+  "static.explain": "Points d'entrée, résolveurs de certificats, API, journaux et métriques. Traefik ne lit ce fichier qu'au démarrage : un changement compte après un redémarrage. Chaque version remplacée est conservée sur la machine. Les ancres et alias YAML ne sont pas acceptés.",
+  "static.text": "Contenu de {{name}}",
+  "static.review": "Voir les changements",
+  "static.changes": "Changements",
+  "static.tooLong": "Le fichier est trop long pour être comparé ici. Vous pouvez quand même l'enregistrer.",
+  "static.save": "Enregistrer cette version",
+  "static.history": "Versions précédentes",
+  "static.load": "Charger dans l'éditeur",
+  "static.restartTitle": "Redémarrer Traefik",
+  "static.saved": "Enregistré. Traefik continue avec l'ancien fichier jusqu'à son redémarrage.",
+  "static.which": "Conteneur Traefik",
+  "static.restart": "Redémarrer",
+  "static.confirmRestart": "Redémarrer Traefik coupe tous les sites quelques secondes. Continuer ?",
+  "static.restarted": "Redémarrage demandé."
 }

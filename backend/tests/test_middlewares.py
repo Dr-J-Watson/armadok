@@ -854,3 +854,106 @@ def test_a_domain_name_that_is_not_a_domain_is_refused_and_a_failure_undoes_the_
     assert got.status_code == 503
     # blog was paused first, then put back when shop failed.
     assert (folder / "sites" / "blog.yml").exists() and (folder / "sites" / "shop.yml").exists()
+
+
+# --- review follow-ups: renaming and pausing ------------------------------------------------------
+
+
+def test_a_rename_refuses_a_file_whose_description_names_another_middleware(hub):
+    client, admin, node, folder = hub
+    client.post(url(node), headers=admin, json=LAN)
+    other = (folder / "middlewares" / "lan.yml").read_text()
+    (folder / "middlewares" / "wan.yml").write_text(other)  # says "lan" inside wan.yml
+    current = sha((folder / "middlewares" / "wan.yml").read_text())
+    got = client.post(
+        url(node, "/wan/rename"),
+        headers=admin,
+        json={"new_name": "office", "expected_sha256": current},
+    )
+    assert got.status_code == 409 and not (folder / "middlewares" / "office.yml").exists()
+
+
+def test_a_file_that_cannot_be_read_is_reported_as_a_possible_user(hub):
+    client, admin, node, folder = hub
+    current = rename_setup(client, admin, node, folder)
+    (folder / "broken.yml").write_text("a: [unclosed\n")
+    plan = client.post(
+        url(node, "/lan/rename"),
+        headers=admin,
+        json={"new_name": "office", "expected_sha256": current, "dry_run": True},
+    )
+    assert "broken.yml" in plan.json()["manual"]
+
+
+def test_a_lost_answer_after_the_old_file_was_removed_does_not_undo_the_rename(hub, monkeypatch):
+    from armadok.core.errors import ApiError
+    from armadok.modules.traefik import middleware_routes
+
+    client, admin, node, folder = hub
+    current = rename_setup(client, admin, node, folder)
+    real = middleware_routes.ask
+
+    async def lossy(request, registry, node_id, op, args, model):
+        done = await real(request, registry, node_id, op, args, model)
+        if op == "traefik.file.delete" and args["path"] == "middlewares/lan.yml":
+            raise ApiError("worker.timeout", 504)  # the machine did it; the answer is lost
+        return done
+
+    monkeypatch.setattr(middleware_routes, "ask", lossy)
+    got = client.post(
+        url(node, "/lan/rename"),
+        headers=admin,
+        json={"new_name": "office", "expected_sha256": current},
+    )
+    assert got.status_code == 200
+    assert (folder / "middlewares" / "office.yml").exists()
+    assert "office@file" in (folder / "sites" / "blog.yml").read_text()
+
+
+def test_a_site_with_a_rule_we_cannot_read_or_no_host_is_never_paused_for_a_domain(hub):
+    client, admin, node, folder = hub
+    make_site(client, admin, node, "plain", ["plain.example.com"])
+    make_site(client, admin, node, "regex", ["regex.example.com"])
+    make_site(client, admin, node, "pathonly", ["pathonly.example.com"])
+    text = (folder / "sites" / "regex.yml").read_text()
+    (folder / "sites" / "regex.yml").write_text(
+        text.replace(
+            "Host(`regex.example.com`)",
+            "Host(`regex.example.com`) || HostRegexp(`^.+\\.other\\.org$`)",
+        )
+    )
+    text = (folder / "sites" / "pathonly.yml").read_text()
+    (folder / "sites" / "pathonly.yml").write_text(
+        text.replace("Host(`pathonly.example.com`)", "PathPrefix(`/example.com`)")
+    )
+    plan = client.post(
+        domain_url(node, "example.com", "pause"), headers=admin, json={"dry_run": True}
+    )
+    assert plan.json()["sites"] == ["plain"]
+
+
+def test_a_cut_site_list_refuses_the_pause_instead_of_pausing_part_of_it(hub, monkeypatch):
+    from armadok.modules.traefik import domain_routes, schemas
+
+    client, admin, node, folder = hub
+    make_site(client, admin, node, "blog", ["blog.example.com"])
+    real = domain_routes.ask
+
+    async def cut(request, registry, node_id, op, args, model):
+        answer = await real(request, registry, node_id, op, args, model)
+        if op == "traefik.sites.list":
+            return schemas.SiteFiles(files=answer.files, truncated=True)
+        return answer
+
+    monkeypatch.setattr(domain_routes, "ask", cut)
+    got = client.post(domain_url(node, "example.com", "pause"), headers=admin, json={})
+    assert got.status_code == 409
+    assert (folder / "sites" / "blog.yml").exists()
+
+
+def test_an_international_top_level_domain_is_accepted(hub):
+    client, admin, node, _ = hub
+    got = client.post(
+        domain_url(node, "exemple.xn--p1ai", "pause"), headers=admin, json={"dry_run": True}
+    )
+    assert got.status_code == 200 and got.json() == {"sites": [], "shared": []}

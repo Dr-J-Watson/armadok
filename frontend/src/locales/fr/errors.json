@@ -209,5 +209,6 @@
   "ownership.not_with_key": "La propriété demande votre propre session, pas une clé d'API.",
   "ownership.unknown_mode": "Mode inconnu.",
   "ownership.list_truncated": "La liste d'objets est trop longue pour garantir « tout ». Léguez ou reprenez-les un par un.",
-  "ownership.inbox_full": "Cette personne a déjà trop de legs en attente."
+  "ownership.inbox_full": "Cette personne a déjà trop de legs en attente.",
+  "worker.history_failed": "L'ancienne version n'a pas pu être conservée : rien n'a été modifié."
 }

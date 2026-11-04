@@ -152,5 +152,22 @@
   "domain.goPause": "Pause these sites",
   "domain.goResume": "Resume these sites",
   "managed.search": "Search a site",
-  "managed.middlewares": "Middlewares"
+  "managed.middlewares": "Middlewares",
+  "views.static": "Static config",
+  "static.title": "Static configuration",
+  "static.notConfigured": "This machine has no static configuration folder set up. Mount the folder that holds traefik.yml for the worker and set ARMADOK_TRAEFIK_STATIC_DIR (see the worker example file).",
+  "static.explain": "Entry points, certificate resolvers, the API, logs and metrics. Traefik reads this file only when it starts: a change counts after a restart. Each replaced version is kept on the machine. YAML anchors and aliases are not accepted.",
+  "static.text": "Contents of {{name}}",
+  "static.review": "Review the changes",
+  "static.changes": "Changes",
+  "static.tooLong": "The file is too long to compare here. You can still save it.",
+  "static.save": "Save this version",
+  "static.history": "Earlier versions",
+  "static.load": "Load into the editor",
+  "static.restartTitle": "Restart Traefik",
+  "static.saved": "Saved. Traefik keeps running with the old file until it restarts.",
+  "static.which": "Traefik container",
+  "static.restart": "Restart",
+  "static.confirmRestart": "Restarting Traefik interrupts every site for a few seconds. Continue?",
+  "static.restarted": "Restart requested."
 }

@@ -1,8 +1,8 @@
 """Middleware endpoints of a node: create, change, list and delete middlewares by intention.
 
 A middleware is one generated file in `middlewares/` (see `middlewares`). Needs
-`traefik.files.write` to change anything. Passwords are hashed here and never stored, logged or
-returned. Every change is audited by name and intention, never by content.
+`traefik.sites.write` (sensitive) to change anything. Passwords are hashed here and never
+stored, logged or returned. Every change is audited by name and intention, never by content.
 """
 
 from __future__ import annotations
@@ -277,7 +277,9 @@ async def _users_of(
     """Find who names a middleware: sites the form built (changeable) and other files (not).
 
     A paused site is not loaded by Traefik, but it would break when resumed: it is reported
-    like a hand-written file, since the form does not rewrite paused sites.
+    like a hand-written file, since the form does not rewrite paused sites. A file that does
+    not parse cannot be read for references, so it is reported too (it may well name this one).
+    Only the file provider is looked at: a reference made from Docker labels is not seen.
     """
     listing = await ask(request, registry, node_id, "traefik.sites.list", {}, schemas.SiteFiles)
     if listing.truncated:
@@ -305,12 +307,19 @@ async def _users_of(
             for s in summaries
             if s["path"] not in managed_paths
             and (
-                any(ref in r["middlewares"] for r in s["routers"])
+                s.get("error")
+                or any(ref in r["middlewares"] for r in s["routers"])
                 or any(ref in m["refs"] for m in s["middlewares"])
             )
         }
     )
     return managed, manual
+
+
+async def _still_there(request: Request, registry: Registry, node_id: str, path: str) -> bool:
+    """Tell whether a file is still in the configuration folder (read afresh from the machine)."""
+    snapshot = await ask(request, registry, node_id, "traefik.snapshot", {}, schemas.Snapshot)
+    return any(f.path == path for f in snapshot.files)
 
 
 @router.post("/{name}/rename", summary="Rename a middleware and the sites that use it")
@@ -328,7 +337,8 @@ async def rename_middleware(
     Sites and files written by hand are never rewritten: they are listed (`manual`) so that
     the person fixes them. The new middleware is written first, then the sites, then the old
     file is removed, so the sites never point at nothing; if a step fails the earlier ones are
-    undone. With `dry_run` nothing is written.
+    undone (a step is recorded for undoing before its answer is checked, since the machine may
+    have done it even when the answer is lost). With `dry_run` nothing is written.
     """
     _writer(conn, registry, who, node_id)
     info = {"middleware": name, "new_name": body.new_name, "dry_run": body.dry_run}
@@ -339,7 +349,9 @@ async def rename_middleware(
         if current is None:
             raise ApiError("traefik.site_not_found", 404)
         previous = builder.untouched(current.content)
-        if previous is None:
+        # The file's own description must agree with its name, or the references we would
+        # follow are not the ones the file really defines.
+        if previous is None or previous.name != name:
             raise ApiError("traefik.modified_by_hand", 409)
         if current.sha256 != body.expected_sha256 or body.new_name == name:
             raise ApiError("worker.conflict", 409)
@@ -360,6 +372,10 @@ async def rename_middleware(
             return report
         renamed = previous.model_copy(update={"name": body.new_name})
         text = builder.render(renamed)
+        new_hash = hashlib.sha256(text.encode()).hexdigest()
+        undo.append(
+            ("traefik.file.delete", {"path": _path(body.new_name), "expected_sha256": new_hash})
+        )
         saved = _checked(
             await ask(
                 request,
@@ -371,9 +387,6 @@ async def rename_middleware(
             ),
             text,
         )
-        undo.append(
-            ("traefik.file.delete", {"path": _path(body.new_name), "expected_sha256": saved.sha256})
-        )
         old_ref, new_ref = builder.reference(name), builder.reference(body.new_name)
         for site, spec in managed:
             changed = spec.model_copy(
@@ -384,7 +397,17 @@ async def rename_middleware(
                 }
             )
             site_text = sitebuilder.render(changed)
-            site_saved = _checked(
+            undo.append(
+                (
+                    "traefik.site.write",
+                    {
+                        "name": site.name,
+                        "content": site.content,
+                        "expected_sha256": hashlib.sha256(site_text.encode()).hexdigest(),
+                    },
+                )
+            )
+            _checked(
                 await ask(
                     request,
                     registry,
@@ -395,38 +418,29 @@ async def rename_middleware(
                 ),
                 site_text,
             )
-            undo.append(
-                (
-                    "traefik.site.write",
-                    {
-                        "name": site.name,
-                        "content": site.content,
-                        "expected_sha256": site_saved.sha256,
-                    },
-                )
+        try:
+            await ask(
+                request,
+                registry,
+                node_id,
+                "traefik.file.delete",
+                {"path": _path(name), "expected_sha256": body.expected_sha256},
+                schemas.Done,
             )
-        await ask(
-            request,
-            registry,
-            node_id,
-            "traefik.file.delete",
-            {"path": _path(name), "expected_sha256": body.expected_sha256},
-            schemas.Done,
-        )
-    except ApiError as error:
+        except ApiError:
+            # The answer may have been lost after the machine removed the file. Undoing then
+            # would point the sites back at a middleware that is gone, so look first.
+            if await _still_there(request, registry, node_id, _path(name)):
+                raise
+    except (ApiError, asyncio.CancelledError) as error:
         for op, args in reversed(undo):
             try:  # best effort: the files stay in the history either way
-                await ask(
-                    request,
-                    registry,
-                    node_id,
-                    op,
-                    args,
-                    schemas.Saved if "content" in args else schemas.Done,
-                )
+                model = schemas.Saved if "content" in args else schemas.Done
+                await ask(request, registry, node_id, op, args, model)
             except ApiError:
                 pass
-        audit_failure(conn, registry, who, "traefik.middleware_rename", node_id, info, error)
+        if isinstance(error, ApiError):
+            audit_failure(conn, registry, who, "traefik.middleware_rename", node_id, info, error)
         raise
     _record(
         conn,

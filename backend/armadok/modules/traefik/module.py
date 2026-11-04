@@ -6,13 +6,14 @@ from armadok.modules.traefik.domain_routes import router as domain_router
 from armadok.modules.traefik.middleware_routes import router as middleware_router
 from armadok.modules.traefik.routes import router
 from armadok.modules.traefik.sites_routes import router as sites_router
+from armadok.modules.traefik.static_routes import router as static_router
 
 _NODE_TYPES = ("network", "full")
 
 module = Module(
     name="traefik",
     requires=("workers",),
-    routes=(router, sites_router, middleware_router, domain_router),
+    routes=(router, sites_router, middleware_router, domain_router, static_router),
     rights=(
         Right("traefik.read", depends_on=("nodes.read",), node_owner=True, level="view"),
         Right("traefik.files.read", depends_on=("traefik.read",), node_owner=True, level="edit"),
@@ -26,6 +27,15 @@ module = Module(
             node_owner=True,
             sensitive=True,
             level="edit",
+        ),
+        # The static file decides entry points, the API and certificate resolvers, and a mistake
+        # stops the proxy: its own sensitive right, never for a key.
+        Right(
+            "traefik.static.write",
+            depends_on=("traefik.files.read",),
+            node_owner=True,
+            sensitive=True,
+            level="admin",
         ),
     ),
     signals=(Signal("traefik.changed", "traefik.read"),),
@@ -43,6 +53,9 @@ module = Module(
         "traefik.middleware_update",
         "traefik.middleware_delete",
         "traefik.middleware_rename",
+        "traefik.static_read",
+        "traefik.static_write",
+        "traefik.static_history_read",
         "traefik.domain_pause",
         "traefik.domain_resume",
     ),
@@ -65,5 +78,9 @@ module = Module(
         WorkerOp("traefik.site.delete", _NODE_TYPES),
         WorkerOp("traefik.history.list", _NODE_TYPES),
         WorkerOp("traefik.history.read", _NODE_TYPES),
+        WorkerOp("traefik.static.read", _NODE_TYPES),
+        WorkerOp("traefik.static.write", _NODE_TYPES),
+        WorkerOp("traefik.static.history.list", _NODE_TYPES),
+        WorkerOp("traefik.static.history.read", _NODE_TYPES),
     ),
 )

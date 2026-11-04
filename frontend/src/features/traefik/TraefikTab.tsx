@@ -9,15 +9,16 @@ import { DomainSwitch } from './DomainSwitch'
 import { ManagedSites } from './ManagedSites'
 import { Middlewares } from './Middlewares'
 import { SitesView } from './SitesView'
+import { StaticConfig } from './StaticConfig'
 
-type View = 'sites' | 'managed' | 'middlewares' | 'coherence' | 'files'
+type View = 'sites' | 'managed' | 'middlewares' | 'coherence' | 'static' | 'files'
 
 export function TraefikTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['traefik', 'errors'])
   const [params, setParams] = useSearchParams()
   // View and open file live in the address: shareable, and kept on reload.
   const asked = params.get('view')
-  const view: View = asked === 'files' || asked === 'managed' || asked === 'middlewares' || asked === 'coherence' ? asked : 'sites'
+  const view: View = asked === 'files' || asked === 'managed' || asked === 'middlewares' || asked === 'coherence' || asked === 'static' ? asked : 'sites'
   const file = params.get('file')
 
   function go(next: Record<string, string | null>) {
@@ -32,7 +33,7 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
   return (
     <>
       <div className="actions">
-        {(['sites', 'managed', 'middlewares', 'coherence', 'files'] as const).map((name) => (
+        {(['sites', 'managed', 'middlewares', 'coherence', 'static', 'files'] as const).map((name) => (
           <button
             key={name}
             type="button"
@@ -51,6 +52,8 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
         </>
       ) : view === 'middlewares' ? (
         <Middlewares nodeId={nodeId} />
+      ) : view === 'static' ? (
+        <StaticConfig nodeId={nodeId} />
       ) : view === 'coherence' ? (
         <Coherence nodeId={nodeId} onOpenFile={(path) => go({ view: 'files', file: path })} />
       ) : view === 'sites' ? (
