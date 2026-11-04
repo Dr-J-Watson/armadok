@@ -2,6 +2,7 @@
 
 from armadok.core.module import Module, RelationProvider, Right, Signal, WorkerOp
 from armadok.modules.traefik import relations
+from armadok.modules.traefik.middleware_routes import router as middleware_router
 from armadok.modules.traefik.routes import router
 from armadok.modules.traefik.sites_routes import router as sites_router
 
@@ -10,7 +11,7 @@ _NODE_TYPES = ("network", "full")
 module = Module(
     name="traefik",
     requires=("workers",),
-    routes=(router, sites_router),
+    routes=(router, sites_router, middleware_router),
     rights=(
         Right("traefik.read", depends_on=("nodes.read",), node_owner=True, level="view"),
         Right("traefik.files.read", depends_on=("traefik.read",), node_owner=True, level="edit"),
@@ -37,6 +38,9 @@ module = Module(
         "traefik.site_rename",
         "traefik.site_delete",
         "traefik.history_restore",
+        "traefik.middleware_create",
+        "traefik.middleware_update",
+        "traefik.middleware_delete",
     ),
     relations=(
         RelationProvider(
@@ -47,6 +51,8 @@ module = Module(
         WorkerOp("traefik.files.list", _NODE_TYPES),
         WorkerOp("traefik.file.read", _NODE_TYPES),
         WorkerOp("traefik.file.write", _NODE_TYPES),
+        WorkerOp("traefik.middleware.write", _NODE_TYPES),
+        WorkerOp("traefik.file.delete", _NODE_TYPES),
         WorkerOp("traefik.snapshot", _NODE_TYPES),
         WorkerOp("traefik.sites.list", _NODE_TYPES),
         WorkerOp("traefik.site.write", _NODE_TYPES),

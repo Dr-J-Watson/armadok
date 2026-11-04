@@ -181,5 +181,10 @@
   "vulns.too_large": "The vulnerability database's answer is too large.",
   "vulns.too_soon": "A check is already running or just ran. Wait a moment.",
   "vulns.busy": "A scan is already running.",
-  "vulns.already_accepted": "This finding is already accepted: stop accepting it first."
+  "vulns.already_accepted": "This finding is already accepted: stop accepting it first.",
+  "traefik.password_needed": "Every new user needs a password.",
+  "traefik.invalid_password": "This password cannot be used (at most 72 bytes).",
+  "traefik.middleware_in_use": "A site still uses this middleware.",
+  "traefik.too_many_passwords": "Too many new passwords at once (10 at most).",
+  "common.invalid_request": "Some fields are not valid."
 }

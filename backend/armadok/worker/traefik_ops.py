@@ -172,6 +172,86 @@ def file_write(args: dict[str, Any]) -> dict[str, Any]:
         os.close(root_fd)
 
 
+MIDDLEWARE_NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
+MIDDLEWARE_FILE = re.compile(r"[a-z0-9][a-z0-9-]{0,39}\.yml")
+MIDDLEWARES_DIR = "middlewares"
+
+
+def middleware_write(args: dict[str, Any]) -> dict[str, Any]:
+    """Create or replace `middlewares/<name>.yml`, making the folder if it is missing.
+
+    The generic file save never creates a folder; the middleware form needs this one, so it
+    has its own operation that can only ever write to that one place.
+    """
+    name = args.get("name")
+    content, expected = args.get("content"), args.get("expected_sha256")
+    if (
+        not isinstance(name, str)
+        or not MIDDLEWARE_NAME.fullmatch(name)
+        or not isinstance(content, str)
+        or (
+            expected is not None
+            and not (isinstance(expected, str) and safefs.SHA256.fullmatch(expected))
+        )
+    ):
+        raise OperationError("worker.invalid_path")
+    root_fd = safefs.open_dir(str(_root_path()))
+    try:
+        try:
+            os.mkdir(MIDDLEWARES_DIR, 0o750, dir_fd=root_fd)
+        except FileExistsError:
+            pass
+        except OSError:
+            raise OperationError("worker.forbidden") from None
+        parent_fd = safefs.open_dir(MIDDLEWARES_DIR, root_fd)
+        try:
+            file_name = f"{name}.yml"
+            try:
+                previous = safefs.read_regular(parent_fd, file_name, MAX_FILE_BYTES)[0]
+            except OperationError:
+                previous = None
+            result = safefs.write_regular(
+                parent_fd, file_name, content.encode("utf-8"), expected, MAX_FILE_BYTES, TEMP_FILE
+            )
+            if previous is not None and previous != content.encode("utf-8"):
+                history.save(root_fd, f"{MIDDLEWARES_DIR}/{file_name}", previous)
+            _touch_reload(root_fd)
+            return result
+        finally:
+            os.close(parent_fd)
+    finally:
+        os.close(root_fd)
+
+
+def middleware_delete(args: dict[str, Any]) -> dict[str, Any]:
+    """Remove a generated middleware file, if it still is the version the caller saw.
+
+    Only `middlewares/<name>.yml` can be removed this way: the one place the middleware form
+    writes. Its text goes to the history first, so the removal can be undone.
+    """
+    folders, name = _split(args.get("path"))
+    expected = args.get("expected_sha256")
+    if (
+        folders != ["middlewares"]
+        or not MIDDLEWARE_FILE.fullmatch(name)
+        or not (isinstance(expected, str) and safefs.SHA256.fullmatch(expected))
+    ):
+        raise OperationError("worker.invalid_path")
+    root_fd, parent_fd = _open_parent(folders)
+    try:
+        data = safefs.read_regular(parent_fd, name, MAX_FILE_BYTES)[0]
+        if hashlib.sha256(data).hexdigest() != expected:
+            raise OperationError("worker.conflict")
+        history.save(root_fd, "/".join([*folders, name]), data)
+        os.unlink(name, dir_fd=parent_fd)
+        os.fsync(parent_fd)
+        _touch_reload(root_fd)
+        return {"done": True}
+    finally:
+        os.close(parent_fd)
+        os.close(root_fd)
+
+
 def snapshot(args: dict[str, Any]) -> dict[str, Any]:
     """Return every file's text in one answer (for the sites view and the relations map).
 
@@ -198,5 +278,7 @@ OPERATIONS: dict[str, Operation] = {
     "traefik.files.list": files_list,
     "traefik.file.read": file_read,
     "traefik.file.write": file_write,
+    "traefik.middleware.write": middleware_write,
+    "traefik.file.delete": middleware_delete,
     "traefik.snapshot": snapshot,
 }

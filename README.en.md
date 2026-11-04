@@ -442,7 +442,7 @@ Everything stays editable afterwards in the settings.
 
 - [ ] Docker Compose projects, Git (GitHub, GitLab, Gitea / Forgejo, Bitbucket), image tracking *(Compose projects done; Git and image tracking to come)*
 - [x] Volume backups, scheduled tasks, availability monitoring *(the public status page is still to come)*
-- [ ] Traefik sites, middlewares, pause, conversions *(sites done; the rest to come)*
+- [ ] Traefik sites, middlewares, pause, conversions *(sites and ready-made middlewares done; the rest to come)*
 - [ ] DNS (OVH, DuckDNS, local) and the link with Traefik
 - [ ] Certificates and traffic statistics *(certificates done; traffic statistics to come)*
 - [x] Relationship map

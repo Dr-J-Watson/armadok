@@ -8,6 +8,7 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from armadok.core import crypto
@@ -111,6 +112,18 @@ def create_app(
     def api_error(_: Request, exc: ApiError) -> JSONResponse:
         """Return errors as a stable code; the interface translates it."""
         return JSONResponse({"error": {"code": exc.code}}, status_code=exc.status_code)
+
+    @app.exception_handler(RequestValidationError)
+    def invalid_request(_: Request, exc: RequestValidationError) -> JSONResponse:
+        """Say which fields were wrong, never what was sent in them.
+
+        FastAPI's default answer repeats each rejected value, which can be a password or a
+        key: it would end up in proxy logs and browser tools.
+        """
+        fields = sorted({".".join(str(p) for p in e.get("loc", ())[1:]) for e in exc.errors()})
+        return JSONResponse(
+            {"error": {"code": "common.invalid_request", "fields": fields[:20]}}, status_code=422
+        )
 
     @app.get("/api/v1/health", tags=["platform"])
     def health() -> dict[str, str]:

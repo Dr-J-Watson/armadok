@@ -35,7 +35,8 @@ def require_for_sites_folder(who: Principal, registry: Registry, node_id: str, p
     Otherwise a holder of the plain file-editing right (which API keys may carry) could do
     through the generic editor what the sensitive sites right forbids.
     """
-    if path.split("/", 1)[0] == "sites":
+    # `middlewares/` holds what decides who reaches a site (see `middleware_routes`).
+    if path.split("/", 1)[0] in ("sites", "middlewares"):
         who.require("traefik.sites.write", registry.rights(), f"node:{node_id}")
 
 

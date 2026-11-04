@@ -442,7 +442,7 @@ Tout reste modifiable ensuite dans les réglages.
 
 - [ ] Projets Docker Compose, Git (GitHub, GitLab, Gitea / Forgejo, Bitbucket), suivi des images *(projets Compose faits ; Git et suivi des images à venir)*
 - [x] Sauvegarde de volumes, tâches planifiées, surveillance de disponibilité *(la page d'état publique reste à faire)*
-- [ ] Sites Traefik, middlewares, pause, conversions *(sites faits ; le reste à venir)*
+- [ ] Sites Traefik, middlewares, pause, conversions *(sites et middlewares prêts à l'emploi faits ; le reste à venir)*
 - [ ] DNS (OVH, DuckDNS, local) et lien avec Traefik
 - [ ] Certificats et statistiques du trafic *(certificats faits ; statistiques du trafic à venir)*
 - [x] Carte des relations

@@ -181,5 +181,10 @@
   "vulns.too_large": "La réponse de la base de failles est trop volumineuse.",
   "vulns.too_soon": "Une vérification est déjà en cours ou vient d'avoir lieu. Patientez un instant.",
   "vulns.busy": "Une vérification est déjà en cours.",
-  "vulns.already_accepted": "Cette faille est déjà acceptée : ne l'acceptez plus d'abord."
+  "vulns.already_accepted": "Cette faille est déjà acceptée : ne l'acceptez plus d'abord.",
+  "traefik.password_needed": "Chaque nouvel utilisateur a besoin d'un mot de passe.",
+  "traefik.invalid_password": "Ce mot de passe est inutilisable (72 octets au plus).",
+  "traefik.middleware_in_use": "Un site utilise encore ce middleware.",
+  "traefik.too_many_passwords": "Trop de nouveaux mots de passe à la fois (10 au plus).",
+  "common.invalid_request": "Certains champs ne sont pas valables."
 }
