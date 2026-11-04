@@ -63,5 +63,6 @@
   "when.cron": "cron {{expr}} ({{zone}})",
   "missed": "Cette tâche devait s'exécuter à {{at}} mais Armadok était arrêté : elle n'a pas tourné.",
   "missedRun": "La lancer maintenant",
-  "missedWait": "Attendre la prochaine fois"
+  "missedWait": "Attendre la prochaine fois",
+  "actions.imagescan.scan": "Analyser les failles des images"
 }

@@ -197,5 +197,8 @@
   "notes.share_self": "Une note est déjà la vôtre.",
   "notes.share_no_access": "Cette personne ne voit pas la machine : on ne peut pas lui montrer la note.",
   "notes.too_many_shares": "Cette note est déjà partagée avec le nombre maximal de personnes.",
-  "notes.not_with_key": "Partager une note demande votre propre session, pas une clé d'API."
+  "notes.not_with_key": "Partager une note demande votre propre session, pas une clé d'API.",
+  "imagescan.too_soon": "Une analyse vient d'avoir lieu sur cette machine. Réessayez dans un instant.",
+  "imagescan.busy": "Cette image est déjà en cours d'analyse.",
+  "imagescan.invalid_image": "Ce n'est pas un identifiant d'image valide."
 }

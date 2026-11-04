@@ -33,4 +33,5 @@ ENABLED_MODULES: tuple[str, ...] = (
     "machine",
     "search",
     "vulns",
+    "imagescan",
 )

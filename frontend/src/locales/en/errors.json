@@ -197,5 +197,8 @@
   "notes.share_self": "A note is already yours.",
   "notes.share_no_access": "This person cannot see the machine, so they cannot be shown the note.",
   "notes.too_many_shares": "This note is already shared with the maximum number of people.",
-  "notes.not_with_key": "Sharing a note needs your own session, not an API key."
+  "notes.not_with_key": "Sharing a note needs your own session, not an API key.",
+  "imagescan.too_soon": "A scan just ran on this machine. Try again in a moment.",
+  "imagescan.busy": "This image is already being scanned.",
+  "imagescan.invalid_image": "This is not a valid image id."
 }

@@ -293,6 +293,7 @@ def test_a_delegate_gives_only_what_they_hold_where_they_hold_it(box):
         "schedule.read",
         "backups.read",
         "machine.read",
+        "imagescan.read",
     ):
         client.post(
             f"/api/v1/users/{carol_id}/grants",

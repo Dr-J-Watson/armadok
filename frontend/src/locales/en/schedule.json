@@ -63,5 +63,6 @@
   "when.cron": "cron {{expr}} ({{zone}})",
   "missed": "This task was due at {{at}} but Armadok was stopped, so it did not run.",
   "missedRun": "Run it now",
-  "missedWait": "Wait for the next time"
+  "missedWait": "Wait for the next time",
+  "actions.imagescan.scan": "Scan images for flaws"
 }

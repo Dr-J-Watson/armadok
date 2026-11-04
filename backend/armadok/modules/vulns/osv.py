@@ -18,7 +18,7 @@ import httpx
 
 HOST = "https://api.osv.dev"
 TIMEOUT_SECONDS = 20
-MAX_COMPONENTS = 500
+MAX_COMPONENTS = 500  # Armadok's own packages; an image may hold up to 5000 (see imagescan)
 BATCH = 100
 MAX_PER_COMPONENT = 200
 MAX_DISTINCT_IDS = 1000
@@ -181,8 +181,12 @@ def _parse_detail(raw: Any) -> dict[str, Any] | None:
 
 async def scan(
     components: list[tuple[str, str]],
+    ecosystem: str = "PyPI",
+    *,
+    max_ids: int = MAX_DISTINCT_IDS,
+    deadline: int = SCAN_DEADLINE_SECONDS,
 ) -> tuple[list[dict[str, Any]], set[tuple[str, str]]]:
-    """Scan `components`; return `(findings, truncated)`.
+    """Scan `components` of one OSV `ecosystem`; return `(findings, truncated)`.
 
     There is one finding per (component, vulnerability), and `truncated` holds the components
     that had more vulnerabilities than are kept (their list is incomplete).
@@ -191,14 +195,14 @@ async def scan(
     partial picture must never be taken for a clean one.
     """
     try:
-        async with asyncio.timeout(SCAN_DEADLINE_SECONDS):
-            return await _scan(components)
+        async with asyncio.timeout(deadline):
+            return await _scan(components, ecosystem, max_ids)
     except TimeoutError:
         raise OsvError("vulns.unreachable") from None
 
 
 async def _scan(
-    components: list[tuple[str, str]],
+    components: list[tuple[str, str]], ecosystem: str, max_ids: int
 ) -> tuple[list[dict[str, Any]], set[tuple[str, str]]]:
     findings: list[dict[str, Any]] = []
     truncated: set[tuple[str, str]] = set()
@@ -212,7 +216,7 @@ async def _scan(
                 "/v1/querybatch",
                 {
                     "queries": [
-                        {"package": {"name": n, "ecosystem": "PyPI"}, "version": v}
+                        {"package": {"name": n, "ecosystem": ecosystem}, "version": v}
                         for n, v in chunk
                     ]
                 },
@@ -236,7 +240,7 @@ async def _scan(
                 if ids:
                     ids_by_component[component] = ids
         distinct = {i for ids in ids_by_component.values() for i in ids}
-        if len(distinct) > MAX_DISTINCT_IDS:
+        if len(distinct) > max_ids:
             raise OsvError("vulns.too_large")
         gate = asyncio.Semaphore(DETAIL_CONCURRENCY)
         cache: dict[str, dict[str, Any]] = {}

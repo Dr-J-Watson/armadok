@@ -23,6 +23,7 @@ import { startFeature } from './start/feature'
 import { rolesFeature } from './roles/feature'
 import { scheduleFeature } from './schedule/feature'
 import { uptimeFeature } from './uptime/feature'
+import { imageScanFeature } from './imagescan/feature'
 import { stateBackupFeature } from './statebackup/feature'
 import { traefikFeature } from './traefik/feature'
 import { vulnsFeature } from './vulns/feature'
@@ -56,5 +57,6 @@ export const features: Feature[] = [
   backupsFeature,
   stateBackupFeature,
   vulnsFeature,
+  imageScanFeature,
   accountFeature,
 ]
