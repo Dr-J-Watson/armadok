@@ -25,3 +25,12 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 )
+
+// Installable app: the service worker only keeps the built files (see public/sw.js).
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Not installable here (private window, blocked): the interface works the same.
+    })
+  })
+}

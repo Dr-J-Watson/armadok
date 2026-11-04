@@ -30,5 +30,6 @@
   "nav.stateBackups": "Sauvegardes d'Armadok",
   "prefs.accent": "Couleur d'accent",
   "prefs.accentReset": "Revenir à la couleur par défaut",
-  "nav.vulns": "Failles"
+  "nav.vulns": "Failles",
+  "nav.help": "Aide"
 }

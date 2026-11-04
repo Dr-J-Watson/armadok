@@ -30,5 +30,6 @@
   "nav.stateBackups": "Armadok backups",
   "prefs.accent": "Accent colour",
   "prefs.accentReset": "Back to the default colour",
-  "nav.vulns": "Vulnerabilities"
+  "nav.vulns": "Vulnerabilities",
+  "nav.help": "Help"
 }
