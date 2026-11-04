@@ -34,6 +34,12 @@ class Settings:
     # Manage the hub's own machine as a node, with no worker: the hub runs the operations itself.
     # Off by default, because it needs the hub to reach Docker and the configuration folders.
     local_node: bool = False
+    # Where the hub's own backups go (default: a `backups` folder inside the data folder, which
+    # is lost with the data: point it at another disk), how many to keep, and how often the
+    # automatic backup runs (0 turns it off).
+    state_backup_dir: Path | None = None
+    state_backup_keep: int = 7
+    state_backup_hours: int = 24
 
     @property
     def audit_key(self) -> bytes | None:
@@ -52,6 +58,15 @@ class Settings:
         return self.data_dir / "armadok.db"
 
 
+def _whole(raw: str | None, default: int, low: int, high: int) -> int:
+    """Read an integer setting; anything missing or out of range falls back to the default."""
+    try:
+        value = int(raw) if raw else default
+    except ValueError:
+        return default
+    return value if low <= value <= high else default
+
+
 def load_settings() -> Settings:
     """Build `Settings` from the `ARMADOK_*` environment variables listed in `.env.example`."""
     return Settings(
@@ -61,5 +76,12 @@ def load_settings() -> Settings:
         local_node=os.environ.get("ARMADOK_LOCAL_NODE", "").lower() == "true",
         allow_private_outbound=os.environ.get("ARMADOK_ALLOW_PRIVATE_OUTBOUND", "").lower()
         == "true",
+        state_backup_dir=(
+            Path(os.environ["ARMADOK_STATE_BACKUP_DIR"])
+            if os.environ.get("ARMADOK_STATE_BACKUP_DIR")
+            else None
+        ),
+        state_backup_keep=_whole(os.environ.get("ARMADOK_STATE_BACKUP_KEEP"), 7, 1, 365),
+        state_backup_hours=_whole(os.environ.get("ARMADOK_STATE_BACKUP_HOURS"), 24, 0, 24 * 30),
         web_dir=Path(os.environ["ARMADOK_WEB_DIR"]) if os.environ.get("ARMADOK_WEB_DIR") else None,
     )

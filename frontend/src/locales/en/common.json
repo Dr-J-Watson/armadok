@@ -26,5 +26,6 @@
   "nav.integrations": "Integrations",
   "nav.serviceAccounts": "Service accounts",
   "nav.nodeAdmin": "Machines (admin)",
-  "nav.start": "Getting started"
+  "nav.start": "Getting started",
+  "nav.stateBackups": "Armadok backups"
 }

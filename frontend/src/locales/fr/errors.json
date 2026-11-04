@@ -152,5 +152,16 @@
   "worker.backups_not_configured": "Cette machine n'a pas de dossier de sauvegarde.",
   "worker.backup_failed": "La sauvegarde n'a pas abouti.",
   "worker.restore_failed": "La restauration n'a pas abouti.",
-  "backups.other_volume": "Cette archive vient d'un autre volume. Confirmez que vous voulez la restaurer dans celui-ci."
+  "backups.other_volume": "Cette archive vient d'un autre volume. Confirmez que vous voulez la restaurer dans celui-ci.",
+  "statebackup.no_encryption_key": "Aucune clé de chiffrement n'est définie : aucune sauvegarde possible.",
+  "statebackup.too_soon": "Une sauvegarde vient d'être faite. Patientez un instant.",
+  "statebackup.not_found": "Cette sauvegarde n'existe pas.",
+  "statebackup.wrong_key": "La clé de chiffrement ne correspond pas à cette sauvegarde.",
+  "statebackup.invalid": "Ce fichier n'est pas une sauvegarde valable.",
+  "statebackup.not_with_key": "Un téléchargement se fait depuis votre propre session, pas avec une clé.",
+  "statebackup.too_large": "La base est trop volumineuse pour être sauvegardée ainsi.",
+  "statebackup.write_failed": "La sauvegarde n'a pas pu être écrite.",
+  "statebackup.hub_running": "La base est utilisée : arrêtez d'abord Armadok.",
+  "statebackup.corrupt": "La base contenue dans cette sauvegarde est abîmée.",
+  "statebackup.newer_version": "Cette sauvegarde vient d'une version plus récente d'Armadok."
 }

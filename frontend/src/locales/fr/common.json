@@ -26,5 +26,6 @@
   "nav.integrations": "Intégrations",
   "nav.serviceAccounts": "Comptes de service",
   "nav.nodeAdmin": "Machines (admin)",
-  "nav.start": "Premiers pas"
+  "nav.start": "Premiers pas",
+  "nav.stateBackups": "Sauvegardes d'Armadok"
 }

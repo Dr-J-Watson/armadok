@@ -1,0 +1,16 @@
+{
+  "title": "Sauvegardes des données d'Armadok",
+  "explain": "Des copies des données propres à Armadok : comptes, droits, réglages, journal d'audit et clé d'identité en laquelle les workers ont confiance. Elles sont chiffrées avec la clé de chiffrement. Gardez cette clé ailleurs : sans elle, une sauvegarde ne peut pas être ouverte.",
+  "noKey": "Aucune clé de chiffrement n'est définie, donc aucune sauvegarde n'est possible (la clé d'identité serait stockée en clair).",
+  "schedule": "Une sauvegarde est faite toutes les {{hours}} heures ; les {{keep}} plus récentes sont gardées.",
+  "manualOnly": "Les sauvegardes automatiques sont désactivées ; les {{keep}} plus récentes sont gardées.",
+  "sameDisk": "Elles sont stockées à côté des données : si le disque est perdu, elles aussi. Définissez ARMADOK_STATE_BACKUP_DIR vers un autre disque.",
+  "now": "Sauvegarder maintenant",
+  "none": "Aucune sauvegarde pour l'instant.",
+  "download": "Télécharger",
+  "delete": "Supprimer",
+  "confirmDelete": "Supprimer définitivement cette sauvegarde ?",
+  "code": "Votre code d'authentification",
+  "restoreTitle": "Restauration",
+  "restoreHow": "Armadok étant arrêté, lancez cette commande avec la même clé de chiffrement. Les fichiers actuels sont mis de côté, pas supprimés."
+}

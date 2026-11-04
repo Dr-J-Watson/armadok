@@ -82,18 +82,32 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T)
 }
 
+async function errorCode(response: Response): Promise<string> {
+  try {
+    return ((await response.json()) as { error?: { code?: string } }).error?.code ?? 'common.unknown'
+  } catch {
+    return 'common.unknown' // not JSON (a proxy error page, say)
+  }
+}
+
 // Download a file the API produces (an export): same authentication as any other call, then the
 // browser is asked to save the result. Nothing is kept in memory longer than the click.
 export async function download(path: string, filename: string): Promise<void> {
   let response = await send(path, { method: 'GET' })
   if (response.status === 401 && (await refreshSession())) response = await send(path, { method: 'GET' })
   if (!response.ok) throw new ApiError('common.unknown', response.status)
-  const url = URL.createObjectURL(await response.blob())
+  save(await response.blob(), filename)
+}
+
+// Hand a file to the browser. The temporary address is released a little later: some browsers
+// cancel the download if it disappears right after the click.
+function save(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
   link.download = filename
   link.click()
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
 export const api = {
@@ -102,4 +116,17 @@ export const api = {
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   del: <T = void>(path: string) => request<T>('DELETE', path),
+}
+
+// Like `download`, for a file that needs a body to be released (a fresh second-factor code).
+export async function downloadWith(path: string, body: unknown, filename: string): Promise<void> {
+  const init = { method: 'POST', body: JSON.stringify(body) }
+  let response = await send(path, init)
+  // Only an expired session is retried: a wrong code answers 401 too, and sending it again
+  // would use up two of the few attempts allowed.
+  if (response.status === 401 && (await errorCode(response.clone())) === 'auth.required' && (await refreshSession())) {
+    response = await send(path, init)
+  }
+  if (!response.ok) throw new ApiError(await errorCode(response), response.status)
+  save(await response.blob(), filename)
 }

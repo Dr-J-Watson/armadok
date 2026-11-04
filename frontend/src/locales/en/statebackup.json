@@ -1,0 +1,16 @@
+{
+  "title": "Armadok data backups",
+  "explain": "Copies of Armadok's own data: accounts, rights, settings, the audit log and the identity key workers trust. They are encrypted with the encryption key. Keep that key somewhere else: without it a backup cannot be opened.",
+  "noKey": "No encryption key is set, so no backup can be made (the identity key would be stored in clear text).",
+  "schedule": "A backup is made every {{hours}} hours; the newest {{keep}} are kept.",
+  "manualOnly": "Automatic backups are off; the newest {{keep}} are kept.",
+  "sameDisk": "They are stored next to the data: if the disk is lost, so are they. Set ARMADOK_STATE_BACKUP_DIR to another disk.",
+  "now": "Back up now",
+  "none": "No backup yet.",
+  "download": "Download",
+  "delete": "Delete",
+  "confirmDelete": "Delete this backup for good?",
+  "code": "Your authenticator code",
+  "restoreTitle": "Restore",
+  "restoreHow": "With Armadok stopped, run this command with the same encryption key. The current files are kept aside, not deleted."
+}

@@ -26,6 +26,18 @@ from armadok.web import add_headers, mount_web
 MAX_BODY_BYTES = 1024 * 1024
 
 
+def all_migrations(registry) -> list:
+    """Return every schema migration of this version: the core's, then each module's."""
+    return [
+        AUDIT_MIGRATION,
+        CHAIN_MIGRATION,
+        HARDENING_MIGRATION,
+        GRANTS_MIGRATION,
+        ROLES_MIGRATION,
+        *(m for module in registry.modules for m in module.migrations),
+    ]
+
+
 def create_app(
     settings: Settings | None = None,
     registry: Registry | None = None,
@@ -45,17 +57,7 @@ def create_app(
         logging.getLogger(noisy).setLevel(logging.WARNING)
     crypto.validate(settings)
     conn = settings.open_db()
-    apply_migrations(
-        conn,
-        [
-            AUDIT_MIGRATION,
-            CHAIN_MIGRATION,
-            HARDENING_MIGRATION,
-            GRANTS_MIGRATION,
-            ROLES_MIGRATION,
-            *(m for module in registry.modules for m in module.migrations),
-        ],
-    )
+    apply_migrations(conn, all_migrations(registry))
     for module in registry.modules:
         for hook in module.startup:
             hook(conn, settings, registry)

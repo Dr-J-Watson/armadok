@@ -30,6 +30,7 @@ SUPERADMIN_RIGHTS = (
     "service_accounts.manage",
     "nodes.admin",
     "emergency.use",
+    "state_backup.manage",
 )
 
 

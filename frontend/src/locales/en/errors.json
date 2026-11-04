@@ -152,5 +152,16 @@
   "worker.backups_not_configured": "This machine has no backup folder.",
   "worker.backup_failed": "The backup did not complete.",
   "worker.restore_failed": "The restore did not complete.",
-  "backups.other_volume": "This archive was made from another volume. Confirm that you want to restore it into this one."
+  "backups.other_volume": "This archive was made from another volume. Confirm that you want to restore it into this one.",
+  "statebackup.no_encryption_key": "No encryption key is set: no backup can be made.",
+  "statebackup.too_soon": "A backup was just made. Wait a moment.",
+  "statebackup.not_found": "This backup does not exist.",
+  "statebackup.wrong_key": "The encryption key does not match this backup.",
+  "statebackup.invalid": "This file is not a valid backup.",
+  "statebackup.not_with_key": "A download is made from your own session, not with a key.",
+  "statebackup.too_large": "The database is too large to be backed up this way.",
+  "statebackup.write_failed": "The backup could not be written.",
+  "statebackup.hub_running": "The database is in use: stop Armadok first.",
+  "statebackup.corrupt": "The database in this backup is damaged.",
+  "statebackup.newer_version": "This backup comes from a newer Armadok."
 }
