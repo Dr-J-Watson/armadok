@@ -7,12 +7,13 @@ import { codeMessage, errorMessage } from '../../core/errors'
 
 export interface Channel {
   id: string
-  kind: 'webhook' | 'ntfy' | 'discord'
+  kind: 'webhook' | 'ntfy' | 'discord' | 'email'
   name: string
   last_status: string | null
+  confirmed: boolean
 }
 
-const KINDS = ['ntfy', 'webhook', 'discord'] as const
+const KINDS = ['ntfy', 'webhook', 'discord', 'email'] as const
 
 export function Channels() {
   const { t } = useTranslation(['notifications', 'errors'])
@@ -23,15 +24,22 @@ export function Channels() {
   const [url, setUrl] = useState('')
   const [topic, setTopic] = useState('')
   const [token, setToken] = useState('')
+  const [mail, setMail] = useState({ host: '', port: '587', security: 'starttls', username: '', password: '', sender: '', recipient: '' })
   // A webhook's signing secret is shown once, here, and kept only in this component's memory.
   const [secret, setSecret] = useState<string | null>(null)
   const [tested, setTested] = useState<string | null>(null)
+  // The code a mailbox received, typed per channel until it is confirmed.
+  const [codes, setCodes] = useState<Record<string, string>>({})
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['channels'] })
   const add = useMutation({
     mutationFn: () => {
-      const settings: Record<string, string> =
-        kind === 'ntfy' ? { topic, ...(url ? { server: url } : {}), ...(token ? { token } : {}) } : { url }
+      const settings: Record<string, string | number> =
+        kind === 'ntfy'
+          ? { topic, ...(url ? { server: url } : {}), ...(token ? { token } : {}) }
+          : kind === 'email'
+            ? { ...mail, port: Number(mail.port) }
+            : { url }
       return api.post<{ id: string; secret: string | null }>('/notifications/channels', { kind, name, settings })
     },
     onSuccess: (data) => {
@@ -40,6 +48,7 @@ export function Channels() {
       setUrl('')
       setTopic('')
       setToken('')
+      setMail({ host: '', port: '587', security: 'starttls', username: '', password: '', sender: '', recipient: '' })
       return refresh()
     },
   })
@@ -52,7 +61,11 @@ export function Channels() {
     },
     onError: () => refresh(),
   })
-  const failed = channels.error ?? add.error ?? remove.error ?? test.error
+  const confirm = useMutation({
+    mutationFn: (id: string) => api.post(`/notifications/channels/${id}/confirm`, { code: codes[id] ?? '' }),
+    onSuccess: refresh,
+  })
+  const failed = channels.error ?? add.error ?? remove.error ?? test.error ?? confirm.error
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -83,7 +96,33 @@ export function Channels() {
                   : codeMessage(t, c.last_status)}
             </p>
             {tested === c.id && !test.isError && <p className="ok-text" role="status">{t('notifications:channels.tested')}</p>}
-            <button type="button" onClick={() => test.mutate(c.id)}>{t('notifications:channels.test')}</button>{' '}
+            {c.confirmed ? (
+              <>
+                <button type="button" onClick={() => test.mutate(c.id)}>{t('notifications:channels.test')}</button>{' '}
+              </>
+            ) : (
+              <form
+                className="notice"
+                aria-label={t('notifications:channels.confirmTitle')}
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  confirm.mutate(c.id)
+                }}
+              >
+                <p>{t('notifications:channels.confirmExplain')}</p>
+                <input
+                  aria-label={t('notifications:channels.confirmCode')}
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  required
+                  autoComplete="one-time-code"
+                  value={codes[c.id] ?? ''}
+                  onChange={(e) => setCodes({ ...codes, [c.id]: e.target.value })}
+                />{' '}
+                <button type="submit" disabled={confirm.isPending}>{t('notifications:channels.confirm')}</button>
+              </form>
+            )}
             <button type="button" onClick={() => remove.mutate(c.id)}>{t('notifications:channels.remove')}</button>
           </li>
         ))}
@@ -105,6 +144,26 @@ export function Channels() {
             <input id="ch-server" type="url" placeholder="https://ntfy.sh" value={url} onChange={(e) => setUrl(e.target.value)} />
             <label htmlFor="ch-token">{t('notifications:channels.token')}</label>
             <input id="ch-token" type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} />
+          </>
+        ) : kind === 'email' ? (
+          <>
+            <label htmlFor="ch-host">{t('notifications:channels.mailHost')}</label>
+            <input id="ch-host" required value={mail.host} onChange={(e) => setMail({ ...mail, host: e.target.value })} />
+            <label htmlFor="ch-port">{t('notifications:channels.mailPort')}</label>
+            <input id="ch-port" type="number" min={1} max={65535} required value={mail.port} onChange={(e) => setMail({ ...mail, port: e.target.value })} />
+            <label htmlFor="ch-security">{t('notifications:channels.mailSecurity')}</label>
+            <select id="ch-security" value={mail.security} onChange={(e) => setMail({ ...mail, security: e.target.value })}>
+              {['starttls', 'ssl', 'none'].map((m) => <option key={m} value={m}>{t(`notifications:security.${m}`)}</option>)}
+            </select>
+            <label htmlFor="ch-user">{t('notifications:channels.mailUser')}</label>
+            <input id="ch-user" autoComplete="off" value={mail.username} onChange={(e) => setMail({ ...mail, username: e.target.value })} />
+            <label htmlFor="ch-pass">{t('notifications:channels.mailPassword')}</label>
+            <input id="ch-pass" type="password" autoComplete="off" value={mail.password} onChange={(e) => setMail({ ...mail, password: e.target.value })} />
+            <label htmlFor="ch-from">{t('notifications:channels.mailFrom')}</label>
+            <input id="ch-from" type="email" required value={mail.sender} onChange={(e) => setMail({ ...mail, sender: e.target.value })} />
+            <label htmlFor="ch-to">{t('notifications:channels.mailTo')}</label>
+            <input id="ch-to" type="email" required value={mail.recipient} onChange={(e) => setMail({ ...mail, recipient: e.target.value })} />
+            {mail.security === 'none' && <p className="notice">{t('notifications:channels.mailNoTls')}</p>}
           </>
         ) : (
           <>

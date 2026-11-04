@@ -16,6 +16,7 @@ slow or hostile receiver cannot hold anything up.
 from __future__ import annotations
 
 import asyncio
+import collections
 import json
 import logging
 import time
@@ -24,7 +25,7 @@ from typing import Any
 from armadok.core import crypto
 from armadok.core.errors import ApiError
 from armadok.core.outbound import OutboundError
-from armadok.modules.notifications import delivery, repository
+from armadok.modules.notifications import delivery, quiet, repository
 from armadok.modules.users import repository as users_repo
 
 log = logging.getLogger("armadok.notifications")
@@ -105,6 +106,8 @@ def _plan(
                 targets = _targets(
                     repository.list_rules(conn, user_id), event, definition.severity, node_id
                 )
+                if definition.severity != "critical" and quiet.is_quiet(quiet.get(conn, user_id)):
+                    targets = {"in_app"}  # quiet hours: the inbox always keeps it, nothing else
                 if "in_app" in targets:
                     repository.add_to_inbox(
                         conn, user_id, event, definition.severity, node_id, params
@@ -114,7 +117,8 @@ def _plan(
                 )
                 for target in targets - {"in_app"}:
                     row = repository.get_channel(conn, user_id, target)
-                    if row is not None:
+                    # A mailbox nobody has confirmed is never written to.
+                    if row is not None and row["confirmed"]:
                         config = json.loads(crypto.decrypt(settings, row["config"]))
                         deliveries.append((row["id"], config, title, body))
             except Exception:  # noqa: BLE001
@@ -132,6 +136,23 @@ def _record_status(app: Any, channel_id: str, status: str) -> None:
         conn.close()
 
 
+# Messages one channel may send per hour: a mailbox cannot be flooded through a rule.
+_HOURLY_LIMIT = {"email": 20}
+_DEFAULT_HOURLY_LIMIT = 120
+
+
+def _within_rate(state: dict, channel_id: str, kind: str) -> bool:
+    """Count a delivery against the channel's hourly budget; False when it is spent."""
+    now = time.monotonic()
+    sent = state.setdefault("sent", {}).setdefault(channel_id, collections.deque())
+    while sent and now - sent[0] > 3600:
+        sent.popleft()
+    if len(sent) >= _HOURLY_LIMIT.get(kind, _DEFAULT_HOURLY_LIMIT):
+        return False
+    sent.append(now)
+    return True
+
+
 async def _deliver(
     app: Any,
     channel_id: str,
@@ -144,6 +165,9 @@ async def _deliver(
 ) -> None:
     """Send one message through one channel, within the concurrency limit; remember the result."""
     state = _state(app)
+    if not _within_rate(state, channel_id, config.get("kind", "")):
+        await asyncio.to_thread(_record_status, app, channel_id, "notifications.rate_limited")
+        return
     async with state["slots"]:
         try:
             await delivery.send(
@@ -157,8 +181,10 @@ async def _deliver(
             )
             status = "ok"
         except (OutboundError, ApiError) as error:
-            status = error.code
-            log.warning("notification channel %s failed: %s", channel_id, status)
+            # Only a generic status is kept: the exact reason would let an account learn what is
+            # behind an address it cannot reach itself (an internal name, an open port).
+            status = "outbound.failed" if isinstance(error, OutboundError) else error.code
+            log.warning("notification channel %s failed: %s", channel_id, error.code)
         except Exception:  # noqa: BLE001
             status = "notifications.delivery_failed"
             log.exception("notification channel %s failed", channel_id)

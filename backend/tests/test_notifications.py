@@ -261,7 +261,8 @@ def test_private_and_odd_destinations_are_refused_by_default(tmp_path, caplog, s
     assert test.status_code == 502 and test.json()["error"]["code"] == "outbound.failed"
     # The owner of the channel can see why in its status (the policy is not a secret).
     listed = client.get("/api/v1/notifications/channels", headers=admin).json()
-    assert listed[0]["last_status"] == "outbound.address_not_allowed"
+    # Only a generic status is kept: the exact reason would reveal what is behind an address.
+    assert listed[0]["last_status"] == "outbound.failed"
     assert Sink.received == []  # nothing was sent to the loopback receiver
 
 

@@ -12,7 +12,12 @@ from __future__ import annotations
 
 import asyncio
 import ipaddress
+import smtplib
 import socket
+import ssl
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from email.message import EmailMessage
 from urllib.parse import urlsplit
 
 import httpx
@@ -108,4 +113,172 @@ async def post(
                 ) as response:
                     return response.status_code
     except (httpx.HTTPError, TimeoutError):
+        raise OutboundError("outbound.failed") from None
+
+
+# --- mail ---------------------------------------------------------------------------------
+
+MAIL_DEADLINE_SECONDS = 20
+MAX_REPLY_BYTES = 256 * 1024  # all the server may say in one session
+# Outside a private network the hub only speaks to the ports mail servers use for submission.
+MAIL_PORTS = frozenset({25, 465, 587, 2525})
+_MAIL_THREADS = ThreadPoolExecutor(max_workers=4, thread_name_prefix="armadok-mail")
+
+
+def check_mail_port(port: int, allow_private: bool) -> None:
+    """Refuse a port that is not a mail port, unless private addresses are allowed."""
+    if not allow_private and port not in MAIL_PORTS:
+        raise OutboundError("outbound.port_not_allowed")
+
+
+class _CappedFile:
+    """The reading side of an SMTP connection, with a cap on everything the server may send."""
+
+    def __init__(self, inner) -> None:  # noqa: ANN001
+        self._inner = inner
+        self._total = 0
+
+    def readline(self, limit: int = -1) -> bytes:
+        line = self._inner.readline(limit)
+        self._total += len(line)
+        if self._total > MAX_REPLY_BYTES:
+            raise OSError("the server said too much")
+        return line
+
+    def close(self) -> None:
+        self._inner.close()
+
+
+def _smtp_classes(address: str, opened: list):
+    """Return SMTP classes that dial `address` (already checked) yet verify TLS for the name.
+
+    The name given to the class stays the one the certificate is checked against; only the
+    place the socket connects to is pinned, so a second DNS lookup cannot send us elsewhere.
+    Every socket opened is noted in `opened`, so a watchdog can cut a conversation short, and
+    what the server sends is capped.
+    """
+
+    class Pinned(smtplib.SMTP):
+        def _get_socket(self, host, port, timeout):  # noqa: ANN001
+            raw = socket.create_connection((address, port), timeout)
+            opened.append(raw)
+            return raw
+
+        def getreply(self):
+            if self.file is None:
+                self.file = _CappedFile(self.sock.makefile("rb"))
+            return super().getreply()
+
+    class PinnedSSL(smtplib.SMTP_SSL):
+        def _get_socket(self, host, port, timeout):  # noqa: ANN001
+            raw = socket.create_connection((address, port), timeout)
+            opened.append(raw)
+            return self.context.wrap_socket(raw, server_hostname=self._host)
+
+        def getreply(self):
+            if self.file is None:
+                self.file = _CappedFile(self.sock.makefile("rb"))
+            return super().getreply()
+
+    return Pinned, PinnedSSL
+
+
+def _cut(opened: list) -> None:
+    """Close every socket of a conversation; a thread blocked reading from one wakes up."""
+    for sock in opened:
+        try:
+            sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        sock.close()
+
+
+def _deliver_mail(
+    address: str,
+    *,
+    host: str,
+    port: int,
+    security: str,
+    username: str,
+    password: str,
+    message: EmailMessage,
+) -> None:
+    opened: list = []
+    plain, secure = _smtp_classes(address, opened)
+    context = ssl.create_default_context()
+    # smtplib's timeout is per read: a server that answers slowly, or endlessly, would hold this
+    # thread for ever. After the deadline the sockets are closed and the thread ends.
+    watchdog = threading.Timer(MAIL_DEADLINE_SECONDS, _cut, args=(opened,))
+    watchdog.daemon = True
+    watchdog.start()
+    try:
+        if security == "ssl":
+            client = secure(
+                host, port, local_hostname="localhost", timeout=TIMEOUT_SECONDS, context=context
+            )
+        else:
+            client = plain(host, port, local_hostname="localhost", timeout=TIMEOUT_SECONDS)
+        with client:
+            if security == "starttls":
+                client.starttls(context=context)
+            if username:
+                client.login(username, password)
+            client.send_message(message)
+    except smtplib.SMTPAuthenticationError:
+        raise OutboundError("outbound.smtp_auth") from None
+    except (smtplib.SMTPException, OSError, ssl.SSLError):
+        raise OutboundError("outbound.failed") from None
+    finally:
+        watchdog.cancel()
+        _cut(opened)
+
+
+async def send_mail(
+    *,
+    host: str,
+    port: int,
+    security: str,
+    username: str,
+    password: str,
+    sender: str,
+    recipient: str,
+    subject: str,
+    body: str,
+    allow_private: bool = False,
+) -> None:
+    """Send one plain-text message through an SMTP server chosen by a user.
+
+    The server's name is resolved here and must be public (unless private addresses are
+    allowed); the connection goes to that very address; TLS is verified for the real name;
+    a password is never sent without TLS; the whole exchange has a deadline; nothing of the
+    server's answer is kept. Raises `OutboundError`.
+    """
+    if security == "none" and (username or password):
+        raise OutboundError("outbound.invalid_mail")
+    check_mail_port(port, allow_private)
+    address = await _resolve(host, port, allow_private)
+    message = EmailMessage()
+    try:
+        # EmailMessage refuses a line break in a header: nothing can add a header of its own.
+        message["From"], message["To"], message["Subject"] = sender, recipient, subject
+    except ValueError:
+        raise OutboundError("outbound.invalid_mail") from None
+    message.set_content(body)
+    try:
+        await asyncio.wait_for(
+            asyncio.get_running_loop().run_in_executor(
+                _MAIL_THREADS,
+                lambda: _deliver_mail(
+                    address,
+                    host=host,
+                    port=port,
+                    security=security,
+                    username=username,
+                    password=password,
+                    message=message,
+                ),
+            ),
+            MAIL_DEADLINE_SECONDS + 3,  # backstop: the watchdog above ends the thread itself
+        )
+    except TimeoutError:
         raise OutboundError("outbound.failed") from None

@@ -163,5 +163,14 @@
   "statebackup.write_failed": "La sauvegarde n'a pas pu être écrite.",
   "statebackup.hub_running": "La base est utilisée : arrêtez d'abord Armadok.",
   "statebackup.corrupt": "La base contenue dans cette sauvegarde est abîmée.",
-  "statebackup.newer_version": "Cette sauvegarde vient d'une version plus récente d'Armadok."
+  "statebackup.newer_version": "Cette sauvegarde vient d'une version plus récente d'Armadok.",
+  "outbound.smtp_auth": "Le serveur de messagerie a refusé l'identifiant ou le mot de passe.",
+  "outbound.invalid_mail": "Ce message ne peut pas être envoyé tel quel.",
+  "notifications.invalid_quiet": "Ces heures de silence ne sont pas valables.",
+  "outbound.port_not_allowed": "Seuls les ports de messagerie (25, 465, 587, 2525) sont autorisés.",
+  "notifications.unconfirmed": "Confirmez d'abord cette boîte.",
+  "notifications.wrong_code": "Ce code n'est pas le bon.",
+  "notifications.code_expired": "Ce code a expiré. Supprimez le canal et ajoutez-le de nouveau.",
+  "notifications.code_locked": "Trop de codes erronés. Supprimez le canal et ajoutez-le de nouveau.",
+  "notifications.rate_limited": "Trop de messages : ce canal est en pause un moment."
 }

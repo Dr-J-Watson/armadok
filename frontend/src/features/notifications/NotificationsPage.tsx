@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Channels } from './Channels'
 import { Inbox } from './Inbox'
+import { Quiet } from './Quiet'
 import { Rules } from './Rules'
 
 const TABS = ['inbox', 'channels', 'rules'] as const
@@ -22,7 +23,12 @@ export function NotificationsPage() {
       <section role="tabpanel">
         {tab === 'inbox' && <Inbox />}
         {tab === 'channels' && <Channels />}
-        {tab === 'rules' && <Rules />}
+        {tab === 'rules' && (
+          <>
+            <Quiet />
+            <Rules />
+          </>
+        )}
       </section>
     </>
   )

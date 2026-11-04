@@ -10,7 +10,7 @@ import time
 import uuid
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from armadok.core import outbound
 from armadok.core.module import NotificationEvent
@@ -66,7 +66,31 @@ class DiscordConfig(BaseModel):
     url: str = Field(max_length=2000)
 
 
+_ADDRESS = r"^[A-Za-z0-9_+-]+(\.[A-Za-z0-9_+-]+)*@[A-Za-z0-9]([A-Za-z0-9.-]{0,251}[A-Za-z0-9])?$"
+
+
+class EmailConfig(BaseModel):
+    """A mailbox reached through an SMTP server the account chooses."""
+
+    kind: Literal["email"] = "email"
+    host: str = Field(pattern=r"^[A-Za-z0-9]([A-Za-z0-9.-]{0,251}[A-Za-z0-9])?$")
+    port: int = Field(ge=1, le=65535)
+    security: Literal["starttls", "ssl", "none"] = "starttls"
+    username: str = Field(default="", max_length=200, pattern=r"^[\x21-\x7e]*$")
+    password: str = Field(default="", max_length=500, pattern=r"^[\x20-\x7e]*$")
+    sender: str = Field(pattern=_ADDRESS, max_length=254)
+    recipient: str = Field(pattern=_ADDRESS, max_length=254)
+
+    @model_validator(mode="after")
+    def _no_clear_password(self) -> EmailConfig:
+        """Refuse credentials on a connection that is not encrypted."""
+        if self.security == "none" and (self.username or self.password):
+            raise ValueError("credentials need TLS")
+        return self
+
+
 CONFIGS: dict[str, type[BaseModel]] = {
+    "email": EmailConfig,
     "webhook": WebhookConfig,
     "ntfy": NtfyConfig,
     "discord": DiscordConfig,
@@ -111,6 +135,20 @@ async def send(
             headers["Authorization"] = f"Bearer {config['token']}"
         url = f"{config['server'].rstrip('/')}/{config['topic']}"
         status = await outbound.post(url, body.encode(), headers, allow_private)
+    elif kind == "email":
+        await outbound.send_mail(
+            host=config["host"],
+            port=config["port"],
+            security=config["security"],
+            username=config.get("username", ""),
+            password=config.get("password", ""),
+            sender=config["sender"],
+            recipient=config["recipient"],
+            subject=f"[Armadok] {title}"[:200],
+            body=f"{body}\n",
+            allow_private=allow_private,
+        )
+        return
     elif kind == "discord":
         content = json.dumps(
             {"content": f"**{title}**\n{body}"[:1900], "allowed_mentions": {"parse": []}}

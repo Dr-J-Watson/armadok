@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import hmac
 import json
 import sqlite3
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from armadok.core.db import Migration
@@ -53,6 +54,20 @@ INDEX_MIGRATION = Migration(
     "notifications-0002-inbox-index",
     "CREATE INDEX notifications_user_id ON notifications (user_id, id);",
 )
+
+CONFIRM_MIGRATION = Migration(
+    "notifications-0004-channel-confirmation",
+    """
+    -- A mailbox is only used once its owner proved they read it (a code sent to it).
+    ALTER TABLE notification_channels ADD COLUMN confirmed INTEGER NOT NULL DEFAULT 1;
+    ALTER TABLE notification_channels ADD COLUMN confirm_hash TEXT;
+    ALTER TABLE notification_channels ADD COLUMN confirm_expires TEXT;
+    ALTER TABLE notification_channels ADD COLUMN confirm_tries INTEGER NOT NULL DEFAULT 0;
+    """,
+)
+
+CONFIRM_MINUTES = 30
+CONFIRM_TRIES = 5
 
 SEVERITIES = ("info", "warning", "critical")
 MAX_INBOX = 1000  # per account: older entries are dropped as new ones arrive
@@ -135,27 +150,76 @@ def mark_read(conn: sqlite3.Connection, user_id: str, ids: list[int] | None) -> 
 
 
 def create_channel(
-    conn: sqlite3.Connection, owner_id: str, kind: str, name: str, sealed_config: str
+    conn: sqlite3.Connection,
+    owner_id: str,
+    kind: str,
+    name: str,
+    sealed_config: str,
+    confirm_hash: str | None = None,
 ) -> str:
-    """Store a channel (its config already encrypted) and return its id."""
+    """Store a channel (its config already encrypted) and return its id.
+
+    With `confirm_hash` the channel stays unused until its owner enters the code it came from.
+    """
     channel_id = uuid.uuid4().hex
+    expires = (datetime.now(UTC) + timedelta(minutes=CONFIRM_MINUTES)).isoformat()
     conn.execute(
-        "INSERT INTO notification_channels (id, owner_id, kind, name, config, created_at)"
-        " VALUES (?, ?, ?, ?, ?, ?)",
-        (channel_id, owner_id, kind, name, sealed_config, _now()),
+        "INSERT INTO notification_channels (id, owner_id, kind, name, config, created_at,"
+        " confirmed, confirm_hash, confirm_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            channel_id,
+            owner_id,
+            kind,
+            name,
+            sealed_config,
+            _now(),
+            0 if confirm_hash else 1,
+            confirm_hash,
+            expires if confirm_hash else None,
+        ),
     )
     conn.commit()
     return channel_id
 
 
+def try_confirm(conn: sqlite3.Connection, owner_id: str, channel_id: str, code_hash: str) -> str:
+    """Check a confirmation code; return "ok", "wrong", "expired", "locked" or "none".
+
+    Every try is counted before it is checked, and a channel locks after a few wrong ones: the
+    code cannot be guessed. A new code needs a new channel.
+    """
+    row = get_channel(conn, owner_id, channel_id)
+    if row is None or row["confirmed"]:
+        return "none"
+    if row["confirm_tries"] >= CONFIRM_TRIES:
+        return "locked"
+    conn.execute(
+        "UPDATE notification_channels SET confirm_tries = confirm_tries + 1 WHERE id = ?",
+        (channel_id,),
+    )
+    if datetime.fromisoformat(row["confirm_expires"]) < datetime.now(UTC):
+        conn.commit()
+        return "expired"
+    if not hmac.compare_digest(row["confirm_hash"] or "", code_hash):
+        conn.commit()
+        return "wrong"
+    conn.execute(
+        "UPDATE notification_channels SET confirmed = 1, confirm_hash = NULL,"
+        " confirm_expires = NULL WHERE id = ?",
+        (channel_id,),
+    )
+    conn.commit()
+    return "ok"
+
+
 def list_channels(conn: sqlite3.Connection, owner_id: str) -> list[dict[str, Any]]:
     """Return an account's channels WITHOUT their configuration (it holds secrets)."""
     rows = conn.execute(
-        "SELECT id, kind, name, last_status, created_at FROM notification_channels"
+        "SELECT id, kind, name, last_status, created_at, confirmed FROM notification_channels"
         " WHERE owner_id = ? ORDER BY created_at",
         (owner_id,),
     )
-    return [dict(r) for r in rows]
+    return [{**dict(r), "confirmed": bool(r["confirmed"])} for r in rows]
 
 
 def get_channel(conn: sqlite3.Connection, owner_id: str, channel_id: str) -> sqlite3.Row | None:

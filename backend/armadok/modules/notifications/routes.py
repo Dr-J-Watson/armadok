@@ -13,25 +13,38 @@ import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from armadok.core import crypto
+from armadok.core import audit, crypto
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError, NotFound
-from armadok.core.outbound import OutboundError, check_url
+from armadok.core.outbound import OutboundError, check_mail_port, check_url
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.nodes import repository as nodes_repo
-from armadok.modules.notifications import delivery, repository
+from armadok.modules.notifications import delivery, quiet, repository
 from armadok.modules.users import repository as users_repo
+from armadok.modules.users.security import token_hash
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
+
+
+def _audit(conn, registry, who, event, **details) -> None:
+    """Record a change of channel or quiet hours (kind and name only: never the settings)."""
+    audit.record(
+        conn,
+        registry.audit_events(),
+        who.actor,
+        event,
+        object_type="notification_channel",
+        details=details,
+    )
 
 
 class ChannelIn(BaseModel):
     """A channel to add: its kind and the settings that kind needs."""
 
-    kind: str = Field(pattern="^(webhook|ntfy|discord)$")
+    kind: str = Field(pattern="^(webhook|ntfy|discord|email)$")
     name: str = Field(min_length=1, max_length=60)
     settings: dict[str, Any] = Field(default_factory=dict, max_length=10)
 
@@ -132,13 +145,18 @@ def channels(conn: sqlite3.Connection = Depends(get_db), who: Principal = Depend
 
 
 @router.post("/channels", status_code=201, summary="Add a channel")
-def add_channel(
+async def add_channel(
     body: ChannelIn,
     request: Request,
     conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Add a channel. Its settings are encrypted; a webhook's signing secret is shown only now."""
+    """Add a channel. Its settings are encrypted; a webhook's signing secret is shown only now.
+
+    A mailbox is not used until its owner enters the code sent to it: nobody can make the hub
+    write to an address that is not theirs.
+    """
     if len(repository.list_channels(conn, who.id)) >= repository.MAX_CHANNELS:
         raise ApiError("notifications.too_many_channels", 409)
     model = delivery.CONFIGS[body.kind]
@@ -148,28 +166,89 @@ def add_channel(
         raise ApiError("notifications.invalid_channel", 422) from None
     data = config.model_dump()
     url = data.get("url") or data.get("server")
+    settings = request.app.state.settings
     try:
         if url:
             check_url(url)
+        if body.kind == "email":
+            check_mail_port(data["port"], settings.allow_private_outbound)
     except OutboundError as error:
         raise ApiError(error.code, 422) from None
     shown_secret = None
     if body.kind == "webhook":
         shown_secret = data["secret"] = secrets.token_urlsafe(32)
-    sealed = crypto.encrypt(request.app.state.settings, json.dumps(data))
-    channel_id = repository.create_channel(conn, who.id, body.kind, body.name, sealed)
-    return {"id": channel_id, "secret": shown_secret}
+    sealed = crypto.encrypt(settings, json.dumps(data))
+    code = f"{secrets.randbelow(10**6):06d}" if body.kind == "email" else None
+    channel_id = repository.create_channel(
+        conn, who.id, body.kind, body.name, sealed, token_hash(code) if code else None
+    )
+    if code:
+        language = _language(conn, who)
+        title, text = (
+            ("Confirm this address", f"Your Armadok confirmation code is {code}.")
+            if language == "en"
+            else ("Confirmez cette adresse", f"Votre code de confirmation Armadok est {code}.")
+        )
+        try:
+            await delivery.send(
+                data,
+                event="confirmation",
+                severity="info",
+                title=title,
+                body=text,
+                node_id=None,
+                allow_private=settings.allow_private_outbound,
+            )
+        except OutboundError:
+            repository.delete_channel(conn, who.id, channel_id)
+            raise ApiError("outbound.failed", 502) from None
+    _audit(conn, registry, who, "notification.channel_create", kind=body.kind, name=body.name)
+    return {"id": channel_id, "secret": shown_secret, "needs_confirmation": code is not None}
+
+
+class ConfirmIn(BaseModel):
+    """The code that was sent to the mailbox."""
+
+    model_config = ConfigDict(extra="forbid")
+    code: str = Field(pattern=r"^[0-9]{6}$")
+
+
+@router.post("/channels/{channel_id}/confirm", summary="Confirm a mailbox")
+def confirm_channel(
+    channel_id: str,
+    body: ConfirmIn,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Confirm a mailbox with the code it received; after a few wrong tries the channel locks."""
+    result = repository.try_confirm(conn, who.id, channel_id, token_hash(body.code))
+    if result == "none":
+        raise NotFound()
+    if result != "ok":
+        raise ApiError(
+            {
+                "wrong": "notifications.wrong_code",
+                "expired": "notifications.code_expired",
+                "locked": "notifications.code_locked",
+            }[result],
+            422 if result != "locked" else 429,
+        )
+    _audit(conn, registry, who, "notification.channel_confirm")
+    return {"confirmed": True}
 
 
 @router.delete("/channels/{channel_id}", status_code=204, summary="Remove a channel")
 def remove_channel(
     channel_id: str,
     conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> None:
     """Remove one of the caller's channels (and the rules that used it)."""
     if not repository.delete_channel(conn, who.id, channel_id):
         raise NotFound()
+    _audit(conn, registry, who, "notification.channel_delete")
 
 
 _TEST_COOLDOWN_SECONDS = 10
@@ -180,6 +259,7 @@ async def test_channel(
     channel_id: str,
     request: Request,
     conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
     """Send a harmless test message through one of the caller's channels.
@@ -190,6 +270,8 @@ async def test_channel(
     row = repository.get_channel(conn, who.id, channel_id)
     if row is None:
         raise NotFound()
+    if not row["confirmed"]:
+        raise ApiError("notifications.unconfirmed", 409)
     recent = request.app.state.__dict__.setdefault("notify_tests", {})
     now = time.monotonic()
     if now - recent.get(who.id, -1e9) < _TEST_COOLDOWN_SECONDS:
@@ -212,8 +294,8 @@ async def test_channel(
             node_id=None,
             allow_private=settings.allow_private_outbound,
         )
-    except OutboundError as error:
-        repository.set_status(conn, channel_id, error.code)
+    except OutboundError:
+        repository.set_status(conn, channel_id, "outbound.failed")
         # Only a generic code goes back: the receiver's exact answer would let a user probe
         # internal services when private addresses are allowed.
         raise ApiError("outbound.failed", 502) from None
@@ -221,7 +303,46 @@ async def test_channel(
         repository.set_status(conn, channel_id, "notifications.delivery_failed")
         raise ApiError("notifications.delivery_failed", 502) from None
     repository.set_status(conn, channel_id, "ok")
+    _audit(conn, registry, who, "notification.channel_test")
     return {"status": "ok"}
+
+
+# --- quiet hours --------------------------------------------------------------------------
+
+
+class QuietIn(BaseModel):
+    """Do-not-disturb hours: from `start` to `end` (may cross midnight) in a time zone."""
+
+    model_config = ConfigDict(extra="forbid")
+    enabled: bool
+    start: str = Field(max_length=5)
+    end: str = Field(max_length=5)
+    timezone: str = Field(max_length=64)
+
+
+@router.get("/quiet", summary="Your do-not-disturb hours")
+def get_quiet(conn: sqlite3.Connection = Depends(get_db), who: Principal = Depends(get_principal)):
+    """Return the caller's quiet hours."""
+    return quiet.get(conn, who.id)
+
+
+@router.put("/quiet", summary="Set your do-not-disturb hours")
+def set_quiet(
+    body: QuietIn,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+):
+    """Set the quiet hours: outside channels stay silent then, except for critical events."""
+    try:
+        quiet.parse(body.start)
+        quiet.parse(body.end)
+        quiet.zone(body.timezone)
+    except ValueError:
+        raise ApiError("notifications.invalid_quiet", 422) from None
+    quiet.put(conn, who.id, body.model_dump())
+    _audit(conn, registry, who, "notification.quiet_set", enabled=body.enabled)
+    return quiet.get(conn, who.id)
 
 
 # --- rules --------------------------------------------------------------------------------

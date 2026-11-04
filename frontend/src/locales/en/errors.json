@@ -163,5 +163,14 @@
   "statebackup.write_failed": "The backup could not be written.",
   "statebackup.hub_running": "The database is in use: stop Armadok first.",
   "statebackup.corrupt": "The database in this backup is damaged.",
-  "statebackup.newer_version": "This backup comes from a newer Armadok."
+  "statebackup.newer_version": "This backup comes from a newer Armadok.",
+  "outbound.smtp_auth": "The mail server refused the user name or password.",
+  "outbound.invalid_mail": "This message cannot be sent as it is.",
+  "notifications.invalid_quiet": "These quiet hours are not valid.",
+  "outbound.port_not_allowed": "Only mail ports (25, 465, 587, 2525) are allowed.",
+  "notifications.unconfirmed": "Confirm this mailbox first.",
+  "notifications.wrong_code": "This code is not the right one.",
+  "notifications.code_expired": "This code has expired. Remove the channel and add it again.",
+  "notifications.code_locked": "Too many wrong codes. Remove the channel and add it again.",
+  "notifications.rate_limited": "Too many messages: this channel is paused for a while."
 }
