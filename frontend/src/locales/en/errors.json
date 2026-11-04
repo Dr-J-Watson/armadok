@@ -186,5 +186,6 @@
   "traefik.invalid_password": "This password cannot be used (at most 72 bytes).",
   "traefik.middleware_in_use": "A site still uses this middleware.",
   "traefik.too_many_passwords": "Too many new passwords at once (10 at most).",
-  "common.invalid_request": "Some fields are not valid."
+  "common.invalid_request": "Some fields are not valid.",
+  "notifications.email_disabled": "E-mail is turned off on this server."
 }

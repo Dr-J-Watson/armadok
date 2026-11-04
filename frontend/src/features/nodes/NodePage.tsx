@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
-import { useCanFn } from '../../core/auth'
+import { useAuth, useCanFn } from '../../core/auth'
 import { errorMessage } from '../../core/errors'
 import { useModules } from '../../core/modules'
 import type { NodeTab } from '../../core/registry'
@@ -19,6 +19,10 @@ export function NodePage() {
   const queryClient = useQueryClient()
   const modules = useModules()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [code, setCode] = useState('')
+  const auth = useAuth()
+  // With a second factor on the account, deleting a machine asks for a fresh code.
+  const needsCode = auth.state.status === 'authenticated' && auth.state.user.totp_enabled
   const sections = useFeatures().flatMap((f) => f.objectSections ?? [])
 
   const node = useQuery({
@@ -27,7 +31,7 @@ export function NodePage() {
   })
 
   const remove = useMutation({
-    mutationFn: () => api.del(`/nodes/${nodeId}`),
+    mutationFn: () => api.del(`/nodes/${nodeId}`, needsCode ? { code } : undefined),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['nodes'] })
       navigate('/nodes')
@@ -126,6 +130,17 @@ export function NodePage() {
         )}
         {confirmDelete ? (
           <>
+            {needsCode && (
+              <label>
+                {t('nodes:delete.code')}
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                />
+              </label>
+            )}{' '}
             <button type="button" className="danger-button" onClick={() => remove.mutate()}>
               {t('nodes:delete.confirm')}
             </button>{' '}

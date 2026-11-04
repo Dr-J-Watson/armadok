@@ -62,5 +62,8 @@
   "channels.confirmTitle": "Confirmer la boîte",
   "channels.confirmExplain": "Un code a été envoyé à cette adresse. Saisissez-le pour commencer à utiliser le canal.",
   "channels.confirmCode": "Code de confirmation",
-  "channels.confirm": "Confirmer"
+  "channels.confirm": "Confirmer",
+  "platform.email": "Canal e-mail activé pour tout le monde",
+  "platform.explain": "Désactivé : aucun e-mail ne part de ce serveur et personne ne peut ajouter de boîte. Les boîtes déjà configurées sont conservées et refonctionnent à la réactivation. Les boîtes de réception et les autres canaux ne changent pas.",
+  "platform.off": "Le canal e-mail est désactivé par un administrateur."
 }

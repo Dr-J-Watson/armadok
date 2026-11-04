@@ -14,12 +14,13 @@ from pydantic import BaseModel, Field
 
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
-from armadok.core.errors import ApiError, NotFound
+from armadok.core.errors import ApiError, MissingRight, NotFound
 from armadok.core.events import emit
 from armadok.core.grants import add_grant
 from armadok.core.registry import Registry
 from armadok.core.rights import ALL_SCOPES, Grant, Principal
 from armadok.modules.nodes import repository
+from armadok.modules.users import second_factor
 
 router = APIRouter(prefix="/nodes", tags=["nodes"])
 
@@ -40,6 +41,12 @@ class NodePatch(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
     type: NodeType | None = None
     description: str | None = Field(default=None, max_length=1000)
+
+
+class DeleteIn(BaseModel):
+    """Optional body of a deletion: the fresh second-factor code, for accounts that have one."""
+
+    code: str = Field(default="", max_length=30)
 
 
 class NodeOut(BaseModel):
@@ -147,10 +154,38 @@ async def delete_node(
     conn: sqlite3.Connection = Depends(get_db),
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
+    body: DeleteIn | None = None,
 ) -> None:
-    """Soft-delete a node. Requires `nodes.delete` on this node."""
+    """Soft-delete a node. Requires `nodes.delete` on this node.
+
+    A person whose account has a second factor must send a fresh code (`code`); a missing or
+    wrong code is refused. With a second factor, an API key may not delete a machine at all.
+    """
     node = _visible_or_404(conn, registry, who, node_id)
     who.require("nodes.delete", registry.rights(), _scope(node_id))
+    if second_factor.is_enabled(conn, who.id):
+        # A key could be created from a stolen session without any code, so with a second
+        # factor on the account only the person's own session may delete a machine.
+        if who.kind != "session":
+            raise MissingRight("nodes.not_with_key")
+        try:
+            second_factor.require_fresh_code(
+                conn, request.app.state.settings, who.id, body.code if body else ""
+            )
+        except ApiError as error:
+            # A wrong code leaves a trace (a flood of them is already cut short).
+            if error.code != "auth.too_many_attempts":
+                audit.record(
+                    conn,
+                    registry.audit_events(),
+                    who.actor,
+                    "node.delete",
+                    object_type="node",
+                    object_id=node_id,
+                    outcome="denied",
+                    details={"code": error.code},
+                )
+            raise
     if node["local"]:
         # It is the machine Armadok runs on: remove it by turning ARMADOK_LOCAL_NODE off.
         raise ApiError("nodes.local_not_deletable", 409)

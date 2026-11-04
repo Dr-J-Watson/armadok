@@ -1,4 +1,4 @@
-"""`GET /api/v1/metrics`: the hub's state in the Prometheus text format.
+"""`GET /api/v1/metrics` (and `GET /metrics`): the hub's state in the Prometheus text format.
 
 Needs the `metrics.read` right, given to an API key that Prometheus presents as a bearer token.
 What it shows follows what that key's owner may see: machines they cannot see are absent, and
@@ -110,3 +110,11 @@ def metrics(
         [({}, len(clients.clients) if clients else 0)],
     )
     return PlainTextResponse(page.text(), media_type=CONTENT_TYPE)
+
+
+# The same page at the root of the site, where Prometheus looks by default. Not in the OpenAPI
+# description, which already documents `/api/v1/metrics`.
+root_router = APIRouter(tags=["metrics"])
+root_router.add_api_route(
+    "/metrics", metrics, methods=["GET"], response_class=PlainTextResponse, include_in_schema=False
+)

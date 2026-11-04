@@ -20,6 +20,7 @@
   "delete.explain": "Le nœud est masqué et son worker est coupé. Rien n'est modifié sur la machine elle-même.",
   "delete.button": "Supprimer le nœud",
   "delete.confirm": "Oui, le supprimer",
+  "delete.code": "Code de votre application d'authentification",
   "delete.cancel": "Annuler",
   "local": "Cette machine",
   "suspended": "suspendue"

@@ -391,3 +391,14 @@ def test_a_hook_does_not_wake_up_when_its_creator_is_enabled_again(box):
     # A hook made after the account came back works.
     fresh = new_hook(client, login(client, "bob"), node).json()
     assert fire(client, fresh["id"], fresh["token"]).status_code == 202
+
+
+def test_metrics_are_also_served_at_the_root_and_never_cached(box):
+    client, admin, node, _ = box
+    assert client.get("/metrics").status_code == 401
+    page = client.get("/metrics", headers=admin)
+    assert page.status_code == 200 and f'node_id="{node}"' in page.text
+    assert page.headers["cache-control"] == "no-store"
+    slash = client.get("/metrics/", headers=admin, follow_redirects=False)
+    assert slash.headers["cache-control"] == "no-store"
+    assert "/metrics" not in client.get("/api/openapi.json").json()["paths"]

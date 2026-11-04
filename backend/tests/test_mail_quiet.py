@@ -670,3 +670,27 @@ def test_channel_and_quiet_changes_are_audited_without_the_settings(box, smtp):
 def test_the_default_quiet_hours_do_not_pretend_to_have_a_time_zone(box):
     client, app, admin = box
     assert client.get("/api/v1/notifications/quiet", headers=admin).json()["timezone"] == ""
+
+
+def test_an_administrator_can_turn_the_mail_channel_off_for_everybody(box, smtp):
+    client, app, admin = box
+    url = "/api/v1/notifications/platform"
+    assert client.get(url, headers=admin).json() == {"email_enabled": True, "can_change": True}
+    # A person without the right can read the state but not change it.
+    client.post("/api/v1/users", headers=admin, json={"username": "bob", "password": PASSWORD})
+    token = client.post(
+        "/api/v1/auth/login", json={"username": "bob", "password": PASSWORD}
+    ).json()["access_token"]
+    bob = {"Authorization": f"Bearer {token}"}
+    assert client.get(url, headers=bob).json()["can_change"] is False
+    assert client.put(url, headers=bob, json={"email_enabled": False}).status_code == 403
+    # Turned off: no new mailbox, and an existing confirmed one is not written to.
+    made = new_mailbox(client, admin, smtp)
+    assert made.status_code == 201
+    assert client.put(url, headers=admin, json={"email_enabled": False}).status_code == 200
+    assert new_mailbox(client, admin, smtp).status_code == 409
+    before = len(smtp.messages)
+    test = client.post(f"/api/v1/notifications/channels/{made.json()['id']}/test", headers=admin)
+    assert test.status_code == 409 and len(smtp.messages) == before
+    assert client.put(url, headers=admin, json={"email_enabled": True}).status_code == 200
+    assert new_mailbox(client, admin, smtp).status_code == 201

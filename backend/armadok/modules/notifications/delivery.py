@@ -21,20 +21,44 @@ DEFAULT_LANGUAGE = "en"
 _PRIORITY = {"info": "3", "warning": "4", "critical": "5"}  # ntfy: 1 (min) .. 5 (max)
 
 
-def render(event: NotificationEvent, params: dict[str, Any], language: str) -> tuple[str, str]:
+_MENTION = re.compile(r"(^|(?<=\s))@(?=\w)|<")
+_MARKDOWN = re.compile(r"([\\*_~`|>#\[\]()!:.-])")
+ZERO_WIDTH = "\u200b"
+
+
+def neutralise(text: str, kind: str) -> str:
+    """Make free text (a name typed by a user) harmless in a message for a `kind` of channel.
+
+    A name must not ping a whole server (`@everyone`), open a mention or a link, or restyle the
+    message. For every external channel an `@` that starts a word, and every `<` (mentions,
+    Slack-style links), get an invisible character after them; for Discord the Markdown
+    characters are also escaped. Plain-text channels keep the rest as typed.
+    """
+    text = _MENTION.sub(lambda m: (m.group(0) or "") + ZERO_WIDTH, text)
+    if kind == "discord":
+        text = _MARKDOWN.sub(r"\\\1", text)
+    return text
+
+
+def render(
+    event: NotificationEvent, params: dict[str, Any], language: str, kind: str = ""
+) -> tuple[str, str]:
     """Fill the event's template for `language` (falling back to English).
 
     Only `{name}` placeholders are replaced, by plain strings: nothing in a parameter can run or
-    reach another object.
+    reach another object. With a channel `kind`, the values are neutralised for that channel
+    (see `neutralise`); without one (the inbox, shown as plain text) they are used as they are.
     """
     title, body = event.templates.get(language) or event.templates[DEFAULT_LANGUAGE]
 
-    def fill(text: str) -> str:
+    def value(name: str) -> str:
         # Control characters (a newline in a node name, say) become spaces: they would break
         # headers and let a name forge extra lines in a message.
-        return _PLACEHOLDER.sub(
-            lambda m: _CONTROL.sub(" ", str(params.get(m.group(1), ""))[:200]), text
-        )
+        text = _CONTROL.sub(" ", str(params.get(name, ""))[:200])
+        return neutralise(text, kind) if kind else text
+
+    def fill(text: str) -> str:
+        return _PLACEHOLDER.sub(lambda m: value(m.group(1)), text)
 
     return fill(title), fill(body)
 
@@ -151,7 +175,11 @@ async def send(
         return
     elif kind == "discord":
         content = json.dumps(
-            {"content": f"**{title}**\n{body}"[:1900], "allowed_mentions": {"parse": []}}
+            {
+                "content": f"**{title}**\n{body}"[:1900],
+                "allowed_mentions": {"parse": []},
+                "flags": 4,  # no link previews: a name holding an address cannot embed anything
+            }
         ).encode()
         status = await outbound.post(
             config["url"], content, {"Content-Type": "application/json"}, allow_private

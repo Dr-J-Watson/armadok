@@ -62,5 +62,8 @@
   "channels.confirmTitle": "Confirm the mailbox",
   "channels.confirmExplain": "A code was sent to this address. Enter it to start using the channel.",
   "channels.confirmCode": "Confirmation code",
-  "channels.confirm": "Confirm"
+  "channels.confirm": "Confirm",
+  "platform.email": "E-mail channel enabled for everybody",
+  "platform.explain": "When off, no e-mail leaves this server and nobody can add a mailbox. Mailboxes already set up are kept and work again when you turn it back on. Inboxes and the other channels are not affected.",
+  "platform.off": "The e-mail channel is turned off by an administrator."
 }

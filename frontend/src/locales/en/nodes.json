@@ -20,6 +20,7 @@
   "delete.explain": "The node is hidden and its worker is cut off. Nothing is changed on the machine itself.",
   "delete.button": "Delete the node",
   "delete.confirm": "Yes, delete it",
+  "delete.code": "Code from your authenticator app",
   "delete.cancel": "Cancel",
   "local": "This machine",
   "suspended": "suspended"

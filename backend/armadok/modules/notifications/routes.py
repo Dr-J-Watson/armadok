@@ -22,7 +22,7 @@ from armadok.core.outbound import OutboundError, check_mail_port, check_url
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.nodes import repository as nodes_repo
-from armadok.modules.notifications import delivery, quiet, repository
+from armadok.modules.notifications import delivery, platform, quiet, repository
 from armadok.modules.users import repository as users_repo
 from armadok.modules.users.security import token_hash
 
@@ -159,6 +159,8 @@ async def add_channel(
     """
     if len(repository.list_channels(conn, who.id)) >= repository.MAX_CHANNELS:
         raise ApiError("notifications.too_many_channels", 409)
+    if body.kind == "email" and not platform.email_enabled(conn):
+        raise ApiError("notifications.email_disabled", 409)
     model = delivery.CONFIGS[body.kind]
     try:
         config = model.model_validate({**body.settings, "kind": body.kind})
@@ -272,6 +274,8 @@ async def test_channel(
         raise NotFound()
     if not row["confirmed"]:
         raise ApiError("notifications.unconfirmed", 409)
+    if row["kind"] == "email" and not platform.email_enabled(conn):
+        raise ApiError("notifications.email_disabled", 409)
     recent = request.app.state.__dict__.setdefault("notify_tests", {})
     now = time.monotonic()
     if now - recent.get(who.id, -1e9) < _TEST_COOLDOWN_SECONDS:
@@ -374,3 +378,40 @@ def set_rules(
             raise ApiError("notifications.invalid_rule", 422)
     repository.replace_rules(conn, who.id, [r.model_dump() for r in body.rules])
     return repository.list_rules(conn, who.id)
+
+
+class PlatformIn(BaseModel):
+    """The platform switches an administrator may change."""
+
+    model_config = ConfigDict(extra="forbid")
+    email_enabled: bool
+
+
+@router.get("/platform", summary="Platform-wide notification switches")
+def get_platform(
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+):
+    """Tell whether the e-mail channel is available (everybody needs to know, to hide it).
+
+    `can_change` says whether the caller may switch it, so the screen shows it only to them.
+    """
+    return {
+        "email_enabled": platform.email_enabled(conn),
+        "can_change": who.has("notifications.admin", registry.rights()),
+    }
+
+
+@router.put("/platform", summary="Change the platform-wide notification switches")
+def set_platform(
+    body: PlatformIn,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+):
+    """Turn the e-mail channel on or off for everybody. Needs `notifications.admin`."""
+    who.require("notifications.admin", registry.rights())
+    platform.set_email_enabled(conn, body.email_enabled)
+    _audit(conn, registry, who, "notification.platform_set", email_enabled=body.email_enabled)
+    return {"email_enabled": body.email_enabled}

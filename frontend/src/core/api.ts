@@ -67,7 +67,14 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     body: body === undefined ? undefined : JSON.stringify(body),
   }
   let response = await send(path, init)
-  if (response.status === 401 && !path.startsWith('/auth/') && (await refreshSession())) {
+  // A wrong second-factor code also answers 401: it must not be sent a second time (it would
+  // use up two of the few attempts allowed), so only an expired session is retried.
+  if (
+    response.status === 401 &&
+    !path.startsWith('/auth/') &&
+    (await errorCode(response.clone())) !== 'auth.invalid_code' &&
+    (await refreshSession())
+  ) {
     response = await send(path, init)
   }
   if (!response.ok) {
@@ -115,7 +122,7 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
-  del: <T = void>(path: string) => request<T>('DELETE', path),
+  del: <T = void>(path: string, body?: unknown) => request<T>('DELETE', path, body),
 }
 
 // Like `download`, for a file that needs a body to be released (a fresh second-factor code).

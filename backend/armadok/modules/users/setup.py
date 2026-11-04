@@ -34,6 +34,7 @@ SUPERADMIN_RIGHTS = (
     "state_backup.manage",
     "vulns.read",
     "vulns.manage",
+    "notifications.admin",
 )
 
 

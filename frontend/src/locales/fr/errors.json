@@ -186,5 +186,6 @@
   "traefik.invalid_password": "Ce mot de passe est inutilisable (72 octets au plus).",
   "traefik.middleware_in_use": "Un site utilise encore ce middleware.",
   "traefik.too_many_passwords": "Trop de nouveaux mots de passe à la fois (10 au plus).",
-  "common.invalid_request": "Certains champs ne sont pas valables."
+  "common.invalid_request": "Certains champs ne sont pas valables.",
+  "notifications.email_disabled": "Le canal e-mail est désactivé sur ce serveur."
 }

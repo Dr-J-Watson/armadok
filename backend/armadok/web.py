@@ -45,7 +45,7 @@ def mount_web(app: FastAPI, directory: Path | None) -> bool:
 def add_headers(request: Request, response: Response) -> None:
     """Set caching and security headers according to what is being served."""
     path = request.url.path
-    if path.startswith("/api/"):
+    if path.startswith("/api/") or path.rstrip("/") in getattr(request.app.state, "root_paths", ()):
         # Responses can carry tokens, secrets and personal data: never cached.
         response.headers["Cache-Control"] = "no-store"
         return

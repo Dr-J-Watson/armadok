@@ -305,7 +305,10 @@ def test_the_owner_hands_the_node_over_and_stays_on_as_an_administrator(box):
         == 200
     )
     assert hand_over(client, dan, node, "Olga box", olga_id, dan_codes[0]).status_code == 200
-    assert client.delete(f"/api/v1/nodes/{node}", headers=olga).status_code == 204
+    gone = client.request(
+        "DELETE", f"/api/v1/nodes/{node}", headers=olga, json={"code": olga_codes[2]}
+    )
+    assert gone.status_code == 204
 
 
 def test_a_hand_over_asks_for_a_session_the_name_and_a_fresh_code(box):
@@ -639,3 +642,26 @@ def test_refused_quick_actions_are_audited(box):
     )
     assert [r[0] for r in rows] == ["denied", "denied"]
     assert "nodeadmin.confirm_mismatch" in rows[0][1] and "auth.invalid_code" in rows[1][1]
+
+
+def test_deleting_a_node_asks_for_a_fresh_code_when_the_account_has_a_second_factor(box):
+    client, admin, _ = box
+    _, olga, node = owner_with_node(client, admin)
+    url = f"/api/v1/nodes/{node}"
+    # Without a second factor on the account, the right alone is enough (a key is in this case).
+    codes = enable_2fa(client, olga)
+    assert client.delete(url, headers=olga).status_code == 401
+    wrong = client.request("DELETE", url, headers=olga, json={"code": "000000"})
+    assert wrong.status_code == 401
+    assert client.get(url, headers=olga).status_code == 200
+    # A key made from the session cannot skip the code.
+    key = client.post(
+        "/api/v1/apikeys",
+        headers=olga,
+        json={"name": "k", "rights": ["nodes.read", "nodes.delete"]},
+    ).json()["key"]
+    assert client.delete(url, headers={"Authorization": f"Bearer {key}"}).status_code in (403, 404)
+    done = client.request("DELETE", url, headers=olga, json={"code": codes[0]})
+    assert done.status_code == 204
+    denied = client.get("/api/v1/audit?event=node.delete&outcome=denied", headers=admin).json()
+    assert len(denied["entries"]) >= 1

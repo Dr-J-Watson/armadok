@@ -25,7 +25,7 @@ from typing import Any
 from armadok.core import crypto
 from armadok.core.errors import ApiError
 from armadok.core.outbound import OutboundError
-from armadok.modules.notifications import delivery, quiet, repository
+from armadok.modules.notifications import delivery, platform, quiet, repository
 from armadok.modules.users import repository as users_repo
 
 log = logging.getLogger("armadok.notifications")
@@ -101,6 +101,7 @@ def _plan(
     conn = settings.open_db()
     deliveries: list[tuple[str, dict[str, Any], str, str]] = []
     try:
+        mail_allowed = platform.email_enabled(conn)
         for user_id in _eligible(conn, app.state.registry, definition, node_id, user_ids):
             try:
                 targets = _targets(
@@ -112,14 +113,16 @@ def _plan(
                     repository.add_to_inbox(
                         conn, user_id, event, definition.severity, node_id, params
                     )
-                title, body = delivery.render(
-                    definition, params, users_repo.get_language(conn, user_id)
-                )
+                language = users_repo.get_language(conn, user_id)
                 for target in targets - {"in_app"}:
                     row = repository.get_channel(conn, user_id, target)
                     # A mailbox nobody has confirmed is never written to.
                     if row is not None and row["confirmed"]:
                         config = json.loads(crypto.decrypt(settings, row["config"]))
+                        if config["kind"] == "email" and not mail_allowed:
+                            continue  # an administrator turned the e-mail channel off
+                        # Free text is neutralised for this kind of channel (mentions, Markdown).
+                        title, body = delivery.render(definition, params, language, config["kind"])
                         deliveries.append((row["id"], config, title, body))
             except Exception:  # noqa: BLE001
                 log.exception("could not prepare a notification for one account")

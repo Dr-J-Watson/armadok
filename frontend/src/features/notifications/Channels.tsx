@@ -19,6 +19,16 @@ export function Channels() {
   const { t } = useTranslation(['notifications', 'errors'])
   const queryClient = useQueryClient()
   const channels = useQuery({ queryKey: ['channels'], queryFn: () => api.get<Channel[]>('/notifications/channels') })
+  const platform = useQuery({
+    queryKey: ['notification-platform'],
+    queryFn: () => api.get<{ email_enabled: boolean; can_change: boolean }>('/notifications/platform'),
+  })
+  const emailOn = platform.data?.email_enabled ?? true
+  const kinds = KINDS.filter((k) => k !== 'email' || emailOn)
+  const switchEmail = useMutation({
+    mutationFn: (enabled: boolean) => api.put('/notifications/platform', { email_enabled: enabled }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notification-platform'] }),
+  })
   const [kind, setKind] = useState<(typeof KINDS)[number]>('ntfy')
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
@@ -128,11 +138,30 @@ export function Channels() {
         ))}
       </ul>
 
+      {platform.data?.can_change && (
+        <div className="notice">
+          <label>
+            <input
+              type="checkbox"
+              checked={emailOn}
+              disabled={switchEmail.isPending}
+              onChange={(e) => switchEmail.mutate(e.target.checked)}
+            />{' '}
+            {t('notifications:platform.email')}
+          </label>
+          <p>{t('notifications:platform.explain')}</p>
+          {switchEmail.isError && (
+            <p role="alert" className="error">{errorMessage(t, switchEmail.error)}</p>
+          )}
+        </div>
+      )}
+      {!emailOn && <p>{t('notifications:platform.off')}</p>}
+
       <h3>{t('notifications:channels.add')}</h3>
       <form className="form" onSubmit={submit}>
         <label htmlFor="ch-kind">{t('notifications:channels.kind')}</label>
         <select id="ch-kind" value={kind} onChange={(e) => setKind(e.target.value as (typeof KINDS)[number])}>
-          {KINDS.map((k) => <option key={k} value={k}>{t(`notifications:kinds.${k}`)}</option>)}
+          {kinds.map((k) => <option key={k} value={k}>{t(`notifications:kinds.${k}`)}</option>)}
         </select>
         <label htmlFor="ch-name">{t('notifications:channels.name')}</label>
         <input id="ch-name" required maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />

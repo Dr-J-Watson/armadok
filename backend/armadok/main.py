@@ -138,6 +138,11 @@ def create_app(
     for module in registry.modules:
         for router in module.routes:
             app.include_router(router, prefix="/api/v1")
+        for router in module.root_routes:
+            app.include_router(router)
+    app.state.root_paths = frozenset(
+        route.path for module in registry.modules for r in module.root_routes for route in r.routes
+    )
 
     # Last, so that every API route wins over the interface's catch-all.
     mount_web(app, settings.web_dir)

@@ -207,6 +207,9 @@ class Module:
     requires: tuple[str, ...] = ()
     # API routes. Typed loosely so the core does not depend on the web framework here.
     routes: tuple[Any, ...] = ()
+    # Routers served at the root of the site instead of under /api/v1 (a path other tools expect,
+    # such as /metrics). They are treated like API routes: never cached, no interface fallback.
+    root_routes: tuple[Any, ...] = ()
     rights: tuple[Right, ...] = ()
     audit_events: tuple[str, ...] = ()
     signals: tuple[Signal, ...] = ()
