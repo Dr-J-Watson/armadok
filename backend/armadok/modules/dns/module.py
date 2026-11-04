@@ -1,7 +1,8 @@
 """Declaration of the `dns` module and its providers."""
 
-from armadok.core.module import Module, Provider, Right, Signal
+from armadok.core.module import Module, Provider, Right, SearchProvider, Signal
 from armadok.modules.dns import repository
+from armadok.modules.dns import search as _search
 from armadok.modules.dns.node_routes import router as node_router
 from armadok.modules.dns.providers.duckdns import DuckDnsProvider
 from armadok.modules.dns.providers.local import LocalProvider
@@ -16,6 +17,7 @@ def _provider(name, impl):
 
 module = Module(
     name="dns",
+    search=(SearchProvider("dns", _search.run),),
     requires=("nodes", "workers", "relations"),
     routes=(router, node_router),
     rights=(

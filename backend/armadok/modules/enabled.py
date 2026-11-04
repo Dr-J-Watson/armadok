@@ -31,4 +31,5 @@ ENABLED_MODULES: tuple[str, ...] = (
     "backups",
     "statebackup",
     "machine",
+    "search",
 )

@@ -4,13 +4,18 @@ import { useAuth } from '../core/auth'
 import { useTranslation } from 'react-i18next'
 import { LANGUAGES, setLanguage } from '../core/i18n'
 import type { Language } from '../core/i18n'
-import { THEMES, applyTheme, currentTheme } from '../core/theme'
+import { ACCENT_PRESETS, THEMES, applyAccent, applyTheme, currentAccent, currentTheme } from '../core/theme'
 import type { Theme } from '../core/theme'
 
 // Language and theme pickers, available before and after login.
 export function Preferences() {
   const { t, i18n } = useTranslation()
   const [theme, setTheme] = useState<Theme>(currentTheme())
+  const [accent, setAccent] = useState<string | null>(currentAccent())
+  const choose = (value: string | null) => {
+    setAccent(value)
+    applyAccent(value)
+  }
   const { state } = useAuth()
 
   return (
@@ -51,6 +56,15 @@ export function Preferences() {
           ))}
         </select>
       </label>
+      <label>
+        <span className="visually-hidden">{t('prefs.accent')}</span>
+        <input type="color" value={accent ?? ACCENT_PRESETS[0]} onChange={(e) => choose(e.target.value)} aria-label={t('prefs.accent')} />
+      </label>
+      {accent && (
+        <button type="button" onClick={() => choose(null)} aria-label={t('prefs.accentReset')} title={t('prefs.accentReset')}>
+          ↺
+        </button>
+      )}
     </div>
   )
 }

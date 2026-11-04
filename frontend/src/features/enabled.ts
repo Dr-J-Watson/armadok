@@ -15,6 +15,7 @@ import { nodeAdminFeature } from './nodeadmin/feature'
 import { nodesFeature } from './nodes/feature'
 import { notesFeature } from './notes/feature'
 import { notificationsFeature } from './notifications/feature'
+import { paletteFeature } from './palette/feature'
 import { projectsFeature } from './projects/feature'
 import { relationsFeature } from './relations/feature'
 import { serviceAccountsFeature } from './service_accounts/feature'
@@ -29,6 +30,7 @@ import { workersFeature } from './workers/feature'
 
 export const features: Feature[] = [
   startFeature,
+  paletteFeature,
   nodesFeature,
   workersFeature,
   dockerFeature,

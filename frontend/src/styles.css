@@ -180,3 +180,12 @@ button:disabled { opacity: .6; cursor: progress; }
 .history { margin-left: .6rem; letter-spacing: -.1em; }
 .dot.ok { color: var(--ok); }
 .dot.bad { color: var(--danger); }
+
+/* Command palette (Ctrl+K). */
+.palette-backdrop { position: fixed; inset: 0; background: rgb(0 0 0 / .4); display: flex; justify-content: center; align-items: flex-start; padding-top: 10vh; z-index: 50; }
+.palette { background: var(--surface, var(--bg)); color: inherit; border: 1px solid var(--border); border-radius: .5rem; width: min(40rem, calc(100vw - 2rem)); padding: .75rem; box-shadow: 0 10px 30px rgb(0 0 0 / .3); }
+.palette input { width: 100%; box-sizing: border-box; }
+.palette ul { list-style: none; margin: .5rem 0 0; padding: 0; max-height: 50vh; overflow: auto; }
+.palette li { padding: .4rem .5rem; border-radius: .3rem; cursor: pointer; }
+.palette li.active { background: var(--border); }
+.palette li.empty { cursor: default; color: var(--muted); }

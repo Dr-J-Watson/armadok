@@ -172,5 +172,7 @@
   "notifications.wrong_code": "Ce code n'est pas le bon.",
   "notifications.code_expired": "Ce code a expiré. Supprimez le canal et ajoutez-le de nouveau.",
   "notifications.code_locked": "Trop de codes erronés. Supprimez le canal et ajoutez-le de nouveau.",
-  "notifications.rate_limited": "Trop de messages : ce canal est en pause un moment."
+  "notifications.rate_limited": "Trop de messages : ce canal est en pause un moment.",
+  "search.too_short": "Tapez au moins deux lettres.",
+  "search.too_fast": "Trop de recherches. Patientez un instant."
 }

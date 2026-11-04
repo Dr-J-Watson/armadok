@@ -75,6 +75,38 @@ class HookAction:
 
 
 @dataclass(frozen=True)
+class SearchContext:
+    """What a search provider may use: the database, the catalogue, who asks and the settings.
+
+    Providers read only what `who` may see; nothing here talks to a worker (a search must be
+    quick and must not fan out to every machine).
+    """
+
+    conn: Any
+    registry: Any
+    who: Any
+    settings: Any
+
+
+@dataclass(frozen=True)
+class SearchHit:
+    """One result of the global search: what it is, how to show it, and where it leads."""
+
+    type: str
+    label: str
+    to: str
+    detail: str = ""
+
+
+@dataclass(frozen=True)
+class SearchProvider:
+    """Looks for a kind of object matching a text. `run(ctx, text, limit)` returns hits."""
+
+    name: str
+    run: Callable[[SearchContext, str, int], list[SearchHit]]
+
+
+@dataclass(frozen=True)
 class RelationObject:
     """One object on the relations map (a container, a network, a router...).
 
@@ -194,7 +226,8 @@ class Module:
     session_grant_sources: tuple[Callable[[Any, str], tuple[Any, ...]], ...] = ()
     account_blockers: tuple[Callable[[Any, str], bool], ...] = ()
     relations: tuple[RelationProvider, ...] = ()
-    search: tuple[Any, ...] = ()
+    # Where the global search (Ctrl+K) finds this module's objects.
+    search: tuple[SearchProvider, ...] = ()
     notification_events: tuple[NotificationEvent, ...] = ()
     # Long-running jobs started with the application (async functions taking the app).
     tasks: tuple[Callable[[Any], Awaitable[None]], ...] = ()

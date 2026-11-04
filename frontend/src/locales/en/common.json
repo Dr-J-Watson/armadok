@@ -27,5 +27,7 @@
   "nav.serviceAccounts": "Service accounts",
   "nav.nodeAdmin": "Machines (admin)",
   "nav.start": "Getting started",
-  "nav.stateBackups": "Armadok backups"
+  "nav.stateBackups": "Armadok backups",
+  "prefs.accent": "Accent colour",
+  "prefs.accentReset": "Back to the default colour"
 }

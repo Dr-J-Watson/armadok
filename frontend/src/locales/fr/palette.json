@@ -1,0 +1,13 @@
+{
+  "button": "Rechercher  Ctrl K",
+  "open": "Rechercher (Ctrl K)",
+  "title": "Recherche",
+  "placeholder": "Une page, une machine, une personne, une note, un domaine…",
+  "none": "Rien trouvé.",
+  "searching": "Recherche…",
+  "type.page": "Page",
+  "type.node": "Machine",
+  "type.user": "Personne",
+  "type.note": "Note",
+  "type.domain": "Domaine"
+}

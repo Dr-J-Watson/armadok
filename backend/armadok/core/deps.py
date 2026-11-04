@@ -35,7 +35,13 @@ def get_principal(request: Request) -> Principal:
     principal = authenticator(request) if authenticator else None
     if principal is None:
         raise Unauthenticated()
-    if principal.read_only and request.method not in ("GET", "HEAD", "OPTIONS"):
+    # The global search is a POST only so its text stays out of URLs and access logs; it changes
+    # nothing, so a read-only key may use it.
+    reads_only = (
+        request.method in ("GET", "HEAD", "OPTIONS")
+        or request.url.path.rstrip("/") == "/api/v1/search"
+    )
+    if principal.read_only and not reads_only:
         raise ApiError("auth.read_only_key", 403)
     # Remembered for the change signals: only people with the right to know hear about it.
     request.state.actor_id = principal.id

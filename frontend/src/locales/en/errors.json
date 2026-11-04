@@ -172,5 +172,7 @@
   "notifications.wrong_code": "This code is not the right one.",
   "notifications.code_expired": "This code has expired. Remove the channel and add it again.",
   "notifications.code_locked": "Too many wrong codes. Remove the channel and add it again.",
-  "notifications.rate_limited": "Too many messages: this channel is paused for a while."
+  "notifications.rate_limited": "Too many messages: this channel is paused for a while.",
+  "search.too_short": "Type at least two letters.",
+  "search.too_fast": "Too many searches. Wait a moment."
 }

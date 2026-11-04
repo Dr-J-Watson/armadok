@@ -1,11 +1,13 @@
 """Declaration of the `nodes` module: what it contributes to the application."""
 
-from armadok.core.module import Module, Right, Signal
+from armadok.core.module import Module, Right, SearchProvider, Signal
 from armadok.modules.nodes import local, repository
+from armadok.modules.nodes import search as _search
 from armadok.modules.nodes.routes import router
 
 module = Module(
     name="nodes",
+    search=(SearchProvider("nodes", _search.run),),
     requires=("users",),
     routes=(router,),
     rights=(

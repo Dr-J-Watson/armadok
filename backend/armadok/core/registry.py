@@ -18,6 +18,7 @@ from armadok.core.module import (
     Provider,
     RelationProvider,
     Right,
+    SearchProvider,
     Signal,
     WorkerOp,
 )
@@ -96,6 +97,10 @@ class Registry:
     def hook_actions(self) -> dict[str, HookAction]:
         """Return what incoming hooks can trigger, by name."""
         return {a.name: a for m in self.modules for a in m.hook_actions}
+
+    def search_providers(self) -> tuple[SearchProvider, ...]:
+        """Return every module's search provider, in module order."""
+        return tuple(p for m in self.modules for p in m.search)
 
     def signals(self) -> dict[str, Signal]:
         """Return the change signals modules announce, by name."""

@@ -1,12 +1,14 @@
 """Declaration of the `notes` module."""
 
-from armadok.core.module import Module, NotificationEvent, Right, Signal
+from armadok.core.module import Module, NotificationEvent, Right, SearchProvider, Signal
 from armadok.modules.notes import repository
+from armadok.modules.notes import search as _search
 from armadok.modules.notes.reminders import reminder_loop
 from armadok.modules.notes.routes import router
 
 module = Module(
     name="notes",
+    search=(SearchProvider("notes", _search.run),),
     requires=("nodes",),
     signals=(Signal("notes.changed", "notes.write"),),
     routes=(router,),
