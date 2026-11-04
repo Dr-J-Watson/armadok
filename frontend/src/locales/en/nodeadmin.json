@@ -18,5 +18,18 @@
   "workerOff": "Its worker is not connected.",
   "reasonShared": "The reason is shown to everyone who can see the machine.",
   "emergency": "Emergency access",
-  "emergencyWarning": "This opens a 30-minute session with the machine's administrator rights. Its owner is told at once, with your reason, and keeps the list of what you do."
+  "emergencyWarning": "This opens a 30-minute session with the machine's administrator rights. Its owner is told at once, with your reason, and keeps the list of what you do.",
+  "disconnect": "Cut the worker",
+  "delete": "Delete",
+  "purge": "Erase for good",
+  "take-over": "Take over",
+  "ban-owner": "Ban the owner",
+  "strip-creation": "Remove the right to create machines",
+  "newOwner": "New owner (type the start of the user name)",
+  "warn.disconnect": "The worker is revoked and disconnected. The owner has to enrol a new one. Nothing changes on the machine.",
+  "warn.delete": "The machine is hidden for everybody and its worker is cut. It can be restored for 30 days. Nothing changes on the machine.",
+  "warn.purge": "The machine is erased from Armadok for good: its members, rights, probes, schedules and backups records. This cannot be undone. Files on the machine itself are not touched.",
+  "warn.take-over": "The current owner loses every right on this machine and the person you choose becomes its owner, with full access to it. This is recorded with your reason.",
+  "warn.ban-owner": "The owner's account is disabled and all their sessions end. Their machines are not touched. An administrator cannot be banned this way.",
+  "warn.strip-creation": "The owner can no longer create machines. The ones they already own stay as they are."
 }

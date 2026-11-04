@@ -22,7 +22,7 @@ from armadok.main import create_app
 from armadok.modules.notifications import delivery, quiet
 
 PASSWORD = "correct horse battery"
-MODULES = ("users", "nodes", "workers", "audit", "notes", "notifications", "uptime")
+MODULES = ("users", "nodes", "workers", "audit", "notes", "notifications", "relations", "uptime")
 
 
 class SmtpServer:

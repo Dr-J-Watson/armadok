@@ -665,3 +665,177 @@ def test_deleting_a_node_asks_for_a_fresh_code_when_the_account_has_a_second_fac
     assert done.status_code == 204
     denied = client.get("/api/v1/audit?event=node.delete&outcome=denied", headers=admin).json()
     assert len(denied["entries"]) >= 1
+
+
+# --- the other quick actions ----------------------------------------------------------------
+
+
+def act(client, admin, node, action, name, code, **extra):
+    body = {"confirm_name": name, "code": code, "reason": "Reported by the host", **extra}
+    return client.post(f"/api/v1/admin/nodes/{node}/{action}", headers=admin, json=body)
+
+
+def test_an_administrator_deletes_then_purges_a_node_and_nothing_stays_behind(box):
+    client, admin, tmp = box
+    olga_id, olga, node = owner_with_node(client, admin)
+    codes = enable_2fa(client, admin)
+    # Erasing something that is not deleted yet is refused.
+    assert act(client, admin, node, "purge", "Olga box", codes[0]).status_code == 409
+    assert act(client, admin, node, "delete", "Olga box", codes[1]).json() == {"state": "deleted"}
+    assert client.get(f"/api/v1/nodes/{node}", headers=olga).status_code == 404
+    assert act(client, admin, node, "delete", "Olga box", codes[2]).status_code == 409
+    assert act(client, admin, node, "purge", "Olga box", codes[3]).json() == {"state": "purged"}
+    db = sqlite3.connect(tmp / "armadok.db")
+    assert db.execute("SELECT COUNT(*) FROM nodes WHERE id = ?", (node,)).fetchone()[0] == 0
+    left = db.execute("SELECT COUNT(*) FROM grants WHERE scope = ?", (f"node:{node}",)).fetchone()
+    assert left[0] == 0
+    # The reason and the name stay in the audit log.
+    entries = client.get("/api/v1/audit?event=node.purge", headers=admin).json()["entries"]
+    assert entries and "Olga box" in str(entries[0]["details"])
+
+
+def test_expired_deleted_nodes_are_erased_by_the_background_round(box):
+    import asyncio
+
+    from armadok.modules.nodeadmin import purge
+
+    client, admin, tmp = box
+    _, olga, node = owner_with_node(client, admin)
+    client.delete(f"/api/v1/nodes/{node}", headers=olga)
+    db = sqlite3.connect(tmp / "armadok.db")
+    db.execute("UPDATE nodes SET deleted_at = '2000-01-01T00:00:00+00:00' WHERE id = ?", (node,))
+    db.commit()
+    assert asyncio.run(purge.purge_expired(client.app)) == 1
+    assert db.execute("SELECT COUNT(*) FROM nodes WHERE id = ?", (node,)).fetchone()[0] == 0
+
+
+def test_taking_over_moves_every_owner_right_and_leaves_the_former_owner_nothing(box):
+    client, admin, _ = box
+    olga_id, olga, node = owner_with_node(client, admin)
+    dan_id, dan = person(client, admin, "dan")
+    codes = enable_2fa(client, admin)
+    done = act(client, admin, node, "take-over", "Olga box", codes[0], user_id=dan_id)
+    assert done.json() == {"owner": dan_id}
+    assert client.get(f"/api/v1/nodes/{node}", headers=olga).status_code == 404
+    assert client.get(f"/api/v1/nodes/{node}", headers=dan).json()["owner"] == dan_id
+    assert (
+        client.patch(f"/api/v1/nodes/{node}", headers=dan, json={"description": "mine"}).status_code
+        == 200
+    )
+    # Never the administrator themself: no implicit access through a take-over.
+    me = client.get("/api/v1/auth/me", headers=admin).json()["id"]
+    assert (
+        act(client, admin, node, "take-over", "Olga box", codes[3], user_id=me).status_code == 409
+    )
+    # A person who does not exist, or is already the owner, is refused.
+    assert (
+        act(client, admin, node, "take-over", "Olga box", codes[1], user_id=dan_id).status_code
+        == 409
+    )
+    assert (
+        act(client, admin, node, "take-over", "Olga box", codes[2], user_id="nobody").status_code
+        == 404
+    )
+
+
+def test_banning_an_owner_ends_their_sessions_but_never_an_administrators(box):
+    client, admin, _ = box
+    olga_id, olga, node = owner_with_node(client, admin)
+    codes = enable_2fa(client, admin)
+    assert act(client, admin, node, "ban-owner", "Olga box", codes[0]).json() == {"banned": olga_id}
+    assert client.get("/api/v1/auth/me", headers=olga).status_code == 401
+    login_try = client.post("/api/v1/auth/login", json={"username": "olga", "password": PASSWORD})
+    assert login_try.status_code in (401, 403)
+    # An administrator's own machine: the owner is an administrator, so it is refused.
+    mine = client.post("/api/v1/nodes", headers=admin, json={"name": "Mine", "type": "docker"})
+    refused = act(client, admin, mine.json()["id"], "ban-owner", "Mine", codes[1])
+    assert refused.status_code == 409
+
+
+def test_the_right_to_create_nodes_can_be_taken_back_and_the_machines_stay(box):
+    client, admin, _ = box
+    _, olga, node = owner_with_node(client, admin)
+    codes = enable_2fa(client, admin)
+    assert act(client, admin, node, "strip-creation", "Olga box", codes[0]).json() == {"removed": 1}
+    made = client.post("/api/v1/nodes", headers=olga, json={"name": "Again", "type": "docker"})
+    assert made.status_code == 403
+    assert client.get(f"/api/v1/nodes/{node}", headers=olga).status_code == 200
+
+
+def test_cutting_a_worker_needs_a_reason_the_name_and_a_code(box):
+    client, admin, _ = box
+    _, _, node = owner_with_node(client, admin)
+    codes = enable_2fa(client, admin)
+    short = client.post(
+        f"/api/v1/admin/nodes/{node}/disconnect",
+        headers=admin,
+        json={"confirm_name": "Olga box", "code": codes[0], "reason": "x"},
+    )
+    assert short.status_code == 422
+    assert act(client, admin, node, "disconnect", "Wrong", codes[0]).status_code == 422
+    assert act(client, admin, node, "disconnect", "Olga box", codes[0]).status_code == 200
+
+
+def test_finding_a_person_for_a_take_over_needs_the_admin_right_and_shows_names_only(box):
+    client, admin, _ = box
+    person(client, admin, "dana")
+    _, olga, _ = owner_with_node(client, admin)
+    url = "/api/v1/admin/nodes/people/search?q=da"
+    assert client.get(url, headers=olga).status_code == 403
+    found = client.get(url, headers=admin).json()
+    assert [p["username"] for p in found] == ["dana"] and set(found[0]) == {"id", "username"}
+    assert client.get("/api/v1/admin/nodes/people/search?q=%25%25", headers=admin).json() == []
+
+
+def test_a_take_over_also_cuts_the_accounts_the_former_owner_runs_and_the_worker(box):
+    client, admin, tmp = box
+    olga_id, olga, node = owner_with_node(client, admin)
+    dan_id, _ = person(client, admin, "dan")
+    made = client.post(
+        "/api/v1/service-accounts",
+        headers=olga,
+        json={"username": "robot", "description": "ci", "follow_owner": True},
+    )
+    codes = enable_2fa(client, admin)
+    done = act(client, admin, node, "take-over", "Olga box", codes[0], user_id=dan_id)
+    assert done.status_code == 200
+    db = sqlite3.connect(tmp / "armadok.db")
+    left = db.execute(
+        "SELECT COUNT(*) FROM grants WHERE scope = ? AND principal_id != ?",
+        (f"node:{node}", dan_id),
+    ).fetchone()[0]
+    assert left == 0, made.text
+    assert (
+        db.execute(
+            "SELECT COUNT(*) FROM workers WHERE node_id = ? AND revoked = 0", (node,)
+        ).fetchone()[0]
+        == 0
+    )
+
+
+def test_purging_clears_the_rows_that_named_the_node_and_a_restore_wins_the_race(box):
+    from armadok.modules.nodes import repository as nodes_repo
+
+    client, admin, tmp = box
+    _, olga, node = owner_with_node(client, admin)
+    client.delete(f"/api/v1/nodes/{node}", headers=olga)
+    db = sqlite3.connect(tmp / "armadok.db")
+    db.row_factory = sqlite3.Row
+    db.execute(
+        "INSERT INTO notifications (user_id, event, severity, node_id, params, created_at)"
+        " VALUES ('x', 'e', 'info', ?, '{}', '2000-01-01')",
+        (node,),
+    )
+    db.commit()
+    tables = (("notifications", "delete"),)
+    # Restored in the meantime: nothing is erased.
+    db.execute("UPDATE nodes SET deleted_at = NULL WHERE id = ?", (node,))
+    db.commit()
+    assert nodes_repo.purge(db, node, tables) is False
+    db.execute("UPDATE nodes SET deleted_at = '2000-01-01T00:00:00+00:00' WHERE id = ?", (node,))
+    db.commit()
+    assert nodes_repo.purge(db, node, tables) is True
+    assert (
+        db.execute("SELECT COUNT(*) FROM notifications WHERE node_id = ?", (node,)).fetchone()[0]
+        == 0
+    )

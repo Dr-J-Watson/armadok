@@ -187,5 +187,7 @@
   "traefik.middleware_in_use": "Un site utilise encore ce middleware.",
   "traefik.too_many_passwords": "Trop de nouveaux mots de passe à la fois (10 au plus).",
   "common.invalid_request": "Certains champs ne sont pas valables.",
-  "notifications.email_disabled": "Le canal e-mail est désactivé sur ce serveur."
+  "notifications.email_disabled": "Le canal e-mail est désactivé sur ce serveur.",
+  "nodeadmin.purge_blocked": "Cette machine est encore référencée ailleurs et ne peut pas être effacée.",
+  "nodeadmin.owner_is_admin": "Le propriétaire est un administrateur : action refusée."
 }

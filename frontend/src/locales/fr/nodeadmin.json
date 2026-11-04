@@ -18,5 +18,18 @@
   "workerOff": "Son worker n'est pas connecté.",
   "reasonShared": "Le motif est montré à toutes les personnes qui voient la machine.",
   "emergency": "Accès d'urgence",
-  "emergencyWarning": "Cela ouvre une session de 30 minutes avec les droits d'administrateur de la machine. Son propriétaire en est averti aussitôt, avec votre motif, et garde la liste de ce que vous faites."
+  "emergencyWarning": "Cela ouvre une session de 30 minutes avec les droits d'administrateur de la machine. Son propriétaire en est averti aussitôt, avec votre motif, et garde la liste de ce que vous faites.",
+  "disconnect": "Couper le worker",
+  "delete": "Supprimer",
+  "purge": "Effacer définitivement",
+  "take-over": "Reprendre la propriété",
+  "ban-owner": "Bannir le propriétaire",
+  "strip-creation": "Retirer le droit de créer des machines",
+  "newOwner": "Nouveau propriétaire (début du nom d'utilisateur)",
+  "warn.disconnect": "Le worker est révoqué et déconnecté. Le propriétaire doit en enrôler un nouveau. Rien ne change sur la machine.",
+  "warn.delete": "La machine est masquée pour tout le monde et son worker est coupé. Elle peut être restaurée pendant 30 jours. Rien ne change sur la machine.",
+  "warn.purge": "La machine est effacée définitivement d'Armadok : ses membres, droits, sondes, tâches planifiées et enregistrements de sauvegarde. C'est irréversible. Les fichiers sur la machine elle-même ne sont pas touchés.",
+  "warn.take-over": "Le propriétaire actuel perd tous ses droits sur cette machine et la personne choisie en devient propriétaire, avec un accès complet. L'action est enregistrée avec votre motif.",
+  "warn.ban-owner": "Le compte du propriétaire est désactivé et toutes ses sessions se terminent. Ses machines ne sont pas touchées. Un administrateur ne peut pas être banni ainsi.",
+  "warn.strip-creation": "Le propriétaire ne peut plus créer de machines. Celles qu'il possède déjà restent telles quelles."
 }

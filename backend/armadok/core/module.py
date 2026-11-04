@@ -210,6 +210,9 @@ class Module:
     # Routers served at the root of the site instead of under /api/v1 (a path other tools expect,
     # such as /metrics). They are treated like API routes: never cached, no interface fallback.
     root_routes: tuple[Any, ...] = ()
+    # Tables that carry a `node_id` column without a foreign key, as (table, "delete" | "unlink"):
+    # when a node is erased for good its rows are deleted, or their `node_id` is emptied.
+    node_tables: tuple[tuple[str, str], ...] = ()
     rights: tuple[Right, ...] = ()
     audit_events: tuple[str, ...] = ()
     signals: tuple[Signal, ...] = ()

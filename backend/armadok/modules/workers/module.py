@@ -6,6 +6,7 @@ from armadok.modules.workers.routes import on_node_deleted, router
 
 module = Module(
     name="workers",
+    node_tables=(("workers", "delete"), ("enrolment_tokens", "delete")),
     requires=("nodes",),
     routes=(router,),
     rights=(

@@ -187,5 +187,7 @@
   "traefik.middleware_in_use": "A site still uses this middleware.",
   "traefik.too_many_passwords": "Too many new passwords at once (10 at most).",
   "common.invalid_request": "Some fields are not valid.",
-  "notifications.email_disabled": "E-mail is turned off on this server."
+  "notifications.email_disabled": "E-mail is turned off on this server.",
+  "nodeadmin.purge_blocked": "This machine is still referenced elsewhere and cannot be erased.",
+  "nodeadmin.owner_is_admin": "The owner is an administrator: this action is refused."
 }

@@ -10,6 +10,7 @@ _DOCKER = ("docker", "full")
 
 module = Module(
     name="projects",
+    node_tables=(("deploy_tasks", "delete"),),
     requires=("workers",),
     routes=(router, deploy_router),
     rights=(

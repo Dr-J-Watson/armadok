@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import sqlite3
 import uuid
-from datetime import UTC, datetime
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 
 from armadok.core.db import Migration
 
@@ -179,3 +180,54 @@ def create_local(conn: sqlite3.Connection) -> dict:
     )
     conn.commit()
     return get_node(conn, node_id)  # type: ignore[return-value]
+
+
+def purge(
+    conn: sqlite3.Connection,
+    node_id: str,
+    tables: tuple[tuple[str, str], ...] = (),
+    record: Callable[[], None] | None = None,
+) -> bool:
+    """Erase a deleted node for good, in one transaction; return False if it was not erasable.
+
+    Only a node that is deleted (and not the hub's own) goes, checked under the write lock, so a
+    restore that lands first wins. Tables that reference the node with a cascade go with it;
+    grants and assignments carry the node only in their `scope` text; `tables` are the other
+    tables modules declared (`Module.node_tables`): rows deleted, or `node_id` emptied.
+    Table names come from module declarations, never from a request. `record` (an audit entry,
+    say) runs inside the same transaction, so the log and the erasure stand or fall together.
+    """
+    scope = f"node:{node_id}"
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        gone = conn.execute(
+            "DELETE FROM nodes WHERE id = ? AND deleted_at IS NOT NULL AND is_local = 0",
+            (node_id,),
+        ).rowcount
+        if gone:
+            if record is not None:
+                record()
+            conn.execute("DELETE FROM grants WHERE scope = ?", (scope,))
+            conn.execute("DELETE FROM assignments WHERE scope = ?", (scope,))
+            for table, action in tables:
+                if action == "delete":
+                    conn.execute(f"DELETE FROM {table} WHERE node_id = ?", (node_id,))  # noqa: S608
+                else:
+                    conn.execute(  # noqa: S608
+                        f"UPDATE {table} SET node_id = NULL WHERE node_id = ?", (node_id,)
+                    )
+        conn.commit()
+    except BaseException:
+        conn.rollback()
+        raise
+    return bool(gone)
+
+
+def purgeable(conn: sqlite3.Connection) -> list[str]:
+    """Return the ids of nodes deleted for longer than the restore window."""
+    limit = (datetime.now(UTC) - timedelta(days=RESTORE_DAYS)).isoformat()
+    rows = conn.execute(
+        "SELECT id FROM nodes WHERE deleted_at IS NOT NULL AND deleted_at <= ? AND is_local = 0",
+        (limit,),
+    )
+    return [r["id"] for r in rows]

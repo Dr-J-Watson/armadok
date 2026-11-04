@@ -15,14 +15,34 @@ interface AdminNode {
   restorable_until: string | null
 }
 
+type Action =
+  | 'suspend'
+  | 'resume'
+  | 'restore'
+  | 'emergency'
+  | 'disconnect'
+  | 'delete'
+  | 'purge'
+  | 'take-over'
+  | 'ban-owner'
+  | 'strip-creation'
+
+// Actions that change who can reach a machine say why; the reason is kept in the audit log.
+const WITH_REASON: Action[] = ['suspend', 'emergency', 'disconnect', 'delete', 'purge', 'take-over', 'ban-owner', 'strip-creation']
+
 // What an administrator may do with machines that are not theirs: see that they exist, suspend,
 // resume or restore them. Never their content. Each action asks for the name and a fresh code.
 export function NodeAdminPage() {
   const { t } = useTranslation(['nodeadmin', 'errors'])
   const queryClient = useQueryClient()
   const nodes = useQuery({ queryKey: ['admin-nodes'], queryFn: () => api.get<AdminNode[]>('/admin/nodes') })
-  const [open, setOpen] = useState<{ id: string; action: 'suspend' | 'resume' | 'restore' | 'emergency' } | null>(null)
-  const [form, setForm] = useState({ name: '', code: '', reason: '' })
+  const [open, setOpen] = useState<{ id: string; action: Action } | null>(null)
+  const [form, setForm] = useState({ name: '', code: '', reason: '', person: '', userId: '' })
+  const people = useQuery({
+    queryKey: ['admin-people', form.person],
+    enabled: open?.action === 'take-over' && form.person.length >= 2,
+    queryFn: () => api.get<{ id: string; username: string }[]>(`/admin/nodes/people/search?q=${encodeURIComponent(form.person)}`),
+  })
   const impact = useQuery({
     queryKey: ['admin-impact', open?.id],
     enabled: open?.action === 'suspend',
@@ -33,11 +53,12 @@ export function NodeAdminPage() {
       api.post(`/admin/nodes/${open?.id}/${open?.action}`, {
         ...(open?.action === 'emergency' ? {} : { confirm_name: form.name }),
         code: form.code,
-        ...(open?.action === 'suspend' || open?.action === 'emergency' ? { reason: form.reason } : {}),
+        ...(open && WITH_REASON.includes(open.action) ? { reason: form.reason } : {}),
+        ...(open?.action === 'take-over' ? { user_id: form.userId } : {}),
       }),
     onSuccess: async () => {
       setOpen(null)
-      setForm({ name: '', code: '', reason: '' })
+      setForm({ name: '', code: '', reason: '', person: '', userId: '' })
       await queryClient.invalidateQueries()
     },
   })
@@ -76,15 +97,29 @@ export function NodeAdminPage() {
                     {t('nodeadmin:suspend')}
                   </button>
                 )}
+                {n.state !== 'deleted' && !n.local && (
+                  <>
+                    {(['disconnect', 'delete', 'take-over', 'ban-owner', 'strip-creation'] as const).map((a) => (
+                      <button key={a} type="button" onClick={() => setOpen({ id: n.id, action: a })}>
+                        {t(`nodeadmin:${a}`)}
+                      </button>
+                    ))}
+                  </>
+                )}
                 {n.state === 'suspended' && (
                   <button type="button" onClick={() => setOpen({ id: n.id, action: 'resume' })}>
                     {t('nodeadmin:resume')}
                   </button>
                 )}
                 {n.state === 'deleted' && (
-                  <button type="button" onClick={() => setOpen({ id: n.id, action: 'restore' })}>
-                    {t('nodeadmin:restore')}
-                  </button>
+                  <>
+                    <button type="button" onClick={() => setOpen({ id: n.id, action: 'restore' })}>
+                      {t('nodeadmin:restore')}
+                    </button>
+                    <button type="button" onClick={() => setOpen({ id: n.id, action: 'purge' })}>
+                      {t('nodeadmin:purge')}
+                    </button>
+                  </>
                 )}
               </td>
             </tr>
@@ -107,7 +142,22 @@ export function NodeAdminPage() {
             </p>
           )}
           {open.action === 'emergency' && <p className="notice">{t('nodeadmin:emergencyWarning')}</p>}
-          {(open.action === 'suspend' || open.action === 'emergency') && (
+          {['purge', 'ban-owner', 'take-over', 'delete', 'disconnect', 'strip-creation'].includes(open.action) && (
+            <p className="notice">{t(`nodeadmin:warn.${open.action}`)}</p>
+          )}
+          {open.action === 'take-over' && (
+            <label>
+              {t('nodeadmin:newOwner')}
+              <input value={form.person} onChange={(e) => setForm({ ...form, person: e.target.value, userId: '' })} />
+              <select value={form.userId} required onChange={(e) => setForm({ ...form, userId: e.target.value })}>
+                <option value="">—</option>
+                {people.data?.map((p) => (
+                  <option key={p.id} value={p.id}>{p.username}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          {WITH_REASON.includes(open.action) && (
             <label>
               {t('nodeadmin:reason')}
               <small> {t('nodeadmin:reasonShared')}</small>

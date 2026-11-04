@@ -7,6 +7,7 @@ from armadok.modules.notifications.service import handle_notify
 
 module = Module(
     name="notifications",
+    node_tables=(("notifications", "delete"), ("notification_rules", "delete")),
     requires=("users", "nodes"),
     signals=(Signal("notifications.changed", "notifications.use"),),
     routes=(router,),

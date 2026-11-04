@@ -110,6 +110,10 @@ class Registry:
         """Return the notification events modules can raise, by name."""
         return {e.name: e for m in self.modules for e in m.notification_events}
 
+    def node_tables(self) -> tuple[tuple[str, str], ...]:
+        """Return the (table, action) pairs modules want handled when a node is erased."""
+        return tuple(t for m in self.modules for t in m.node_tables)
+
     def node_owner_rights(self) -> tuple[str, ...]:
         """Return the rights a node's creator receives on that node."""
         return tuple(r.id for r in self.rights().values() if r.node_owner)

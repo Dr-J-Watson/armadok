@@ -17,6 +17,7 @@ def _provider(name, impl):
 
 module = Module(
     name="dns",
+    node_tables=(("dns_domains", "unlink"),),
     search=(SearchProvider("dns", _search.run),),
     requires=("nodes", "workers", "relations"),
     routes=(router, node_router),
