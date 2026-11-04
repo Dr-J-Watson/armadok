@@ -130,5 +130,13 @@
   "coherence.codes.chain.loop": "cette chaîne revient sur elle-même : {{detail}}.",
   "coherence.codes.router.duplicate_rule": "même règle et mêmes points d'entrée que {{detail}} : un seul des deux reçoit le trafic.",
   "coherence.codes.service.unused": "aucun routeur n'utilise ce service.",
-  "coherence.codes.middleware.unused": "rien n'utilise ce middleware."
+  "coherence.codes.middleware.unused": "rien n'utilise ce middleware.",
+  "middlewares.rename": "Renommer",
+  "middlewares.renameTitle": "Renommer un middleware",
+  "middlewares.newName": "Nouveau nom",
+  "middlewares.renamePlan": "Voir ce qui va changer",
+  "middlewares.renameCancel": "Annuler",
+  "middlewares.renameSites": "{{count}} site(s) fait(s) avec le formulaire suivront le nouveau nom : {{sites}}.",
+  "middlewares.renameManual": "Ces fichiers nomment le middleware et ne sont jamais réécrits à votre place. Modifiez-les à la main, sinon leurs sites le perdront : {{files}}.",
+  "middlewares.renameGo": "Renommer maintenant"
 }

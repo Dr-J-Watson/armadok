@@ -664,3 +664,113 @@ def test_an_update_is_audited_with_counts_not_values(hub):
     )
     log = client.get("/api/v1/audit", headers=admin).text
     assert "new_passwords" in log and "bob" not in log and "another-long-pass" not in log
+
+
+# --- renaming, with the sites that use it ---------------------------------------------------------
+
+SITE = {
+    "spec": {
+        "name": "blog",
+        "hosts": ["blog.example.com"],
+        "container": "blog-web",
+        "port": 80,
+        "middlewares": ["lan@file"],
+    }
+}
+HAND_WRITTEN = (
+    "http:\n  routers:\n    legacy:\n      rule: Host(`old.example.com`)\n      service: s\n"
+    "      middlewares: [lan@file]\n  services:\n    s:\n      loadBalancer:\n        servers:\n"
+    "          - url: http://old:80\n"
+)
+
+
+def rename_setup(client, admin, node, folder):
+    client.post(url(node), headers=admin, json=LAN)
+    client.post(f"/api/v1/nodes/{node}/traefik/sites", headers=admin, json=SITE)
+    (folder / "legacy.yml").write_text(HAND_WRITTEN)
+    return client.get(url(node), headers=admin).json()["middlewares"][0]["sha256"]
+
+
+def test_a_rename_follows_the_form_built_sites_and_reports_the_hand_written_ones(hub):
+    client, admin, node, folder = hub
+    current = rename_setup(client, admin, node, folder)
+    body = {"new_name": "office", "expected_sha256": current}
+    plan = client.post(url(node, "/lan/rename"), headers=admin, json={**body, "dry_run": True})
+    assert plan.status_code == 200
+    assert plan.json()["sites"] == ["blog"] and plan.json()["manual"] == ["legacy.yml"]
+    assert (folder / "middlewares" / "lan.yml").exists()  # a dry run writes nothing
+    assert not (folder / "middlewares" / "office.yml").exists()
+
+    done = client.post(url(node, "/lan/rename"), headers=admin, json=body)
+    assert done.status_code == 200, done.text
+    assert done.json()["reference"] == "office@file" and done.json()["manual"] == ["legacy.yml"]
+    assert not (folder / "middlewares" / "lan.yml").exists()
+    assert mw.untouched((folder / "middlewares" / "office.yml").read_text()).name == "office"
+    site_text = (folder / "sites" / "blog.yml").read_text()
+    assert "office@file" in site_text and "lan@file" not in site_text
+    assert (folder / "legacy.yml").read_text() == HAND_WRITTEN  # never rewritten by hand
+    log = client.get("/api/v1/audit", headers=admin).text
+    assert "traefik.middleware_rename" in log
+
+
+def test_a_rename_refuses_a_taken_name_a_stale_version_and_a_hand_edited_file(hub):
+    client, admin, node, folder = hub
+    current = rename_setup(client, admin, node, folder)
+    client.post(url(node), headers=admin, json={"spec": {"intent": "compress", "name": "zip"}})
+    taken = client.post(
+        url(node, "/lan/rename"),
+        headers=admin,
+        json={"new_name": "zip", "expected_sha256": current},
+    )
+    assert taken.status_code == 409
+    stale = client.post(
+        url(node, "/lan/rename"),
+        headers=admin,
+        json={"new_name": "office", "expected_sha256": "0" * 64},
+    )
+    assert stale.status_code == 409
+    same = client.post(
+        url(node, "/lan/rename"),
+        headers=admin,
+        json={"new_name": "lan", "expected_sha256": current},
+    )
+    assert same.status_code == 409
+    (folder / "middlewares" / "lan.yml").write_text(
+        (folder / "middlewares" / "lan.yml").read_text() + "# mine\n"
+    )
+    hand = client.post(
+        url(node, "/lan/rename"),
+        headers=admin,
+        json={
+            "new_name": "office",
+            "expected_sha256": sha((folder / "middlewares" / "lan.yml").read_text()),
+        },
+    )
+    assert hand.status_code == 409 and not (folder / "middlewares" / "office.yml").exists()
+
+
+def test_a_failed_rename_puts_everything_back(hub, monkeypatch):
+    from armadok.core.errors import ApiError
+    from armadok.modules.traefik import middleware_routes
+
+    client, admin, node, folder = hub
+    current = rename_setup(client, admin, node, folder)
+    site_before = (folder / "sites" / "blog.yml").read_text()
+    real_ask = middleware_routes.ask
+
+    async def failing(request, registry, node_id, op, args, model):
+        # The very last step (removing the old file) fails.
+        if op == "traefik.file.delete" and args["path"] == "middlewares/lan.yml":
+            raise ApiError("worker.unavailable", 503)
+        return await real_ask(request, registry, node_id, op, args, model)
+
+    monkeypatch.setattr(middleware_routes, "ask", failing)
+    got = client.post(
+        url(node, "/lan/rename"),
+        headers=admin,
+        json={"new_name": "office", "expected_sha256": current},
+    )
+    assert got.status_code == 503
+    assert (folder / "middlewares" / "lan.yml").exists()
+    assert not (folder / "middlewares" / "office.yml").exists()
+    assert (folder / "sites" / "blog.yml").read_text() == site_before

@@ -13,6 +13,7 @@ import sqlite3
 from typing import Any
 
 from fastapi import APIRouter, Depends, Path, Request
+from pydantic import BaseModel, ConfigDict, Field
 
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
@@ -20,7 +21,7 @@ from armadok.core.errors import ApiError
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.traefik import middlewares as builder
-from armadok.modules.traefik import parse, schemas
+from armadok.modules.traefik import parse, schemas, sitebuilder
 from armadok.modules.workers.access import ask, audit_failure, authorise
 
 router = APIRouter(prefix="/nodes/{node_id}/traefik/middlewares", tags=["traefik"])
@@ -258,6 +259,195 @@ async def update_middleware(
         raise
     _record(conn, registry, who, "traefik.middleware_update", node_id, **info)
     return {"name": name, "reference": builder.reference(name), "sha256": saved.sha256}
+
+
+class MiddlewareRename(BaseModel):
+    """Body of a middleware rename: the new name, the version being renamed, and a dry run."""
+
+    model_config = ConfigDict(extra="forbid")
+    new_name: str = Field(pattern=builder.NAME_PATTERN)
+    expected_sha256: str = Field(pattern=schemas.SHA_PATTERN)
+    # Only report what the rename would change (and what it cannot), writing nothing.
+    dry_run: bool = False
+
+
+async def _users_of(
+    request: Request, registry: Registry, node_id: str, snapshot: schemas.Snapshot, ref: str
+) -> tuple[list[tuple[schemas.SiteFile, sitebuilder.SiteSpec]], list[str]]:
+    """Find who names a middleware: sites the form built (changeable) and other files (not).
+
+    A paused site is not loaded by Traefik, but it would break when resumed: it is reported
+    like a hand-written file, since the form does not rewrite paused sites.
+    """
+    listing = await ask(request, registry, node_id, "traefik.sites.list", {}, schemas.SiteFiles)
+    if listing.truncated:
+        raise ApiError("traefik.snapshot_incomplete", 409)
+    managed: list[tuple[schemas.SiteFile, sitebuilder.SiteSpec]] = []
+    managed_paths: set[str] = set()
+    for site in listing.files:
+        if site.paused:
+            continue
+        spec = sitebuilder.untouched(site.content)
+        if spec is not None and ref in {parse.qualify(m) for m in spec.middlewares}:
+            managed.append((site, spec))
+            managed_paths.add(f"sites/{site.name}.yml")
+    summaries = await _summaries(snapshot)
+    summaries += await asyncio.to_thread(
+        lambda: [
+            parse.summarize(f"sites/{s.name}.yml.paused", s.content, s.sha256)
+            for s in listing.files
+            if s.paused
+        ]
+    )
+    manual = sorted(
+        {
+            s["path"]
+            for s in summaries
+            if s["path"] not in managed_paths
+            and (
+                any(ref in r["middlewares"] for r in s["routers"])
+                or any(ref in m["refs"] for m in s["middlewares"])
+            )
+        }
+    )
+    return managed, manual
+
+
+@router.post("/{name}/rename", summary="Rename a middleware and the sites that use it")
+async def rename_middleware(
+    node_id: str,
+    body: MiddlewareRename,
+    request: Request,
+    name: str = MiddlewareName,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Give a generated middleware a new name, following it in the sites the form built.
+
+    Sites and files written by hand are never rewritten: they are listed (`manual`) so that
+    the person fixes them. The new middleware is written first, then the sites, then the old
+    file is removed, so the sites never point at nothing; if a step fails the earlier ones are
+    undone. With `dry_run` nothing is written.
+    """
+    _writer(conn, registry, who, node_id)
+    info = {"middleware": name, "new_name": body.new_name, "dry_run": body.dry_run}
+    undo: list[tuple[str, dict]] = []
+    try:
+        snapshot = await _snapshot(request, registry, node_id)
+        current = next((f for f in snapshot.files if f.path == _path(name)), None)
+        if current is None:
+            raise ApiError("traefik.site_not_found", 404)
+        previous = builder.untouched(current.content)
+        if previous is None:
+            raise ApiError("traefik.modified_by_hand", 409)
+        if current.sha256 != body.expected_sha256 or body.new_name == name:
+            raise ApiError("worker.conflict", 409)
+        summaries = await _summaries(snapshot)
+        taken = {m["name"] for s in summaries for m in s["middlewares"]}
+        if body.new_name in taken or any(f.path == _path(body.new_name) for f in snapshot.files):
+            raise ApiError("traefik.name_taken", 409)
+        managed, manual = await _users_of(
+            request, registry, node_id, snapshot, builder.reference(name)
+        )
+        report = {
+            "name": body.new_name,
+            "reference": builder.reference(body.new_name),
+            "sites": sorted(site.name for site, _ in managed),
+            "manual": manual,
+        }
+        if body.dry_run:
+            return report
+        renamed = previous.model_copy(update={"name": body.new_name})
+        text = builder.render(renamed)
+        saved = _checked(
+            await ask(
+                request,
+                registry,
+                node_id,
+                "traefik.middleware.write",
+                {"name": body.new_name, "content": text, "expected_sha256": None},
+                schemas.Saved,
+            ),
+            text,
+        )
+        undo.append(
+            ("traefik.file.delete", {"path": _path(body.new_name), "expected_sha256": saved.sha256})
+        )
+        old_ref, new_ref = builder.reference(name), builder.reference(body.new_name)
+        for site, spec in managed:
+            changed = spec.model_copy(
+                update={
+                    "middlewares": [
+                        new_ref if parse.qualify(m) == old_ref else m for m in spec.middlewares
+                    ]
+                }
+            )
+            site_text = sitebuilder.render(changed)
+            site_saved = _checked(
+                await ask(
+                    request,
+                    registry,
+                    node_id,
+                    "traefik.site.write",
+                    {"name": site.name, "content": site_text, "expected_sha256": site.sha256},
+                    schemas.Saved,
+                ),
+                site_text,
+            )
+            undo.append(
+                (
+                    "traefik.site.write",
+                    {
+                        "name": site.name,
+                        "content": site.content,
+                        "expected_sha256": site_saved.sha256,
+                    },
+                )
+            )
+        await ask(
+            request,
+            registry,
+            node_id,
+            "traefik.file.delete",
+            {"path": _path(name), "expected_sha256": body.expected_sha256},
+            schemas.Done,
+        )
+    except ApiError as error:
+        for op, args in reversed(undo):
+            try:  # best effort: the files stay in the history either way
+                await ask(
+                    request,
+                    registry,
+                    node_id,
+                    op,
+                    args,
+                    schemas.Saved if "content" in args else schemas.Done,
+                )
+            except ApiError:
+                pass
+        audit_failure(conn, registry, who, "traefik.middleware_rename", node_id, info, error)
+        raise
+    _record(
+        conn,
+        registry,
+        who,
+        "traefik.middleware_rename",
+        node_id,
+        middleware=name,
+        new_name=body.new_name,
+        sites=len(managed),
+        manual=len(manual),
+    )
+    return {**report, "sha256": saved.sha256}
+
+
+def _checked(saved: schemas.Saved, text: str) -> schemas.Saved:
+    """Check the worker's answer against what was sent (its answers are not trusted)."""
+    data = text.encode()
+    if saved.size != len(data) or saved.sha256 != hashlib.sha256(data).hexdigest():
+        raise ApiError("worker.invalid_answer", 502)
+    return saved
 
 
 @router.delete("/{name}", status_code=204, summary="Delete a middleware")

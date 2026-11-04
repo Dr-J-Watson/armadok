@@ -84,3 +84,34 @@ describe('middlewares', () => {
     expect(String(spy.mock.calls.find(([, init]) => init?.method === 'POST')![0])).toContain('/preview')
   })
 })
+
+describe('renaming a middleware', () => {
+  it('shows the plan first, warns about hand-written files, and only then renames', async () => {
+    const sent: { path: string; body: Record<string, unknown> }[] = []
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      if (init?.method === 'POST') {
+        const body = JSON.parse(String(init.body))
+        sent.push({ path: String(input), body })
+        return json({ sites: ['blog'], manual: ['legacy.yml'], name: 'office', reference: 'office@file' })
+      }
+      return json({ middlewares: [item({ name: 'lan', spec: { intent: 'compress', name: 'lan' } })] })
+    })
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Middlewares nodeId="n1" />
+      </QueryClientProvider>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Rename' }))
+    const field = screen.getByLabelText('New name')
+    await userEvent.clear(field)
+    await userEvent.type(field, 'office')
+    await userEvent.click(screen.getByRole('button', { name: 'Show what will change' }))
+    expect(await screen.findByText(/1 site\(s\) built with the form will follow the new name: blog/)).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('legacy.yml')
+    expect(sent).toHaveLength(1)
+    expect(sent[0].body.dry_run).toBe(true) // nothing was renamed yet
+    await userEvent.click(screen.getByRole('button', { name: 'Rename now' }))
+    await vi.waitFor(() => expect(sent).toHaveLength(2))
+    expect(sent[1].body).toEqual({ new_name: 'office', expected_sha256: 'a'.repeat(64) })
+  })
+})

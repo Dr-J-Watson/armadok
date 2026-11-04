@@ -41,6 +41,7 @@ module = Module(
         "traefik.middleware_create",
         "traefik.middleware_update",
         "traefik.middleware_delete",
+        "traefik.middleware_rename",
     ),
     relations=(
         RelationProvider(

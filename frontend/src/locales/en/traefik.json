@@ -130,5 +130,13 @@
   "coherence.codes.chain.loop": "this chain leads back to itself: {{detail}}.",
   "coherence.codes.router.duplicate_rule": "same rule and entry points as {{detail}}: only one of them gets the traffic.",
   "coherence.codes.service.unused": "no router uses this service.",
-  "coherence.codes.middleware.unused": "nothing uses this middleware."
+  "coherence.codes.middleware.unused": "nothing uses this middleware.",
+  "middlewares.rename": "Rename",
+  "middlewares.renameTitle": "Rename a middleware",
+  "middlewares.newName": "New name",
+  "middlewares.renamePlan": "Show what will change",
+  "middlewares.renameCancel": "Cancel",
+  "middlewares.renameSites": "{{count}} site(s) built with the form will follow the new name: {{sites}}.",
+  "middlewares.renameManual": "These files name the middleware and are never rewritten for you. Change them by hand, or the sites in them will lose it: {{files}}.",
+  "middlewares.renameGo": "Rename now"
 }

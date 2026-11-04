@@ -114,8 +114,22 @@ export function Middlewares({ nodeId }: { nodeId: string }) {
     mutationFn: () => api.post<{ content: string }>(`${base}/preview`, { spec: body(form!) }),
     onSuccess: (data) => setShown(data.content),
   })
+  // Renaming follows the sites the form built; the plan is shown first, and hand-written files
+  // that name the middleware are listed because nothing rewrites them.
+  const [renaming, setRenaming] = useState<{ item: Item; name: string } | null>(null)
+  const plan = useMutation({
+    mutationFn: () => api.post<{ sites: string[]; manual: string[] }>(`${base}/${renaming!.item.name}/rename`, { new_name: renaming!.name, expected_sha256: renaming!.item.sha256, dry_run: true }),
+  })
+  const rename = useMutation({
+    mutationFn: () => api.post(`${base}/${renaming!.item.name}/rename`, { new_name: renaming!.name, expected_sha256: renaming!.item.sha256 }),
+    onSuccess: () => {
+      setRenaming(null)
+      plan.reset()
+      return client.invalidateQueries({ queryKey: ['traefik-middlewares', nodeId] }).then(() => Promise.all([client.invalidateQueries({ queryKey: ['traefik-sites', nodeId] }), client.invalidateQueries({ queryKey: ['traefik-managed', nodeId] })]))
+    },
+  })
   const remove = useMutation({ mutationFn: (m: Item) => api.del(`${base}/${m.name}?expected_sha256=${m.sha256}`), onSuccess: refresh })
-  const failed = list.error ?? save.error ?? preview.error ?? remove.error
+  const failed = list.error ?? save.error ?? preview.error ?? remove.error ?? plan.error ?? rename.error
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -145,12 +159,46 @@ export function Middlewares({ nodeId }: { nodeId: string }) {
             ) : (
               <span className="notice">{t('traefik:middlewares.byHand')}</span>
             )}{' '}
+            {m.editable && (
+              <>
+                <button type="button" onClick={() => { setRenaming({ item: m, name: m.name }); plan.reset() }}>
+                  {t('traefik:middlewares.rename')}
+                </button>{' '}
+              </>
+            )}
             <button type="button" disabled={m.used_by.length > 0} title={m.used_by.length > 0 ? t('traefik:middlewares.inUse') : undefined} onClick={() => window.confirm(t('traefik:middlewares.confirmDelete')) && remove.mutate(m)}>
               {t('traefik:middlewares.delete')}
             </button>
           </li>
         ))}
       </ul>
+      {renaming && (
+        <div className="notice" role="group" aria-label={t('traefik:middlewares.renameTitle')}>
+          <label>
+            {t('traefik:middlewares.newName')}
+            <input value={renaming.name} maxLength={64} onChange={(e) => { setRenaming({ ...renaming, name: e.target.value }); plan.reset() }} />
+          </label>{' '}
+          <button type="button" disabled={plan.isPending || renaming.name === renaming.item.name || renaming.name === ''} onClick={() => plan.mutate()}>
+            {t('traefik:middlewares.renamePlan')}
+          </button>{' '}
+          <button type="button" onClick={() => { setRenaming(null); plan.reset() }}>
+            {t('traefik:middlewares.renameCancel')}
+          </button>
+          {plan.data && (
+            <>
+              <p>{t('traefik:middlewares.renameSites', { count: plan.data.sites.length, sites: plan.data.sites.join(', ') })}</p>
+              {plan.data.manual.length > 0 && (
+                <p role="alert" className="error">
+                  {t('traefik:middlewares.renameManual', { files: plan.data.manual.join(', ') })}
+                </p>
+              )}
+              <button type="button" disabled={rename.isPending} onClick={() => rename.mutate()}>
+                {t('traefik:middlewares.renameGo')}
+              </button>
+            </>
+          )}
+        </div>
+      )}
       {!form && (
         <button type="button" onClick={() => setForm(blank())}>
           {t('traefik:middlewares.new')}
