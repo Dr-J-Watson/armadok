@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from armadok.worker import (
+    backup_ops,
     certs_ops,
     compose_ops,
     docker_control,
@@ -39,4 +40,5 @@ OPERATIONS: dict[str, Operation] = {
     **certs_ops.OPERATIONS,
     **compose_ops.OPERATIONS,
     **uptime_ops.OPERATIONS,
+    **backup_ops.OPERATIONS,
 }

@@ -44,5 +44,7 @@
   "choices.kind.containers": "Conteneurs arrêtés",
   "choices.kind.images": "Images inutilisées (orphelines)",
   "choices.kind.networks": "Réseaux inutilisés",
-  "confirmDelete": "Supprimer cette tâche ?"
+  "confirmDelete": "Supprimer cette tâche ?",
+  "actions.volume.backup": "Sauvegarder un volume",
+  "fields.volume": "Volume"
 }

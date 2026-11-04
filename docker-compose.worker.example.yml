@@ -27,6 +27,10 @@ services:
       # reads it and sends only public facts (names, issuer, dates), never a key. Mount it
       # read-only, preferably on its own (a folder that holds nothing else).
       # ARMADOK_ACME_FILE: /acme/acme.json
+      # Where volume backups are written (mounted below). Archives are root-only files made by a
+      # short-lived helper container; the worker only lists and deletes them. Give the folder to
+      # the worker's group with write access (chmod g+ws) so it can rotate old archives.
+      # ARMADOK_BACKUP_DIR: /backups
     volumes:
       # The worker's identity key lives here: keep this volume.
       - armadok-worker-data:/data
@@ -34,6 +38,7 @@ services:
       - ${PROJECTS_DIR:?set it in .env}:/stacks
       # - ${TRAEFIK_DYNAMIC_DIR:?set it in .env}:/traefik-dynamic
       # - ${ACME_DIR:?set it in .env}:/acme:ro
+      # - ${BACKUP_DIR:?set it in .env}:/backups
       # Full Docker control, which is root on this machine: deployments (`docker compose up`) need it.
       - /var/run/docker.sock:/var/run/docker.sock
     # The group that owns the Docker socket (find it with: stat -c %g /var/run/docker.sock).

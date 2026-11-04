@@ -147,5 +147,10 @@
   "schedule.creator_lost_right": "The account that created this task no longer holds the right it needs.",
   "schedule.failed": "The task failed.",
   "schedule.timeout": "The task took too long and was stopped.",
-  "schedule.skipped_late": "The run was missed (the hub was stopped) and skipped."
+  "schedule.skipped_late": "The run was missed (the hub was stopped) and skipped.",
+  "backups.confirm_mismatch": "The name typed does not match the volume.",
+  "worker.backups_not_configured": "This machine has no backup folder.",
+  "worker.backup_failed": "The backup did not complete.",
+  "worker.restore_failed": "The restore did not complete.",
+  "backups.other_volume": "This archive was made from another volume. Confirm that you want to restore it into this one."
 }

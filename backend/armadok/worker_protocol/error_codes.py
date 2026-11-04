@@ -27,6 +27,10 @@ WORKER_ERROR_CODES = frozenset(
         "worker.forbidden",
         "worker.conflict",
         "worker.not_text",
+        # Volume backups (see `worker/backup_ops.py`).
+        "worker.backups_not_configured",
+        "worker.backup_failed",
+        "worker.restore_failed",
         # Availability probes: why a probe got no answer (see `worker/uptime_ops.py`).
         "worker.probe_dns",
         "worker.probe_refused",

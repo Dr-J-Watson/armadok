@@ -44,5 +44,7 @@
   "choices.kind.containers": "Stopped containers",
   "choices.kind.images": "Unused (dangling) images",
   "choices.kind.networks": "Unused networks",
-  "confirmDelete": "Delete this task?"
+  "confirmDelete": "Delete this task?",
+  "actions.volume.backup": "Back up a volume",
+  "fields.volume": "Volume"
 }

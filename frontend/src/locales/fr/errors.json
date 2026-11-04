@@ -147,5 +147,10 @@
   "schedule.creator_lost_right": "Le compte qui a créé cette tâche n'a plus le droit nécessaire.",
   "schedule.failed": "La tâche a échoué.",
   "schedule.timeout": "La tâche a pris trop de temps et a été arrêtée.",
-  "schedule.skipped_late": "L'exécution a été manquée (le hub était arrêté) et sautée."
+  "schedule.skipped_late": "L'exécution a été manquée (le hub était arrêté) et sautée.",
+  "backups.confirm_mismatch": "Le nom saisi ne correspond pas au volume.",
+  "worker.backups_not_configured": "Cette machine n'a pas de dossier de sauvegarde.",
+  "worker.backup_failed": "La sauvegarde n'a pas abouti.",
+  "worker.restore_failed": "La restauration n'a pas abouti.",
+  "backups.other_volume": "Cette archive vient d'un autre volume. Confirmez que vous voulez la restaurer dans celui-ci."
 }

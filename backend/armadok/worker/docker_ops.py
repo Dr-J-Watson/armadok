@@ -70,25 +70,31 @@ def docker_get(path: str) -> Any:
         raise OperationError("worker.docker_error") from None
 
 
-def docker_raw(method: str, path: str, timeout: float = TIMEOUT_SECONDS) -> tuple[int, bytes]:
+def docker_raw(
+    method: str, path: str, timeout: float = TIMEOUT_SECONDS, body: dict[str, Any] | None = None
+) -> tuple[int, bytes]:
     """Send one request to the Docker daemon and return `(status, body)`.
 
     Shared by the read-only operations here and the control operations (`docker_control`),
-    which are the only callers allowed to pass a method other than GET.
+    which are the only callers allowed to pass a method other than GET. `body` (a JSON object)
+    is sent only by the backup helper, which creates its one fixed kind of container.
     """
     socket_path = os.environ.get("ARMADOK_DOCKER_SOCKET", DEFAULT_SOCKET)
     conn = _UnixHTTPConnection(socket_path, timeout)
     try:
-        conn.request(method, path)
+        if body is None:
+            conn.request(method, path)
+        else:
+            conn.request(method, path, json.dumps(body), {"Content-Type": "application/json"})
         response = conn.getresponse()
-        body = response.read(MAX_RESPONSE_BYTES + 1)
+        answer = response.read(MAX_RESPONSE_BYTES + 1)
     except (OSError, http.client.HTTPException):
         raise OperationError("worker.docker_unavailable") from None
     finally:
         conn.close()
-    if len(body) > MAX_RESPONSE_BYTES:
+    if len(answer) > MAX_RESPONSE_BYTES:
         raise ResponseTooLarge("worker.docker_error")
-    return response.status, body
+    return response.status, answer
 
 
 def docker_info(args: dict[str, Any]) -> dict[str, Any]:

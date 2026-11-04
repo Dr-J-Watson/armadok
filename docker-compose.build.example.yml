@@ -24,6 +24,7 @@ services:
       # Optional folders the local node may use (mount them below):
       # ARMADOK_PROJECTS_DIR: /stacks
       # ARMADOK_TRAEFIK_DIR: /traefik-dynamic
+      # ARMADOK_BACKUP_DIR: /backups
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
@@ -32,6 +33,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # - ${PROJECTS_DIR}:/stacks
       # - ${TRAEFIK_DYNAMIC_DIR}:/traefik-dynamic
+      # - ${BACKUP_DIR}:/backups
     group_add:
       - ${DOCKER_GID:?set it in .env}
     read_only: true
