@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
+import { PublishControl } from '../status/PublishControl'
 
 interface Result {
   at: string
@@ -107,6 +108,7 @@ export function UptimeTab({ nodeId }: { nodeId: string }) {
                 </span>
               ))}
             </span>
+            {manage && <PublishControl nodeId={nodeId} probeId={p.id} defaultTitle={p.name} />}
             {manage && (
               <span>
                 {' '}

@@ -1,0 +1,17 @@
+{
+  "publish": "Public page",
+  "published": "Public page (open)",
+  "hint": "Anyone with the address can see this title, whether the site is up, and the latest results. Nothing else: no address, no machine, no reason.",
+  "title": "Title shown to the public",
+  "open": "Open the page",
+  "retitle": "Change the title",
+  "close": "Close the page",
+  "address": "Address:",
+  "notFound": "This page does not exist or was closed.",
+  "state.up": "Up",
+  "state.down": "Down",
+  "state.unknown": "Unknown",
+  "recent": "Latest results",
+  "availability": "Available {{value}}% of the checks.",
+  "checked": "Last check: {{at}}"
+}

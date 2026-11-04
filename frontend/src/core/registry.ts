@@ -53,6 +53,8 @@ export interface Feature {
   // Backend module that must be enabled for this feature to appear.
   requiresModule?: string
   routes?: RouteObject[]
+  // Pages opened without signing in (a public status page): the server decides what they show.
+  publicRoutes?: RouteObject[]
   nav?: NavItem[]
   nodeTabs?: NodeTab[]
   objectSections?: ObjectSection[]

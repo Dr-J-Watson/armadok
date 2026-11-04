@@ -62,10 +62,18 @@ function Gate() {
   )
 }
 
+// Pages meant for people who are not signed in. They are matched before anything asks who the
+// visitor is, and they come from the features list like every other page.
+function PublicOrGate() {
+  const publicRoutes = useMemo<RouteObject[]>(() => features.flatMap((f) => f.publicRoutes ?? []), [])
+  const element = useRoutes([...publicRoutes, { path: '*', element: <Gate /> }])
+  return element
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <Gate />
+      <PublicOrGate />
     </BrowserRouter>
   )
 }

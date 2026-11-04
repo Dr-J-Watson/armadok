@@ -189,3 +189,4 @@ button:disabled { opacity: .6; cursor: progress; }
 .palette li { padding: .4rem .5rem; border-radius: .3rem; cursor: pointer; }
 .palette li.active { background: var(--border); }
 .palette li.empty { cursor: default; color: var(--muted); }
+.public-status { max-width: 32rem; margin: 3rem auto; padding: 0 1rem; text-align: center; }
