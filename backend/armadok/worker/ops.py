@@ -20,6 +20,7 @@ from armadok.worker import (
     sites_ops,
     stats_ops,
     traefik_ops,
+    traffic_ops,
     uptime_ops,
 )
 from armadok.worker.operation import Operation, OperationError
@@ -45,4 +46,5 @@ OPERATIONS: dict[str, Operation] = {
     **uptime_ops.OPERATIONS,
     **backup_ops.OPERATIONS,
     **stats_ops.OPERATIONS,
+    **traffic_ops.OPERATIONS,
 }

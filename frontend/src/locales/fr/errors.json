@@ -220,5 +220,10 @@
   "imageupdates.busy": "Une vérification est déjà en cours.",
   "outbound.too_large": "La réponse était trop volumineuse.",
   "imageupdates.timeout": "La vérification a pris trop de temps et a été arrêtée.",
-  "images.too_many_registries": "Trop de registres différents dans une vérification : celui-ci a été laissé de côté."
+  "images.too_many_registries": "Trop de registres différents dans une vérification : celui-ci a été laissé de côté.",
+  "worker.metrics_not_configured": "Cette machine n'a pas d'adresse de métriques Traefik configurée.",
+  "worker.metrics_unreachable": "Les métriques de Traefik n'ont pas répondu.",
+  "traffic.too_soon": "Attendez quelques secondes entre deux tests.",
+  "traffic.busy": "Le test n'a pas pu se faire : une lecture est déjà en cours.",
+  "traffic.not_stored": "Les chiffres n'ont pas pu être enregistrés."
 }

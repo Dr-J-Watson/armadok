@@ -52,6 +52,8 @@ WORKER_ERROR_STATUS = {
     "worker.too_large": 413,
     "worker.not_text": 415,
     "worker.history_failed": 409,
+    "worker.metrics_not_configured": 409,
+    "worker.metrics_unreachable": 502,
     "worker.projects_not_configured": 409,
     "worker.traefik_not_configured": 409,
     "worker.acme_not_configured": 409,

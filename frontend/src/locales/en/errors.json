@@ -220,5 +220,10 @@
   "imageupdates.busy": "A check is already running.",
   "outbound.too_large": "The answer was too large.",
   "imageupdates.timeout": "The check took too long and was stopped.",
-  "images.too_many_registries": "Too many different registries in one check: this one was left out."
+  "images.too_many_registries": "Too many different registries in one check: this one was left out.",
+  "worker.metrics_not_configured": "This machine has no Traefik metrics address set up.",
+  "worker.metrics_unreachable": "Traefik's metrics did not answer.",
+  "traffic.too_soon": "Wait a few seconds between two tests.",
+  "traffic.busy": "The test could not run: a reading is already in progress.",
+  "traffic.not_stored": "The figures could not be stored."
 }

@@ -26,6 +26,10 @@ services:
       # Traefik's STATIC configuration (traefik.yml): mount the FOLDER that holds it, writable
       # (Armadok replaces the file, keeping the old copy in a hidden sub-folder). Optional.
       # ARMADOK_TRAEFIK_STATIC_DIR: /traefik-static
+      # Where Traefik's Prometheus metrics are read, for the Traffic tab. Use a PRIVATE entry
+      # point of Traefik (never published) reachable on a Docker network the worker also joins.
+      # No visitor address is in these metrics. Optional.
+      # ARMADOK_TRAEFIK_METRICS_URL: http://traefik:8082/metrics
       # Traefik's acme.json, to show its certificates. The file holds the PRIVATE KEYS: Armadok
       # reads it and sends only public facts (names, issuer, dates), never a key. Mount it
       # read-only, preferably on its own (a folder that holds nothing else).
