@@ -41,6 +41,8 @@ COPY --from=build /opt/venv /opt/venv
 COPY --from=docker:29-cli@sha256:5e6baf67325a79f64ed3bed6863954d5e05d0f3d4e57cbdb14809346814bbfdb /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=docker:29-cli@sha256:5e6baf67325a79f64ed3bed6863954d5e05d0f3d4e57cbdb14809346814bbfdb /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/libexec/docker/cli-plugins/docker-compose
 COPY backend/armadok /app/armadok
+# The command line (`docker exec <container> armadok nodes`): the same API as the interface.
+COPY scripts/armadok /usr/local/bin/armadok
 COPY --from=web /web/dist /app/web
 WORKDIR /app
 USER 10001

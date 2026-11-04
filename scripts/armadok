@@ -1,0 +1,3 @@
+#!/bin/sh
+# Starts the Armadok command line (see `armadok --help`).
+exec python -m armadok.cli "$@"

@@ -3,6 +3,7 @@
 *
 !backend/requirements.txt
 !backend/armadok
+!scripts/armadok
 !frontend
 frontend/node_modules
 frontend/dist

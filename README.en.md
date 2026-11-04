@@ -449,7 +449,7 @@ Everything stays editable afterwards in the settings.
 - [x] Nodes, workers, rights, audit
 - [ ] Vulnerability (CVE) watch for Armadok and your images
 - [x] Notes, notifications, English and French *(browser push to come)*
-- [ ] API keys, integrations, Prometheus metrics and CLI *(CLI to come)*
+- [x] API keys, integrations, Prometheus metrics and CLI
 
 ---
 

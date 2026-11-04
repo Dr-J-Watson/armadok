@@ -449,7 +449,7 @@ Tout reste modifiable ensuite dans les réglages.
 - [x] Nœuds, workers, droits, audit
 - [ ] Surveillance des failles (CVE) d'Armadok et de vos images
 - [x] Notes, notifications, français et anglais *(notifications du navigateur à venir)*
-- [ ] Clés d'API, intégrations, métriques Prometheus et CLI *(CLI à venir)*
+- [x] Clés d'API, intégrations, métriques Prometheus et CLI
 
 ---
 
