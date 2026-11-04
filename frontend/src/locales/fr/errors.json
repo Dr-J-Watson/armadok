@@ -174,5 +174,12 @@
   "notifications.code_locked": "Trop de codes erronés. Supprimez le canal et ajoutez-le de nouveau.",
   "notifications.rate_limited": "Trop de messages : ce canal est en pause un moment.",
   "search.too_short": "Tapez au moins deux lettres.",
-  "search.too_fast": "Trop de recherches. Patientez un instant."
+  "search.too_fast": "Trop de recherches. Patientez un instant.",
+  "vulns.disabled": "La vérification des failles est désactivée (ARMADOK_VULN_CHECK).",
+  "vulns.unreachable": "La base de failles n'a pas pu être jointe.",
+  "vulns.bad_answer": "La base de failles a répondu de façon inattendue.",
+  "vulns.too_large": "La réponse de la base de failles est trop volumineuse.",
+  "vulns.too_soon": "Une vérification est déjà en cours ou vient d'avoir lieu. Patientez un instant.",
+  "vulns.busy": "Une vérification est déjà en cours.",
+  "vulns.already_accepted": "Cette faille est déjà acceptée : ne l'acceptez plus d'abord."
 }

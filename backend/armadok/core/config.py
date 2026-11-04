@@ -37,6 +37,10 @@ class Settings:
     # Where the hub's own backups go (default: a `backups` folder inside the data folder, which
     # is lost with the data: point it at another disk), how many to keep, and how often the
     # automatic backup runs (0 turns it off).
+    # Look up the known vulnerabilities of Armadok's own components in the public OSV database
+    # (only package names and versions are sent). Off by default: no call leaves the hub unless
+    # the operator asks for it.
+    vuln_check: bool = False
     state_backup_dir: Path | None = None
     state_backup_keep: int = 7
     state_backup_hours: int = 24
@@ -76,6 +80,7 @@ def load_settings() -> Settings:
         local_node=os.environ.get("ARMADOK_LOCAL_NODE", "").lower() == "true",
         allow_private_outbound=os.environ.get("ARMADOK_ALLOW_PRIVATE_OUTBOUND", "").lower()
         == "true",
+        vuln_check=os.environ.get("ARMADOK_VULN_CHECK", "").lower() == "true",
         state_backup_dir=(
             Path(os.environ["ARMADOK_STATE_BACKUP_DIR"])
             if os.environ.get("ARMADOK_STATE_BACKUP_DIR")

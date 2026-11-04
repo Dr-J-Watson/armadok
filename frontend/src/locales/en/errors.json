@@ -174,5 +174,12 @@
   "notifications.code_locked": "Too many wrong codes. Remove the channel and add it again.",
   "notifications.rate_limited": "Too many messages: this channel is paused for a while.",
   "search.too_short": "Type at least two letters.",
-  "search.too_fast": "Too many searches. Wait a moment."
+  "search.too_fast": "Too many searches. Wait a moment.",
+  "vulns.disabled": "The vulnerability check is off (ARMADOK_VULN_CHECK).",
+  "vulns.unreachable": "The vulnerability database could not be reached.",
+  "vulns.bad_answer": "The vulnerability database answered in an unexpected way.",
+  "vulns.too_large": "The vulnerability database's answer is too large.",
+  "vulns.too_soon": "A check is already running or just ran. Wait a moment.",
+  "vulns.busy": "A scan is already running.",
+  "vulns.already_accepted": "This finding is already accepted: stop accepting it first."
 }

@@ -7,6 +7,7 @@ import logging
 import secrets
 import sqlite3
 
+from armadok.core.db import Migration
 from armadok.core.grants import add_grant
 from armadok.core.rights import Grant
 from armadok.modules.users import repository
@@ -31,7 +32,53 @@ SUPERADMIN_RIGHTS = (
     "nodes.admin",
     "emergency.use",
     "state_backup.manage",
+    "vulns.read",
+    "vulns.manage",
 )
+
+
+SUPERADMIN_MIGRATION = Migration(
+    "users-0003-superadmin-rights-applied",
+    "CREATE TABLE superadmin_rights_applied (right TEXT PRIMARY KEY);",
+)
+
+
+def ensure_superadmin_rights(
+    conn: sqlite3.Connection, settings: object = None, registry: object = None
+) -> None:
+    """Give the installation's administrators the platform rights added since setup, once each.
+
+    The first account gets its platform rights when it is created, so a right introduced by a
+    later version would otherwise reach nobody on an existing installation (and nobody can
+    grant what they do not hold). Each right is handed out once: if an administrator later
+    takes it away, it is not given back at the next start.
+    """
+    done = {r["right"] for r in conn.execute("SELECT right FROM superadmin_rights_applied")}
+    missing = [r for r in SUPERADMIN_RIGHTS if r not in done]
+    if not missing:
+        return
+    admins = [
+        row["principal_id"]
+        for row in conn.execute(
+            "SELECT DISTINCT g.principal_id FROM grants g JOIN users u ON u.id = g.principal_id"
+            " WHERE g.granted_by = 'setup' AND g.right = 'users.read' AND u.is_active = 1"
+        )
+    ]
+    for admin in admins:
+        held = {
+            (g["right"], g["scope"])
+            for g in conn.execute(
+                "SELECT right, scope FROM grants WHERE principal_id = ?", (admin,)
+            )
+        }
+        for right in missing:
+            if (right, "*") not in held:
+                add_grant(conn, admin, Grant(right), granted_by="setup", commit=False)
+    conn.executemany(
+        "INSERT OR IGNORE INTO superadmin_rights_applied (right) VALUES (?)",
+        [(r,) for r in missing],
+    )
+    conn.commit()
 
 
 def ensure_install_code(
@@ -76,6 +123,10 @@ def run_setup(
         user = repository.create_user(conn, username, password_hash, commit=False)
         for right in (*SUPERADMIN_RIGHTS, *baseline):
             add_grant(conn, user["id"], Grant(right), granted_by="setup", commit=False)
+        conn.executemany(
+            "INSERT OR IGNORE INTO superadmin_rights_applied (right) VALUES (?)",
+            [(r,) for r in SUPERADMIN_RIGHTS],
+        )
         conn.commit()
         return user
     except BaseException:

@@ -447,7 +447,7 @@ Everything stays editable afterwards in the settings.
 - [ ] Certificates and traffic statistics *(certificates done; traffic statistics to come)*
 - [x] Relationship map
 - [x] Nodes, workers, rights, audit
-- [ ] Vulnerability (CVE) watch for Armadok and your images
+- [ ] Vulnerability (CVE) watch for Armadok and your images *(Armadok's own Python packages done; container images and web packages to come)*
 - [x] Notes, notifications, English and French *(browser push to come)*
 - [x] API keys, integrations, Prometheus metrics and CLI
 

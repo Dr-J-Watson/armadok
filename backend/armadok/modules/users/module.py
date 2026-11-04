@@ -40,7 +40,8 @@ module = Module(
         repository.TOTP_MIGRATION,
         repository.LANGUAGE_MIGRATION,
         repository.KIND_MIGRATION,
+        setup.SUPERADMIN_MIGRATION,
     ),
     authenticator=authenticate,
-    startup=(setup.ensure_install_code,),
+    startup=(setup.ensure_install_code, setup.ensure_superadmin_rights),
 )

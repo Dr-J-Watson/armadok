@@ -447,7 +447,7 @@ Tout reste modifiable ensuite dans les réglages.
 - [ ] Certificats et statistiques du trafic *(certificats faits ; statistiques du trafic à venir)*
 - [x] Carte des relations
 - [x] Nœuds, workers, droits, audit
-- [ ] Surveillance des failles (CVE) d'Armadok et de vos images
+- [ ] Surveillance des failles (CVE) d'Armadok et de vos images *(paquets Python d'Armadok faits ; images de conteneurs et paquets web à venir)*
 - [x] Notes, notifications, français et anglais *(notifications du navigateur à venir)*
 - [x] Clés d'API, intégrations, métriques Prometheus et CLI
 

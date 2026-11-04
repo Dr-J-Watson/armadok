@@ -37,6 +37,10 @@ RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin arma
  && mkdir /data && chown 10001:10001 /data && chmod 700 /data
 
 COPY --from=build /opt/venv /opt/venv
+# No package installer in the running image: nothing needs one, and the base image's pip is one
+# more component whose flaws would have to be tracked.
+RUN /usr/local/bin/python -m pip uninstall -y pip setuptools wheel \
+ && /opt/venv/bin/python -m pip uninstall -y pip
 # Docker CLI and Compose plugin only (no daemon): `docker compose` runs the deployments.
 COPY --from=docker:29-cli@sha256:5e6baf67325a79f64ed3bed6863954d5e05d0f3d4e57cbdb14809346814bbfdb /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=docker:29-cli@sha256:5e6baf67325a79f64ed3bed6863954d5e05d0f3d4e57cbdb14809346814bbfdb /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/libexec/docker/cli-plugins/docker-compose
