@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
+import { ShareNote } from './ShareNote'
 
 export interface Note {
   id: string
@@ -16,6 +17,8 @@ export interface Note {
   done: boolean
   remind_at: string | null
   updated_at: string
+  author?: string
+  read_only?: boolean
 }
 
 const IMPORTANCE = ['info', 'warning', 'todo'] as const
@@ -25,6 +28,7 @@ export function NoteItem({ note, onChanged }: { note: Note; onChanged: () => voi
   const { t } = useTranslation(['notes', 'errors'])
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(note.body)
+  const [sharing, setSharing] = useState(false)
   const patch = useMutation({
     mutationFn: (changes: Record<string, unknown>) =>
       api.patch(`/notes/${note.id}`, { ...changes, expected_updated_at: note.updated_at }),
@@ -43,6 +47,7 @@ export function NoteItem({ note, onChanged }: { note: Note; onChanged: () => voi
           <input
             type="checkbox"
             checked={note.done}
+            disabled={note.read_only}
             onChange={(e) => patch.mutate({ done: e.target.checked })}
           />
           <span className="visually-hidden">{t('notes:done')}</span>
@@ -67,8 +72,11 @@ export function NoteItem({ note, onChanged }: { note: Note; onChanged: () => voi
       ) : (
         <p className="note-body">{note.body}</p>
       )}
-      {!editing && (
+      {note.read_only && <p className="hint">{t('notes:from', { author: note.author })}</p>}
+      {sharing && !note.read_only && <ShareNote noteId={note.id} nodeId={note.node_id} />}
+      {!editing && !note.read_only && (
         <div className="note-actions">
+          <button type="button" className="link-button" onClick={() => setSharing(!sharing)}>{t('notes:share')}</button>
           <button type="button" className="link-button" onClick={() => setEditing(true)}>{t('notes:edit')}</button>
           <button type="button" className="link-button" onClick={() => patch.mutate({ pinned: !note.pinned })}>
             {note.pinned ? t('notes:unpin') : t('notes:pin')}

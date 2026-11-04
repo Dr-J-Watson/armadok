@@ -11,7 +11,7 @@ import asyncio
 import sqlite3
 import time
 
-from fastapi import APIRouter, Depends, Path, Request
+from fastapi import APIRouter, Depends, Path, Request, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -70,6 +70,8 @@ def list_backups(
 
 @router.post("/new-key", summary="Generate a key of its own for these backups")
 def new_key(
+    response: Response,
+    conn: sqlite3.Connection = Depends(get_db),
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
@@ -81,6 +83,8 @@ def new_key(
     who.require("state_backup.manage", registry.rights())
     if who.kind != "session":
         raise MissingRight("statebackup.not_with_key")
+    response.headers["Cache-Control"] = "no-store"
+    _audit(conn, registry, who, "statebackup.key_generated")  # the event only, never the value
     return {"key": crypto.generate_key()}
 
 

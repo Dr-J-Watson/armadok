@@ -18,7 +18,9 @@ STARTUP_DELAY_SECONDS = 120
 
 def due(settings: Any) -> bool:
     """Return True when the newest backup is older than the configured interval (or none)."""
-    if settings.state_backup_hours <= 0 or not settings.encryption_key:
+    if settings.state_backup_hours <= 0 or not (
+        settings.state_backup_key or settings.encryption_key
+    ):
         return False
     newest = archive.listing(settings)
     if not newest:

@@ -193,5 +193,9 @@
   "schedule.nothing_missed": "Nothing was missed for this task, or it was already decided.",
   "backups.not_downloadable": "This archive cannot be downloaded (it was made before downloads existed).",
   "backups.too_many_downloads": "Too many downloads are waiting. Try again in a minute.",
-  "backups.not_with_key": "Downloading an archive needs your own session, not an API key."
+  "backups.not_with_key": "Downloading an archive needs your own session, not an API key.",
+  "notes.share_self": "A note is already yours.",
+  "notes.share_no_access": "This person cannot see the machine, so they cannot be shown the note.",
+  "notes.too_many_shares": "This note is already shared with the maximum number of people.",
+  "notes.not_with_key": "Sharing a note needs your own session, not an API key."
 }

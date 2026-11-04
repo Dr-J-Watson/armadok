@@ -193,5 +193,9 @@
   "schedule.nothing_missed": "Rien n'a été manqué pour cette tâche, ou la décision est déjà prise.",
   "backups.not_downloadable": "Cette archive ne peut pas être téléchargée (elle date d'avant l'option de téléchargement).",
   "backups.too_many_downloads": "Trop de téléchargements en attente. Réessayez dans une minute.",
-  "backups.not_with_key": "Télécharger une archive demande votre propre session, pas une clé d'API."
+  "backups.not_with_key": "Télécharger une archive demande votre propre session, pas une clé d'API.",
+  "notes.share_self": "Une note est déjà la vôtre.",
+  "notes.share_no_access": "Cette personne ne voit pas la machine : on ne peut pas lui montrer la note.",
+  "notes.too_many_shares": "Cette note est déjà partagée avec le nombre maximal de personnes.",
+  "notes.not_with_key": "Partager une note demande votre propre session, pas une clé d'API."
 }

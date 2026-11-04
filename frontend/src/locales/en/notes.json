@@ -20,5 +20,16 @@
   "importance.info": "Info",
   "importance.warning": "Warning",
   "importance.todo": "To do",
-  "remindOn": "reminder {{date}}"
+  "remindOn": "reminder {{date}}",
+  "share": "Share",
+  "sharedWith": "Shown, read-only, to:",
+  "notShared": "Private: only you can read this note.",
+  "unshare": "Stop sharing",
+  "shareWith": "Show it to (exact user name)",
+  "shareHint": "Only people who can see this machine are offered. They can read the note but not change it, and you can stop at any time.",
+  "sharedWithMe": "Shared with me",
+  "mine": "My notes",
+  "from": "Shared by {{author}} (read-only)",
+  "find": "Look up",
+  "nobody": "No such person can see this machine."
 }

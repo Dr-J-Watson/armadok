@@ -8,13 +8,15 @@ from armadok.modules.notes.routes import router
 
 module = Module(
     name="notes",
+    # Notes about a machine that was erased for good go with it (their shares follow).
+    node_tables=(("notes", "delete"),),
     search=(SearchProvider("notes", _search.run),),
-    requires=("nodes",),
+    requires=("nodes", "users"),
     signals=(Signal("notes.changed", "notes.write"),),
     routes=(router,),
     # Everyone may keep private notes: it gives access to nothing but their own memos.
     rights=(Right("notes.write", baseline=True),),
-    migrations=(repository.MIGRATION, repository.REMINDER_MIGRATION),
+    migrations=(repository.MIGRATION, repository.REMINDER_MIGRATION, repository.SHARES_MIGRATION),
     notification_events=(
         NotificationEvent(
             "note.reminder",

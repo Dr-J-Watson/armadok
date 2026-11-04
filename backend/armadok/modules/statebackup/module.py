@@ -10,7 +10,12 @@ module = Module(
     routes=(router,),
     # Sensitive and platform-wide: a backup holds every account and every secret (encrypted).
     rights=(Right("state_backup.manage", sensitive=True),),
-    audit_events=("statebackup.create", "statebackup.delete", "statebackup.download"),
+    audit_events=(
+        "statebackup.create",
+        "statebackup.delete",
+        "statebackup.download",
+        "statebackup.key_generated",
+    ),
     signals=(Signal("statebackups.changed", "state_backup.manage", shared=True),),
     notification_events=(
         NotificationEvent(

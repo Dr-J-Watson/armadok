@@ -14,6 +14,7 @@ from typing import Any
 from armadok.core import crypto
 from armadok.core.config import Settings
 from armadok.core.db import Migration
+from armadok.core.errors import ApiError
 
 MIGRATION = Migration(
     "notes-0001-create",
@@ -42,6 +43,19 @@ REMINDER_MIGRATION = Migration(
     "ALTER TABLE notes ADD COLUMN reminded_at TEXT;",
 )
 
+SHARES_MIGRATION = Migration(
+    "notes-0003-shares",
+    """
+    CREATE TABLE note_shares (
+        note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (note_id, user_id)
+    );
+    CREATE INDEX note_shares_user ON note_shares (user_id);
+    """,
+)
+
 MAX_PER_OWNER = 5000  # bounds the in-memory search and the table size per account
 
 
@@ -59,6 +73,8 @@ def _public(settings: Settings, row: sqlite3.Row) -> dict[str, Any]:
         data[flag] = bool(data[flag])
     data.pop("owner_id")
     data.pop("reminded_at", None)
+    if data.get("author"):
+        data.pop("remind_at", None)  # a reminder is the author's own
     return data
 
 
@@ -142,7 +158,18 @@ def list_notes(
         " LIMIT ?",
         (*args, MAX_PER_OWNER),
     )
-    return [_public(settings, r) for r in rows]
+    return _readable(settings, rows)
+
+
+def _readable(settings: Settings, rows) -> list[dict[str, Any]]:
+    """Open each note, skipping one that cannot be read (after a key mix-up, say)."""
+    out = []
+    for row in rows:
+        try:
+            out.append(_public(settings, row))
+        except ApiError:
+            continue
+    return out
 
 
 def update(
@@ -178,3 +205,66 @@ def delete(conn: sqlite3.Connection, owner_id: str, note_id: str) -> bool:
     cur = conn.execute("DELETE FROM notes WHERE id = ? AND owner_id = ?", (note_id, owner_id))
     conn.commit()
     return cur.rowcount == 1
+
+
+# --- sharing: a note can be shown, read-only, to people its author names ---------------------
+
+MAX_SHARES_PER_NOTE = 10
+
+
+def shared_with(conn: sqlite3.Connection, note_id: str) -> list[str]:
+    """Return the ids of the people a note is shared with."""
+    return [
+        r["user_id"]
+        for r in conn.execute(
+            "SELECT user_id FROM note_shares WHERE note_id = ? ORDER BY created_at", (note_id,)
+        )
+    ]
+
+
+def share(conn: sqlite3.Connection, owner_id: str, note_id: str, user_id: str) -> str:
+    """Share one of the owner's notes; return "ok", "missing" (not theirs) or "full"."""
+    if (
+        conn.execute(
+            "SELECT 1 FROM notes WHERE id = ? AND owner_id = ?", (note_id, owner_id)
+        ).fetchone()
+        is None
+    ):
+        return "missing"
+    if len(shared_with(conn, note_id)) >= MAX_SHARES_PER_NOTE:
+        return "full"
+    conn.execute(
+        "INSERT OR IGNORE INTO note_shares (note_id, user_id, created_at) VALUES (?, ?, ?)",
+        (note_id, user_id, _now()),
+    )
+    conn.commit()
+    return "ok"
+
+
+def unshare(conn: sqlite3.Connection, owner_id: str, note_id: str, user_id: str) -> bool:
+    """Stop sharing a note with one person; False if it was not shared with them."""
+    cur = conn.execute(
+        "DELETE FROM note_shares WHERE note_id = ? AND user_id = ? AND note_id IN"
+        " (SELECT id FROM notes WHERE owner_id = ?)",
+        (note_id, user_id, owner_id),
+    )
+    conn.commit()
+    return cur.rowcount == 1
+
+
+def shared_to(conn: sqlite3.Connection, settings: Settings, user_id: str) -> list[dict[str, Any]]:
+    """Return the notes others shared with this person, newest first.
+
+    The author is named; nothing else about the author's other notes is visible.
+    """
+    rows = conn.execute(
+        "SELECT n.*, u.username AS author FROM notes n"
+        " JOIN note_shares s ON s.note_id = n.id JOIN users u ON u.id = n.owner_id"
+        " WHERE s.user_id = ? AND u.is_active = 1 ORDER BY n.updated_at DESC LIMIT 500",
+        (user_id,),
+    )
+    out = _readable(settings, rows)
+    for note in out:
+        note.pop("pinned", None)
+        note["read_only"] = True
+    return out

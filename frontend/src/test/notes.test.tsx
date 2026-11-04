@@ -88,3 +88,35 @@ describe('notes panel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('changed elsewhere')
   })
 })
+
+describe('sharing a note', () => {
+  it('shows who it is shared with and lets the author add someone who sees the machine', async () => {
+    notes = [note()]
+    sent.length = 0
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const path = String(input).replace('/api/v1', '')
+      const method = (init?.method ?? 'GET').toUpperCase()
+      if (method !== 'GET') sent.push({ method, path, body: init?.body ? JSON.parse(String(init.body)) : undefined })
+      if (path.startsWith('/notes/people')) return json([{ id: 'u2', username: 'carl' }])
+      if (path.endsWith('/shares') && method === 'GET') return json([])
+      return method === 'GET' ? json(notes) : json({})
+    })
+    renderPanel()
+    await userEvent.click(await screen.findByRole('button', { name: 'Share' }))
+    expect(await screen.findByText('Private: only you can read this note.')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Show it to (exact user name)'), 'carl')
+    await userEvent.click(screen.getByRole('button', { name: 'Look up' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'carl' }))
+    expect(sent.find((c) => c.path === '/notes/k1/shares')?.body).toEqual({ user_id: 'u2' })
+  })
+
+  it('shows a note shared with me as read-only', async () => {
+    notes = [note({ read_only: true, author: 'bob' })]
+    server()
+    renderPanel()
+    expect(await screen.findByText('Shared by bob (read-only)')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull()
+  })
+})
+

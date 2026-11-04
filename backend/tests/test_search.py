@@ -210,3 +210,129 @@ def test_the_rate_limiter_forgets_only_quiet_accounts(monkeypatch):
     for name in ("c", "d", "e"):
         routes._within_rate(name)
     assert routes._within_rate("busy") is False
+
+
+# --- the background index of what lives on the machines ---------------------------------------
+
+
+def seed(app, node, rows):
+    conn = app.state.settings.open_db()
+    for provider, kind, ident, label in rows:
+        conn.execute(
+            "INSERT INTO search_index (node_id, provider, type, object_id, label)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (node, provider, kind, ident, label),
+        )
+    conn.commit()
+    conn.close()
+
+
+def test_containers_projects_and_sites_are_found_only_where_the_provider_may_be_read(box):
+    client, admin, app = box
+    node = client.post(
+        "/api/v1/nodes", headers=admin, json={"name": "home", "type": "docker"}
+    ).json()["id"]
+    seed(
+        app,
+        node,
+        [
+            ("docker", "container", "c1", "blog-web"),
+            ("traefik", "router", "r1", "blog-router"),
+            ("traefik", "domain", "d1", "blog.example.com"),
+        ],
+    )
+    got = find(client, admin, "blog")
+    assert {h["type"] for h in got} >= {"container", "router", "domain"}
+    docker_only = person(
+        client,
+        admin,
+        "dora",
+        [("nodes.read", f"node:{node}"), ("docker.read", f"node:{node}")],
+    )
+    got = find(client, docker_only, "blog")
+    assert [h["type"] for h in got] == ["container"]
+    assert got[0]["to"] == f"/nodes/{node}?tab=map&focus=container:c1"
+    nobody = person(client, admin, "nina")
+    assert find(client, nobody, "blog") == []
+    # A LIKE wildcard typed by the user is just text.
+    assert find(client, admin, "%%") == []
+
+
+def test_a_round_replaces_a_providers_names_and_a_failure_keeps_the_old_ones(box, monkeypatch):
+    import asyncio
+
+    from armadok.core.module import RelationData, RelationObject, RelationProvider
+    from armadok.modules.search import index
+
+    client, admin, app = box
+    node = client.post(
+        "/api/v1/nodes", headers=admin, json={"name": "home", "type": "docker"}
+    ).json()
+    answers = [
+        RelationData(
+            (RelationObject("container", "c1", "alpha"), RelationObject("probe", "p", "x"))
+        ),
+        RelationData((RelationObject("container", "c2", "beta"),)),
+    ]
+
+    async def provide(app_, node_id, viewer):
+        # The indexer reads as a principal of its own with every right on this machine only.
+        assert viewer.kind == "background" and viewer.grants
+        assert all(g.scope == f"node:{node_id}" for g in viewer.grants)
+        if not answers:
+            raise RuntimeError("machine offline")
+        return answers.pop(0)
+
+    fake = RelationProvider("docker", "docker.read", ("docker", "full", "network"), provide)
+    monkeypatch.setattr(app.state.registry, "relation_providers", lambda: (fake,))
+
+    def names():
+        conn = app.state.settings.open_db()
+        try:
+            return sorted(r[0] for r in conn.execute("SELECT label FROM search_index"))
+        finally:
+            conn.close()
+
+    client.portal.call(index.refresh_node, app, {"id": node["id"], "type": "docker"})
+    assert names() == ["alpha"]  # a probe is not worth a search result
+    client.portal.call(index.refresh_node, app, {"id": node["id"], "type": "docker"})
+    assert names() == ["beta"]  # replaced, not accumulated
+    client.portal.call(index.refresh_node, app, {"id": node["id"], "type": "docker"})
+    assert names() == ["beta"]  # the machine did not answer: the last names stay
+    assert asyncio.iscoroutinefunction(index.index_loop)
+
+
+def test_a_deleted_machine_disappears_from_the_index(box):
+    client, admin, app = box
+    created = client.post("/api/v1/nodes", headers=admin, json={"name": "tmp", "type": "docker"})
+    node = created.json()["id"]
+    seed(app, node, [("docker", "container", "c9", "ghostly")])
+    assert len(find(client, admin, "ghostly")) == 1
+    assert client.delete(f"/api/v1/nodes/{node}", headers=admin).status_code in (204, 401)
+
+
+def test_an_api_key_never_reads_or_shares_notes_even_its_owners(box):
+    client, admin, app = box
+    node = client.post("/api/v1/nodes", headers=admin, json={"name": "n", "type": "docker"}).json()[
+        "id"
+    ]
+    body = {"node_id": node, "object_type": "container", "object_id": "abc", "body": "private"}
+    note = client.post("/api/v1/notes", headers=admin, json=body).json()
+    made = client.post(
+        "/api/v1/apikeys",
+        headers=admin,
+        json={"name": "k", "rights": ["notes.write", "nodes.read"]},
+    )
+    token = {"Authorization": f"Bearer {made.json()['key']}"}
+    for method, path in (
+        ("get", "/api/v1/notes"),
+        ("get", "/api/v1/notes/shared"),
+        ("get", f"/api/v1/notes/{note['id']}/shares"),
+        ("post", "/api/v1/notes"),
+        ("patch", f"/api/v1/notes/{note['id']}"),
+        ("delete", f"/api/v1/notes/{note['id']}"),
+    ):
+        extra = {"json": {}} if method in ("post", "patch") else {}
+        got = getattr(client, method)(path, headers=token, **extra)
+        assert got.status_code == 403, (method, path, got.status_code)
+    assert client.get("/api/v1/notes", headers=admin).status_code == 200

@@ -9,5 +9,12 @@
   "type.node": "Machine",
   "type.user": "Personne",
   "type.note": "Note",
-  "type.domain": "Domaine"
+  "type.domain": "Domaine",
+  "type.container": "Conteneur",
+  "type.project": "Projet",
+  "type.network": "Réseau",
+  "type.volume": "Volume",
+  "type.router": "Site (routeur)",
+  "type.service": "Service",
+  "type.middleware": "Middleware"
 }
