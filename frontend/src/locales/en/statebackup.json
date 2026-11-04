@@ -12,5 +12,10 @@
   "confirmDelete": "Delete this backup for good?",
   "code": "Your authenticator code",
   "restoreTitle": "Restore",
-  "restoreHow": "With Armadok stopped, run this command with the same encryption key. The current files are kept aside, not deleted."
+  "restoreHow": "With Armadok stopped, run this command with the same encryption key. The current files are kept aside, not deleted.",
+  "ownKey": "These backups use their own key (ARMADOK_STATE_BACKUP_KEY): they open even if the main encryption key is lost.",
+  "sharedKey": "These backups use the same key as your stored secrets. If that key is lost, the backups cannot be opened either. A key of their own avoids that.",
+  "makeKey": "Generate a key of their own",
+  "keyShown": "Write this key down somewhere safe, outside this server, then add it to the server's configuration and restart. It is shown only now and is not kept anywhere.",
+  "keySaved": "I saved it"
 }

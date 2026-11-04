@@ -1,10 +1,11 @@
 """Making, listing and removing backups of the hub's own state.
 
 A backup holds a consistent snapshot of the database (taken with SQLite's online backup, so the
-hub keeps running) and the hub's identity key, packed and then **encrypted with the
-encryption key**: a copied file is useless without it, and restoring needs the same key (keep
-it elsewhere; it is the one thing a backup cannot contain). Without an encryption key no backup
-is made, because the identity key would otherwise sit in clear text.
+hub keeps running) and the hub's identity key, packed and then **encrypted with the backup key**
+(`ARMADOK_STATE_BACKUP_KEY` when set, else the encryption key): a copied file is useless without
+it, and restoring needs the same key (keep it elsewhere; it is the one thing a backup cannot
+contain). Without a key no backup is made, because the identity key would otherwise sit in clear
+text.
 
 Files are written to a private folder (mode 0700) as 0600 files, never overwriting an existing
 one, and only the newest few are kept.
@@ -56,13 +57,23 @@ def folder(settings: Settings) -> Path:
     return path
 
 
-def _fernet(settings: Settings) -> Fernet:
-    if not settings.encryption_key:
+def _fernets(settings: Settings) -> list[Fernet]:
+    """Return the keys a backup may be sealed with, the one to use now first.
+
+    That is the dedicated backup key when there is one, then the main encryption key (which also
+    opens backups made before a dedicated key was set).
+    """
+    keys = [k for k in (settings.state_backup_key, settings.encryption_key) if k]
+    if not keys:
         raise ApiError("statebackup.no_encryption_key", 409)
     try:
-        return Fernet(settings.encryption_key.encode())
+        return [Fernet(k.encode()) for k in keys]
     except ValueError:
         raise ApiError("statebackup.no_encryption_key", 409) from None
+
+
+def _fernet(settings: Settings) -> Fernet:
+    return _fernets(settings)[0]
 
 
 def _snapshot(settings: Settings) -> bytes:
@@ -192,10 +203,15 @@ def remove(settings: Settings, name: str) -> None:
 
 def unseal(settings: Settings, data: bytes) -> dict[str, bytes]:
     """Decrypt and unpack a backup into `{member name: bytes}`; used by the restore command."""
-    try:
-        raw = _fernet(settings).decrypt(data)
-    except InvalidToken:
-        raise ApiError("statebackup.wrong_key", 422) from None
+    raw = None
+    for fernet in _fernets(settings):
+        try:
+            raw = fernet.decrypt(data)
+            break
+        except InvalidToken:
+            continue
+    if raw is None:
+        raise ApiError("statebackup.wrong_key", 422)
     out: dict[str, bytes] = {}
     try:
         with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as tar:

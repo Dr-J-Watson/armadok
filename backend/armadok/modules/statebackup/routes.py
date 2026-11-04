@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, Path, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from armadok.core import audit
+from armadok.core import audit, crypto
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError, MissingRight
 from armadok.core.registry import Registry
@@ -62,9 +62,26 @@ def list_backups(
         "backups": archive.listing(settings),
         "keep": settings.state_backup_keep,
         "every_hours": settings.state_backup_hours,
-        "ready": bool(settings.encryption_key),
+        "ready": bool(settings.state_backup_key or settings.encryption_key),
+        "separate_key": bool(settings.state_backup_key),
         "custom_folder": settings.state_backup_dir is not None,
     }
+
+
+@router.post("/new-key", summary="Generate a key of its own for these backups")
+def new_key(
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Return a new random key, once, to be written down and set as `ARMADOK_STATE_BACKUP_KEY`.
+
+    Nothing is stored here: the key is the one thing a backup cannot contain, and keeping it in
+    the database would defeat the point. Only your own session may ask, never an API key.
+    """
+    who.require("state_backup.manage", registry.rights())
+    if who.kind != "session":
+        raise MissingRight("statebackup.not_with_key")
+    return {"key": crypto.generate_key()}
 
 
 @router.post("", status_code=201, summary="Back up now")

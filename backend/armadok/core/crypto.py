@@ -19,11 +19,15 @@ def generate_key() -> str:
 
 def validate(settings: Settings) -> None:
     """Fail fast at start-up if a key is configured but unusable."""
-    if settings.encryption_key:
-        try:
-            Fernet(settings.encryption_key.encode())
-        except ValueError:
-            raise ValueError("ARMADOK_ENCRYPTION_KEY is not a valid Fernet key") from None
+    for name, key in (
+        ("ARMADOK_ENCRYPTION_KEY", settings.encryption_key),
+        ("ARMADOK_STATE_BACKUP_KEY", settings.state_backup_key),
+    ):
+        if key:
+            try:
+                Fernet(key.encode())
+            except ValueError:
+                raise ValueError(f"{name} is not a valid Fernet key") from None
 
 
 def _fernet(settings: Settings) -> Fernet:

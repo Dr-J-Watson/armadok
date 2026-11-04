@@ -15,6 +15,7 @@ interface Answer {
   keep: number
   every_hours: number
   ready: boolean
+  separate_key: boolean
   custom_folder: boolean
 }
 
@@ -38,7 +39,10 @@ export function StateBackupsPage() {
     // A code is for one try: it is cleared whatever the outcome.
     onSettled: () => setCode(''),
   })
-  const failed = list.error ?? create.error ?? remove.error ?? fetchFile.error
+  // The new key is shown once, here, and kept only in this component's memory.
+  const [newKey, setNewKey] = useState<string | null>(null)
+  const makeKey = useMutation({ mutationFn: () => api.post<{ key: string }>('/statebackups/new-key'), onSuccess: (a) => setNewKey(a.key) })
+  const failed = list.error ?? create.error ?? remove.error ?? fetchFile.error ?? makeKey.error
   const data = list.data
 
   return (
@@ -58,6 +62,28 @@ export function StateBackupsPage() {
             {data.every_hours > 0 ? t('statebackup:schedule', { hours: data.every_hours, keep: data.keep }) : t('statebackup:manualOnly', { keep: data.keep })}{' '}
             {!data.custom_folder && <span className="notice">{t('statebackup:sameDisk')}</span>}
           </p>
+          <p className={data.separate_key ? '' : 'notice'}>{data.separate_key ? t('statebackup:ownKey') : t('statebackup:sharedKey')}</p>
+          {!data.separate_key && (
+            <>
+              <button type="button" disabled={makeKey.isPending} onClick={() => makeKey.mutate()}>
+                {t('statebackup:makeKey')}
+              </button>
+              {newKey && (
+                <div role="status" className="notice">
+                  <p>{t('statebackup:keyShown')}</p>
+                  <p>
+                    <code>{newKey}</code>
+                  </p>
+                  <p>
+                    <code>ARMADOK_STATE_BACKUP_KEY={newKey}</code>
+                  </p>
+                  <button type="button" onClick={() => setNewKey(null)}>
+                    {t('statebackup:keySaved')}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
           <button type="button" disabled={!data.ready || create.isPending} onClick={() => create.mutate()}>
             {t('statebackup:now')}
           </button>

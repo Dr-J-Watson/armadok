@@ -42,6 +42,9 @@ class Settings:
     # the operator asks for it.
     vuln_check: bool = False
     state_backup_dir: Path | None = None
+    # A key of its own for backups of the hub's state (so they open even if the main key is
+    # lost). Without one, backups use `encryption_key`.
+    state_backup_key: str | None = field(default=None, repr=False)
     state_backup_keep: int = 7
     state_backup_hours: int = 24
 
@@ -86,6 +89,7 @@ def load_settings() -> Settings:
             if os.environ.get("ARMADOK_STATE_BACKUP_DIR")
             else None
         ),
+        state_backup_key=os.environ.get("ARMADOK_STATE_BACKUP_KEY") or None,
         state_backup_keep=_whole(os.environ.get("ARMADOK_STATE_BACKUP_KEEP"), 7, 1, 365),
         state_backup_hours=_whole(os.environ.get("ARMADOK_STATE_BACKUP_HOURS"), 24, 0, 24 * 30),
         web_dir=Path(os.environ["ARMADOK_WEB_DIR"]) if os.environ.get("ARMADOK_WEB_DIR") else None,

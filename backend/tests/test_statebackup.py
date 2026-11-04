@@ -5,6 +5,7 @@ import re
 import sqlite3
 import stat
 import tarfile
+import time
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -448,3 +449,32 @@ def test_the_restore_command_reports_problems_without_a_traceback(tmp_path, monk
     monkeypatch.delenv("ARMADOK_ENCRYPTION_KEY")
     assert restore_state.main([str(tmp_path / "missing.enc"), "--yes"]) == 2
     assert KEY not in capsys.readouterr().err
+
+
+def test_a_dedicated_backup_key_seals_new_backups_and_the_main_key_still_opens_old_ones(box):
+    client, admin, app, tmp = box
+    old = client.post("/api/v1/statebackups", headers=admin).json()["name"]  # main key
+    own = generate_key()
+    sealed_with = Settings(
+        data_dir=tmp / "data", encryption_key=KEY, state_backup_key=own, state_backup_dir=tmp / "bk"
+    )
+    time.sleep(1.1)  # a backup is named by the second
+    new = archive.create(sealed_with)
+    # The new one opens with the dedicated key alone, even if the main key is lost.
+    only_own = Settings(data_dir=tmp / "data", state_backup_key=own)
+    assert "armadok.db" in archive.unseal(only_own, (tmp / "bk" / new).read_bytes())
+    # The main key alone does not open it; both keys open both files.
+    only_main = Settings(data_dir=tmp / "data", encryption_key=KEY)
+    with pytest.raises(ApiError):
+        archive.unseal(only_main, (tmp / "bk" / new).read_bytes())
+    assert "armadok.db" in archive.unseal(sealed_with, (tmp / "bk" / old).read_bytes())
+
+
+def test_a_new_backup_key_is_shown_once_and_never_kept_nor_given_to_a_key(box):
+    client, admin, app, tmp = box
+    first = client.post("/api/v1/statebackups/new-key", headers=admin).json()["key"]
+    second = client.post("/api/v1/statebackups/new-key", headers=admin).json()["key"]
+    assert first != second and len(first) == 44
+    listing = client.get("/api/v1/statebackups", headers=admin).json()
+    assert listing["separate_key"] is False and first not in str(listing)
+    assert client.post("/api/v1/statebackups/new-key").status_code == 401

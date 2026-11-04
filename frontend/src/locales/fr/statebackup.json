@@ -12,5 +12,10 @@
   "confirmDelete": "Supprimer définitivement cette sauvegarde ?",
   "code": "Votre code d'authentification",
   "restoreTitle": "Restauration",
-  "restoreHow": "Armadok étant arrêté, lancez cette commande avec la même clé de chiffrement. Les fichiers actuels sont mis de côté, pas supprimés."
+  "restoreHow": "Armadok étant arrêté, lancez cette commande avec la même clé de chiffrement. Les fichiers actuels sont mis de côté, pas supprimés.",
+  "ownKey": "Ces sauvegardes ont leur propre clé (ARMADOK_STATE_BACKUP_KEY) : elles s'ouvrent même si la clé de chiffrement principale est perdue.",
+  "sharedKey": "Ces sauvegardes utilisent la même clé que vos secrets stockés. Si cette clé est perdue, les sauvegardes ne peuvent pas non plus être ouvertes. Une clé à part évite cela.",
+  "makeKey": "Générer une clé à part",
+  "keyShown": "Notez cette clé dans un endroit sûr, hors de ce serveur, puis ajoutez-la à la configuration du serveur et redémarrez. Elle n'est affichée qu'ici et n'est conservée nulle part.",
+  "keySaved": "Je l'ai notée"
 }
