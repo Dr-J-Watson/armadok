@@ -7,6 +7,7 @@ import sqlite3
 from fastapi import APIRouter, Depends, Path, Query, Request
 
 from armadok.core import audit
+from armadok.core.coalesce import Shared
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError, MissingRight
 from armadok.core.registry import Registry
@@ -15,6 +16,7 @@ from armadok.modules.docker import schemas
 from armadok.modules.workers.access import ask, audit_failure, authorise
 
 router = APIRouter(prefix="/nodes/{node_id}/docker", tags=["docker"])
+_stats_shared = Shared(4.0)
 
 
 @router.get("/info", summary="Docker version of the machine")
@@ -45,6 +47,29 @@ async def list_containers(
         request, registry, node_id, "docker.containers.list", {}, schemas.ContainerList
     )
     return answer.model_dump()
+
+
+@router.get("/stats", summary="Resource use of the running containers")
+async def container_stats(
+    node_id: str,
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Return processor, memory, network and process figures per running container.
+
+    Needs `docker.read`. Measuring takes a few seconds, so the interface asks for it only while
+    someone is looking at it.
+    """
+    authorise(conn, registry, who, node_id, "docker.read")
+
+    async def measure() -> dict:
+        answer = await ask(request, registry, node_id, "docker.stats", {}, schemas.ContainerStats)
+        return answer.model_dump()
+
+    # Many viewers polling one machine cost one measurement (the check above ran for each).
+    return await _stats_shared.get(node_id, measure)
 
 
 def _listing(path: str, op: str, model: type) -> None:

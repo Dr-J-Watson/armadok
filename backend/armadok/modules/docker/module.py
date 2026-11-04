@@ -43,5 +43,6 @@ module = Module(
         WorkerOp("docker.container.action", ("docker", "full")),
         WorkerOp("docker.container.logs", ("docker", "full")),
         WorkerOp("docker.prune", ("docker", "full")),
+        WorkerOp("docker.stats", ("docker", "full")),
     ),
 )

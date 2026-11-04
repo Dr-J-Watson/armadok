@@ -13,6 +13,7 @@ import json
 import logging
 import re
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request, WebSocket
@@ -184,6 +185,11 @@ async def ping_worker(
     return await call_operation(request.app, registry, node_id, "ping", {})
 
 
+# Operations of the local node run here, not in the shared default pool: a slow one (a stuck
+# Docker daemon) must not use up the threads that worker authentication and files need.
+_LOCAL_POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="armadok-local")
+
+
 async def _run_locally(op: str, args: dict[str, Any]) -> dict:
     """Run an operation on the hub's own machine (the local node has no worker).
 
@@ -194,7 +200,10 @@ async def _run_locally(op: str, args: dict[str, Any]) -> dict:
     if handler is None:
         raise ApiError("worker.unknown_op", 502)
     try:
-        result = await asyncio.wait_for(asyncio.to_thread(handler, args), CALL_TIMEOUT_SECONDS)
+        loop = asyncio.get_running_loop()
+        result = await asyncio.wait_for(
+            loop.run_in_executor(_LOCAL_POOL, handler, args), CALL_TIMEOUT_SECONDS
+        )
     except OperationError as error:
         code = error.code if error.code in WORKER_ERROR_CODES else "worker.error"
         raise ApiError(code, WORKER_ERROR_STATUS.get(code, 502)) from None

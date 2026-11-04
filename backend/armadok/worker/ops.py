@@ -17,6 +17,7 @@ from armadok.worker import (
     docker_ops,
     projects_ops,
     sites_ops,
+    stats_ops,
     traefik_ops,
     uptime_ops,
 )
@@ -41,4 +42,5 @@ OPERATIONS: dict[str, Operation] = {
     **compose_ops.OPERATIONS,
     **uptime_ops.OPERATIONS,
     **backup_ops.OPERATIONS,
+    **stats_ops.OPERATIONS,
 }

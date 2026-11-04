@@ -1,0 +1,17 @@
+{
+  "tab": "Ressources",
+  "cpu": "Processeur ({{count}} cœurs)",
+  "memory": "Mémoire",
+  "swap": "Swap",
+  "load": "Charge moyenne : {{a}} · {{b}} · {{c}} (1, 5, 15 min)",
+  "uptime": "Allumée depuis",
+  "uptimeDays": "{{days}} j {{hours}} h",
+  "uptimeHours": "{{hours}} h {{minutes}} min",
+  "network": "Réseau vu par le worker depuis son démarrage : {{received}} reçus, {{sent}} envoyés",
+  "temperature": "Température : {{value}} °C",
+  "free": "{{free}} libres sur {{total}}",
+  "disk.projects": "Dossier des projets",
+  "disk.traefik": "Dossier de Traefik",
+  "disk.backups": "Dossier des sauvegardes",
+  "disk.data": "Dossier des données"
+}

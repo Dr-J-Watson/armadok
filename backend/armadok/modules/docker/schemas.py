@@ -156,3 +156,36 @@ class Volumes(BaseModel):
     model_config = _STRICT
     items: list[Volume] = Field(max_length=1000)
     truncated: bool = False
+
+
+FullId = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
+Figure = Annotated[int, Field(ge=0, le=2**50)]
+
+
+class ContainerStat(BaseModel):
+    """Resource use of one running container, as numbers."""
+
+    model_config = _STRICT
+    id: FullId
+    cpu_percent: float = Field(ge=0, le=100000)
+    memory_used: Figure
+    memory_limit: Figure
+    network_received: Figure
+    network_sent: Figure
+    pids: int = Field(ge=0, le=10**7)
+
+
+class ContainerStats(BaseModel):
+    """The answer of `docker.stats`."""
+
+    model_config = _STRICT
+    stats: list[ContainerStat] = Field(max_length=100)
+    truncated: bool = False
+
+    @field_validator("stats")
+    @classmethod
+    def _one_per_container(cls, value: list[ContainerStat]) -> list[ContainerStat]:
+        """Refuse a list that names a container twice."""
+        if len({s.id for s in value}) != len(value):
+            raise ValueError("duplicate container")
+        return value

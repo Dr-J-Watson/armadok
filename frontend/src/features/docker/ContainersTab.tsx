@@ -21,6 +21,15 @@ interface Container {
   ports: Port[]
 }
 
+interface Stat {
+  id: string
+  cpu_percent: number
+  memory_used: number
+  memory_limit: number
+}
+
+const mebi = (n: number) => `${Math.round(n / 1048576)} MiB`
+
 function publishedPorts(ports: Port[]): string {
   return ports
     .filter((p) => p.public)
@@ -47,6 +56,15 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
     enabled: logsOf !== null,
     queryFn: () => api.get<{ output: string }>(`/nodes/${nodeId}/docker/containers/${encodeURIComponent(logsOf ?? '')}/logs?tail=200`),
   })
+  // Measuring takes a few seconds on the machine: only while the box is ticked.
+  const [live, setLive] = useState(false)
+  const stats = useQuery({
+    queryKey: ['container-stats', nodeId],
+    enabled: live,
+    queryFn: () => api.get<{ stats: Stat[]; truncated: boolean }>(`/nodes/${nodeId}/docker/stats`),
+    refetchInterval: 6000,
+  })
+  const usage = new Map((stats.data?.stats ?? []).map((x) => [x.id, x]))
   const containers = useQuery({
     queryKey: ['containers', nodeId],
     queryFn: () =>
@@ -68,12 +86,22 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
   return (
     <>
       {truncated && <p className="notice">{t('docker:truncated')}</p>}
+      <label>
+        <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} /> {t('docker:live.toggle')}
+      </label>
+      {live && stats.isError && (
+        <p role="alert" className="error">
+          {errorMessage(t, stats.error)}
+        </p>
+      )}
+      {live && stats.data?.truncated && <p className="notice">{t('docker:live.truncated')}</p>}
       <table className="table">
         <thead>
           <tr>
             <th>{t('docker:columns.name')}</th>
             <th>{t('docker:columns.image')}</th>
             <th>{t('docker:columns.state')}</th>
+            {live && <th>{t('docker:columns.usage')}</th>}
             <th>{t('docker:columns.ports')}</th>
             <th>{t('docker:columns.networks')}</th>
             <th>{t('docker:columns.actions')}</th>
@@ -93,6 +121,15 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
                 <span className={`badge ${c.state === 'running' ? 'ok' : 'off'}`}>{c.state}</span>{' '}
                 <small>{c.status}</small>
               </td>
+              {live && (
+                <td data-label={t('docker:columns.usage')}>
+                  {usage.has(c.id)
+                    ? `${usage.get(c.id)!.cpu_percent}% · ${mebi(usage.get(c.id)!.memory_used)}${usage.get(c.id)!.memory_limit ? ` / ${mebi(usage.get(c.id)!.memory_limit)}` : ''}`
+                    : c.state === 'running' && stats.isPending
+                      ? '…'
+                      : ''}
+                </td>
+              )}
               <td data-label={t('docker:columns.ports')}>{publishedPorts(c.ports)}</td>
               <td data-label={t('docker:columns.networks')}>{c.networks.join(', ')}</td>
               <td data-label={t('docker:columns.actions')}>

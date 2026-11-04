@@ -54,12 +54,12 @@ class ResponseTooLarge(OperationError):
     """The daemon's answer exceeded the size limit (callers may ask for less)."""
 
 
-def docker_get(path: str) -> Any:
+def docker_get(path: str, timeout: float = TIMEOUT_SECONDS) -> Any:
     """GET a Docker API path and return the decoded JSON.
 
     The socket path comes from `ARMADOK_DOCKER_SOCKET`. Only GET exists on purpose.
     """
-    status, body = docker_raw("GET", path)
+    status, body = docker_raw("GET", path, timeout)
     if status == 404:
         raise OperationError("worker.not_found")
     if status != 200:

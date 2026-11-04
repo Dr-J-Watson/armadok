@@ -20,5 +20,8 @@
   "resources.images": "Images",
   "resources.networks": "Réseaux",
   "resources.volumes": "Volumes",
-  "resources.none": "Aucun."
+  "resources.none": "Aucun.",
+  "live.toggle": "Afficher l'utilisation en direct (processeur, mémoire)",
+  "live.truncated": "Tous les conteneurs n'ont pas pu être mesurés.",
+  "columns.usage": "Utilisation"
 }
