@@ -32,5 +32,10 @@
   "prefs.accentReset": "Revenir à la couleur par défaut",
   "nav.vulns": "Failles",
   "nav.help": "Aide",
-  "nav.ownership": "Legs de propriété"
+  "nav.ownership": "Legs de propriété",
+  "nav.menu": "Menu",
+  "nav.section.main": "Infrastructure",
+  "nav.section.access": "Accès",
+  "nav.section.admin": "Administration",
+  "nav.section.personal": "Personnel"
 }

@@ -150,5 +150,7 @@
   "domain.sites": "{{count}} site(s): {{sites}}.",
   "domain.shared": "Left alone because they also answer for another domain: {{sites}}.",
   "domain.goPause": "Pause these sites",
-  "domain.goResume": "Resume these sites"
+  "domain.goResume": "Resume these sites",
+  "managed.search": "Search a site",
+  "managed.middlewares": "Middlewares"
 }

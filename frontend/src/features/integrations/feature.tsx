@@ -5,6 +5,6 @@ export const integrationsFeature: Feature = {
   name: 'integrations',
   requiresModule: 'hooks',
   signals: { 'hooks.changed': ['hooks'] },
-  nav: [{ id: 'integrations', labelKey: 'nav.integrations', to: '/integrations', requiresRight: 'hooks.manage' }],
+  nav: [{ id: 'integrations', section: 'access', labelKey: 'nav.integrations', to: '/integrations', requiresRight: 'hooks.manage' }],
   routes: [{ path: '/integrations', element: <IntegrationsPage /> }],
 }

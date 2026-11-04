@@ -150,5 +150,7 @@
   "domain.sites": "{{count}} site(s) : {{sites}}.",
   "domain.shared": "Laissés tels quels car ils répondent aussi pour un autre domaine : {{sites}}.",
   "domain.goPause": "Mettre ces sites en pause",
-  "domain.goResume": "Réactiver ces sites"
+  "domain.goResume": "Réactiver ces sites",
+  "managed.search": "Chercher un site",
+  "managed.middlewares": "Middlewares"
 }

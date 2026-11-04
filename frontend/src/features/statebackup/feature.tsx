@@ -5,6 +5,6 @@ export const stateBackupFeature: Feature = {
   name: 'statebackup',
   requiresModule: 'statebackup',
   signals: { 'statebackups.changed': ['statebackups'] },
-  nav: [{ id: 'statebackups', labelKey: 'nav.stateBackups', to: '/state-backups', requiresRight: 'state_backup.manage' }],
+  nav: [{ id: 'statebackups', section: 'admin', labelKey: 'nav.stateBackups', to: '/state-backups', requiresRight: 'state_backup.manage' }],
   routes: [{ path: '/state-backups', element: <StateBackupsPage /> }],
 }

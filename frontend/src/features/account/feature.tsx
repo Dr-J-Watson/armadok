@@ -4,6 +4,6 @@ import { AccountPage } from './AccountPage'
 export const accountFeature: Feature = {
   name: 'account',
   requiresModule: 'users',
-  nav: [{ id: 'account', labelKey: 'nav.account', to: '/account' }],
+  nav: [{ id: 'account', section: 'personal', labelKey: 'nav.account', to: '/account' }],
   routes: [{ path: '/account', element: <AccountPage /> }],
 }

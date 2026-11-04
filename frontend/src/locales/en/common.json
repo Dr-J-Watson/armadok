@@ -32,5 +32,10 @@
   "prefs.accentReset": "Back to the default colour",
   "nav.vulns": "Vulnerabilities",
   "nav.help": "Help",
-  "nav.ownership": "Ownership gifts"
+  "nav.ownership": "Ownership gifts",
+  "nav.menu": "Menu",
+  "nav.section.main": "Infrastructure",
+  "nav.section.access": "Access",
+  "nav.section.admin": "Administration",
+  "nav.section.personal": "Personal"
 }

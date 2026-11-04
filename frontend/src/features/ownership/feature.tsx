@@ -6,7 +6,7 @@ export const ownershipFeature: Feature = {
   name: 'ownership',
   requiresModule: 'ownership',
   signals: { 'ownership.changed': ['ownership'] },
-  nav: [{ id: 'ownership', labelKey: 'nav.ownership', to: '/ownership' }],
+  nav: [{ id: 'ownership', section: 'personal', labelKey: 'nav.ownership', to: '/ownership' }],
   routes: [{ path: '/ownership', element: <OwnershipPage /> }],
   // Under every object: the section hides itself for kinds that cannot have an owner.
   objectSections: [

@@ -33,6 +33,7 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
   const [renaming, setRenaming] = useState<{ name: string; to: string } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [historyOf, setHistoryOf] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   const list = useQuery({
     queryKey: ['traefik-managed', nodeId],
@@ -54,6 +55,12 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
     mutationFn: (run: () => Promise<unknown>) => run(),
     onSuccess: refresh,
   })
+
+  // What the search box matches: the site's name and every one of its addresses.
+  const matches = (site: Managed) => {
+    const needle = search.trim().toLowerCase()
+    return needle === '' || site.name.includes(needle) || (site.spec?.hosts ?? []).some((h) => h.includes(needle))
+  }
 
   if (created) {
     return <SiteFollowUp nodeId={nodeId} {...created} onDone={() => setCreated(null)} />
@@ -92,15 +99,44 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
         </p>
       )}
       {list.data.sites.length === 0 && <p className="empty">{t('traefik:managed.none')}</p>}
-      <ul className="links">
-        {list.data.sites.map((s) => (
-          <li key={s.name}>
-            <strong>{s.name}</strong>{' '}
-            <span className={`badge ${s.paused ? 'off' : 'ok'}`}>
-              {t(s.paused ? 'traefik:managed.paused' : 'traefik:managed.active')}
-            </span>{' '}
-            {s.spec && <small>{s.spec.hosts.join(', ')}</small>}
-            {s.modified_by_hand && <small> — {t('traefik:managed.byHand')}</small>}
+      <label className="site-search">
+        <span className="visually-hidden">{t('traefik:managed.search')}</span>
+        <input type="search" placeholder={t('traefik:managed.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
+      </label>
+      <ul className="site-grid">
+        {list.data.sites.filter(matches).map((s) => (
+          <li key={s.name} className={`site-card${s.paused ? ' paused' : ''}`}>
+            <header>
+              {s.spec ? (
+                <a href={`${s.spec.https ? 'https' : 'http'}://${s.spec.hosts[0]}${s.spec.path_prefix ?? ''}`} target="_blank" rel="noopener noreferrer">
+                  {s.spec.hosts[0]}
+                </a>
+              ) : (
+                <strong>{s.name}</strong>
+              )}
+              <span className={`badge ${s.paused ? 'off' : 'ok'}`}>
+                {t(s.paused ? 'traefik:managed.paused' : 'traefik:managed.active')}
+              </span>
+            </header>
+            <p className="hint">
+              {s.name}
+              {s.spec && s.spec.hosts.length > 1 ? ` · +${s.spec.hosts.length - 1}` : ''}
+              {s.modified_by_hand && ` · ${t('traefik:managed.byHand')}`}
+            </p>
+            {s.spec && (
+              <p className="site-target">
+                <code>{s.spec.url ?? `${s.spec.container ?? ''}:${s.spec.port ?? ''}`}</code>
+              </p>
+            )}
+            {s.spec && s.spec.middlewares.length > 0 && (
+              <p className="pills" aria-label={t('traefik:managed.middlewares')}>
+                {s.spec.middlewares.map((m) => (
+                  <span key={m} className="pill">
+                    {m.replace(/@.*$/, '')}
+                  </span>
+                ))}
+              </p>
+            )}
             <div className="actions">
               {s.paused ? (
                 <button type="button" onClick={() => act.mutate(() => api.post(`${base}/sites/${s.name}/resume`))}>

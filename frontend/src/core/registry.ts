@@ -8,6 +8,8 @@ export interface NavItem {
   id: string
   labelKey: string // in the `common` namespace
   to: string
+  // Which group of the side menu it sits in (`nav.section.<id>` in `common`); omitted = main.
+  section?: 'main' | 'access' | 'admin' | 'personal'
   // Hidden when the account does not hold this right everywhere (the server still decides).
   requiresRight?: string
 }

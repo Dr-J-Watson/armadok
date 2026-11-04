@@ -7,7 +7,7 @@ export const dnsFeature: Feature = {
   name: 'dns',
   signals: { 'dns.changed': ['dns-domains', 'dns-records', 'dns-accounts', 'dns-report'] },
   requiresModule: 'dns',
-  nav: [{ id: 'dns', labelKey: 'nav.dns', to: '/dns' }],
+  nav: [{ id: 'dns', section: 'main', labelKey: 'nav.dns', to: '/dns' }],
   routes: [
     { path: '/dns', element: <DnsPage /> },
     { path: '/dns/:domainId', element: <DomainPage /> },
