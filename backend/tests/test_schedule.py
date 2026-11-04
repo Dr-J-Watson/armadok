@@ -480,3 +480,117 @@ def test_a_stuck_run_is_cut_off(box, monkeypatch):
     monkeypatch.setattr(runner, "_run", stuck)
     assert client.portal.call(runner.run_task, app, row(app, tid)) == "schedule.timeout"
     assert tid not in runner._running
+
+
+# --- cron and missed runs ---------------------------------------------------------------------
+
+
+def test_cron_runs_at_the_listed_times_in_the_zone():
+    spec = timing.validate({"kind": "cron", "expr": "30 3 * * 1-5", "timezone": "Europe/Paris"})
+    # Friday 2026-01-09 at 03:30 Paris is 02:30 UTC; the next one skips the weekend.
+    assert timing.next_run(spec, at("2026-01-09T02:00:00")) == at("2026-01-09T02:30:00")
+    assert timing.next_run(spec, at("2026-01-09T02:30:00")) == at("2026-01-12T02:30:00")
+
+
+def test_cron_supports_steps_lists_names_and_sunday_as_zero_or_seven():
+    spec = timing.validate({"kind": "cron", "expr": "0 */6 * jan,feb sun"})
+    assert timing.next_run(spec, at("2026-01-01T00:00:00")) == at("2026-01-04T00:00:00")
+    seven = timing.validate({"kind": "cron", "expr": "0 12 * * 7"})
+    zero = timing.validate({"kind": "cron", "expr": "0 12 * * 0"})
+    assert timing.next_run(seven, at("2026-01-01T00:00:00")) == at("2026-01-04T12:00:00")
+    assert timing.next_run(zero, at("2026-01-01T00:00:00")) == at("2026-01-04T12:00:00")
+
+
+def test_cron_day_of_month_or_day_of_week_when_both_are_set():
+    spec = timing.validate({"kind": "cron", "expr": "0 8 13 * fri"})
+    # Friday 2026-02-13 matches both; 2026-01-02 is a Friday, not the 13th.
+    assert timing.next_run(spec, at("2026-01-01T00:00:00")) == at("2026-01-02T08:00:00")
+
+
+@pytest.mark.parametrize(
+    "expr",
+    [
+        "* * * * *",  # every minute: too often
+        "0,5 * * * *",  # five minutes apart: too often
+        "*/10 * * * *",
+        "0 0 31 2 *",  # no such date
+        "0 25 * * *",
+        "0 0 * *",
+        "0 0 * * * *",
+        "a b c d e",
+        "0 0 */0 * *",
+        "$(reboot) * * * *",
+        "0 0 " + "1," * 80 + "1 * *",
+    ],
+)
+def test_bad_or_too_frequent_cron_expressions_are_refused(expr):
+    with pytest.raises(ValueError):
+        timing.validate({"kind": "cron", "expr": expr})
+
+
+def test_a_missed_run_waits_for_its_manager_then_is_replaced_by_a_notice(box, daemon, monkeypatch):
+    client, admin, node, app = box
+    sent = []
+
+    async def fake_emit(_app, name, /, **payload):
+        sent.append(payload)
+
+    monkeypatch.setattr(runner, "emit", fake_emit)
+    tid = make(client, admin, node).json()["id"]
+
+    def set_next(when):
+        conn = app.state.settings.open_db()
+        conn.execute("UPDATE scheduled_tasks SET next_run = ? WHERE id = ?", (when, tid))
+        conn.commit()
+        conn.close()
+
+    late = (datetime.now(UTC) - timedelta(hours=5)).isoformat()
+    set_next(late)
+    client.portal.call(runner.run_due, app)
+    assert row(app, tid)["missed_slot"] == late and SEEN == []
+    assert [m["event"] for m in sent] == ["schedule.missed"]
+    assert sent[0]["user_ids"] and sent[0]["params"]["name"] == "weekly prune"
+    # Nobody answers; at the next time the question becomes a notice.
+    set_next((datetime.now(UTC) - timedelta(minutes=1)).isoformat())
+    client.portal.call(runner.run_due, app)
+    assert [m["event"] for m in sent][-1] == "schedule.missed_final"
+    assert row(app, tid)["missed_slot"] is None and len(SEEN) == 1
+
+
+def test_the_manager_can_run_a_missed_task_or_wait_and_only_the_first_answer_counts(box, daemon):
+    client, admin, node, app = box
+    tid = make(client, admin, node).json()["id"]
+    url = f"/api/v1/nodes/{node}/schedule/{tid}/missed"
+    assert client.post(url, headers=admin, json={"decision": "run"}).status_code == 409
+    conn = app.state.settings.open_db()
+    repo.set_skipped(conn, tid, "2026-01-01T00:00:00+00:00")
+    conn.close()
+    assert client.post(url, headers=admin, json={"decision": "later"}).status_code == 422
+    ran = client.post(url, headers=admin, json={"decision": "run"})
+    assert ran.status_code == 200 and ran.json()["result"] == "ok" and len(SEEN) == 1
+    assert client.post(url, headers=admin, json={"decision": "run"}).status_code == 409
+    conn = app.state.settings.open_db()
+    repo.set_skipped(conn, tid, "2026-01-02T00:00:00+00:00")
+    conn.close()
+    waited = client.post(url, headers=admin, json={"decision": "wait"})
+    assert waited.json() == {"result": "waiting"} and len(SEEN) == 1
+
+
+def test_a_rule_without_a_next_date_pauses_its_task_instead_of_stalling_the_others(
+    box, monkeypatch
+):
+    client, admin, node, app = box
+    tid = make(client, admin, node).json()["id"]
+    conn = app.state.settings.open_db()
+    try:
+        task = repo.get(conn, tid)
+
+        def never(spec, after):
+            raise ValueError("no run found")
+
+        monkeypatch.setattr(timing, "next_run", never)
+        assert repo.advance(conn, task) is True
+    finally:
+        conn.close()
+    after = row(app, tid)
+    assert after["enabled"] == 0 and after["last_result"] == "schedule.no_next_run"

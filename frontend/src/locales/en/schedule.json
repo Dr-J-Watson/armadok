@@ -46,5 +46,22 @@
   "choices.kind.networks": "Unused networks",
   "confirmDelete": "Delete this task?",
   "actions.volume.backup": "Back up a volume",
-  "fields.volume": "Volume"
+  "fields.volume": "Volume",
+  "presets.hourly": "Every hour",
+  "presets.nightly": "Every night (03:00)",
+  "presets.weekly": "Every Monday (03:00)",
+  "presets.daily": "Every day at a time I choose",
+  "presets.interval": "Every so often (minutes)",
+  "presets.cron": "Advanced (cron expression)",
+  "cron.label": "Cron expression ({{zone}})",
+  "cron.help": "Five fields: minute, hour, day of the month, month, day of the week. Never more often than every 15 minutes. Pick an example to start from it.",
+  "cron.examples.0 * * * *": "every hour, on the hour",
+  "cron.examples.30 2 * * *": "every day at 02:30",
+  "cron.examples.0 4 * * 1": "every Monday at 04:00",
+  "cron.examples.0 5 1 * *": "the 1st of each month at 05:00",
+  "cron.examples.0 */6 * * *": "every 6 hours",
+  "when.cron": "cron {{expr}} ({{zone}})",
+  "missed": "This task was due at {{at}} but Armadok was stopped, so it did not run.",
+  "missedRun": "Run it now",
+  "missedWait": "Wait for the next time"
 }

@@ -27,7 +27,7 @@ MAX_PER_TICK = 10
 RUN_TIMEOUT_SECONDS = 120  # one stuck run must not hold up the others (or the next round)
 # A run missed because the hub was down is made up for only if it is not too late: a nightly
 # prune must not start at noon.
-MAX_LATE = timedelta(hours=1)
+MAX_LATE = timedelta(hours=1)  # later than this, the task's manager decides
 _running: set[str] = set()
 
 
@@ -121,10 +121,21 @@ async def _run(app: Any, task: Any, requested_by: str | None = None) -> str:
     return result
 
 
+async def _node_name(conn, node_id: str) -> str:
+    row = conn.execute("SELECT name FROM nodes WHERE id = ?", (node_id,)).fetchone()
+    return row["name"] if row else "-"
+
+
 async def run_due(app: Any) -> int:
-    """Run the tasks whose time has come; return how many ran (or were skipped)."""
+    """Run the tasks whose time has come; return how many ran (or were skipped).
+
+    A run that is more than an hour late (the hub was stopped) is not made up for on its own: its
+    manager is asked whether to run it now or wait. If they have not answered by the task's next
+    time, the question is replaced by a notice that the run was missed.
+    """
     now = datetime.now(UTC)
     conn = app.state.settings.open_db()
+    notices: list[tuple[str, Any, str, str]] = []
     try:
         due = repo.due(conn, now, MAX_PER_TICK)
         taken, late = [], []
@@ -133,8 +144,10 @@ async def run_due(app: Any) -> int:
             if not repo.advance(conn, task):
                 continue  # another loop took this slot
             taken.append(task)
+            if task["missed_slot"] and repo.clear_missed(conn, task["id"], task["missed_slot"]):
+                notices.append(("schedule.missed_final", task, task["missed_slot"], ""))
             if now - datetime.fromisoformat(task["next_run"]) > MAX_LATE:
-                repo.set_skipped(conn, task["id"])
+                repo.set_skipped(conn, task["id"], task["next_run"])
                 _audit(
                     conn,
                     app.state.registry,
@@ -145,8 +158,19 @@ async def run_due(app: Any) -> int:
                     code="schedule.skipped_late",
                 )
                 late.append(task["id"])
+                notices.append(("schedule.missed", task, task["next_run"], ""))
+        names = {t["node_id"]: await _node_name(conn, t["node_id"]) for _, t, _, _ in notices}
     finally:
         conn.close()
+    for event, task, slot, _ in notices:
+        await emit(
+            app,
+            "notify",
+            event=event,
+            node_id=task["node_id"],
+            user_ids=[task["created_by"]],
+            params={"node": names[task["node_id"]], "name": task["name"], "slot": slot[:16]},
+        )
     await asyncio.gather(*(run_task(app, t) for t in taken if t["id"] not in late))
     return len(taken)
 

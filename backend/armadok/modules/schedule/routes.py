@@ -198,6 +198,43 @@ def delete_task(
     _audit(conn, registry, who, "schedule.delete", node_id, task_id)
 
 
+class MissedDecision(BaseModel):
+    """What to do about a run missed while Armadok was stopped."""
+
+    model_config = ConfigDict(extra="forbid")
+    decision: str = Field(pattern="^(run|wait)$")
+
+
+@router.post("/{task_id}/missed", summary="Decide about a missed run")
+async def decide_missed(
+    node_id: str,
+    body: MissedDecision,
+    request: Request,
+    task_id: str = TaskId,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Run the missed task now, or leave it for its next time. Only the first answer counts."""
+    authorise(conn, registry, who, node_id, "schedule.manage")
+    row = _task_of(conn, node_id, task_id)
+    _may_touch(registry, who, row)
+    slot = row["missed_slot"]
+    if slot is None or not repo.clear_missed(conn, task_id, slot):
+        raise ApiError("schedule.nothing_missed", 409)
+    _audit(
+        conn, registry, who, "schedule.missed_decision", node_id, task_id, decision=body.decision
+    )
+    if body.decision == "wait":
+        return {"result": "waiting"}
+    result = await runner.run_task(request.app, row, requested_by=who.id)
+    if result == "schedule.already_running":
+        # Nothing ran, so the question is still open.
+        conn.execute("UPDATE scheduled_tasks SET missed_slot = ? WHERE id = ?", (slot, task_id))
+        conn.commit()
+    return {"result": result}
+
+
 @router.post("/{task_id}/run", summary="Run a task now")
 async def run_now(
     node_id: str,

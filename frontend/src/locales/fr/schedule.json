@@ -46,5 +46,22 @@
   "choices.kind.networks": "Réseaux inutilisés",
   "confirmDelete": "Supprimer cette tâche ?",
   "actions.volume.backup": "Sauvegarder un volume",
-  "fields.volume": "Volume"
+  "fields.volume": "Volume",
+  "presets.hourly": "Toutes les heures",
+  "presets.nightly": "Chaque nuit (03:00)",
+  "presets.weekly": "Chaque lundi (03:00)",
+  "presets.daily": "Chaque jour à l'heure de mon choix",
+  "presets.interval": "Régulièrement (minutes)",
+  "presets.cron": "Avancé (expression cron)",
+  "cron.label": "Expression cron ({{zone}})",
+  "cron.help": "Cinq champs : minute, heure, jour du mois, mois, jour de la semaine. Jamais plus souvent que toutes les 15 minutes. Choisissez un exemple pour partir de celui-ci.",
+  "cron.examples.0 * * * *": "toutes les heures pile",
+  "cron.examples.30 2 * * *": "chaque jour à 02:30",
+  "cron.examples.0 4 * * 1": "chaque lundi à 04:00",
+  "cron.examples.0 5 1 * *": "le 1er de chaque mois à 05:00",
+  "cron.examples.0 */6 * * *": "toutes les 6 heures",
+  "when.cron": "cron {{expr}} ({{zone}})",
+  "missed": "Cette tâche devait s'exécuter à {{at}} mais Armadok était arrêté : elle n'a pas tourné.",
+  "missedRun": "La lancer maintenant",
+  "missedWait": "Attendre la prochaine fois"
 }

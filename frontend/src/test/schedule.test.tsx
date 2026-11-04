@@ -68,4 +68,27 @@ describe('scheduled tasks tab', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Run now' }))
     expect(await screen.findByText('The task ran.')).toBeInTheDocument()
   })
+
+  it('offers ready-made times and a cron expression with examples', async () => {
+    const spy = renderTab([])
+    await screen.findByText('No scheduled task yet.')
+    await userEvent.type(screen.getByLabelText('Name'), 'Pull')
+    await userEvent.selectOptions(screen.getByLabelText('Action'), 'project.restart')
+    await userEvent.type(await screen.findByLabelText('Project'), 'blog')
+    await userEvent.selectOptions(screen.getByLabelText('When'), 'hourly')
+    await userEvent.selectOptions(screen.getByLabelText('When'), 'cron')
+    await userEvent.click(screen.getByRole('button', { name: /0 4 \* \* 1/ }))
+    expect(screen.getByText('every Monday at 04:00')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    const post = spy.mock.calls.find(([, init]) => init?.method === 'POST')
+    expect(JSON.parse(String(post![1]!.body)).schedule).toMatchObject({ kind: 'cron', expr: '0 4 * * 1' })
+  })
+
+  it('lets the manager decide about a run missed while Armadok was stopped', async () => {
+    const spy = renderTab([task({ missed_slot: '2030-01-01T03:00:00Z' })])
+    expect(await screen.findByText(/was stopped, so it did not run/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Wait for the next time' }))
+    const post = spy.mock.calls.find(([url, init]) => init?.method === 'POST' && String(url).endsWith('/missed'))
+    expect(JSON.parse(String(post![1]!.body))).toEqual({ decision: 'wait' })
+  })
 })

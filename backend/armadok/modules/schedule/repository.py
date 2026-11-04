@@ -34,6 +34,12 @@ MIGRATION = Migration(
 )
 
 
+MISSED = Migration(
+    "schedule-0002-missed-slot",
+    "ALTER TABLE scheduled_tasks ADD COLUMN missed_slot TEXT;",
+)
+
+
 def _now() -> datetime:
     return datetime.now(UTC)
 
@@ -52,6 +58,8 @@ def view(row: sqlite3.Row) -> dict[str, Any]:
         "next_run": row["next_run"] if row["enabled"] else None,
         "last_run": row["last_run"],
         "last_result": row["last_result"],
+        # The time of a run missed while the hub was stopped, until its manager decides.
+        "missed_slot": row["missed_slot"],
     }
 
 
@@ -156,22 +164,46 @@ def advance(conn: sqlite3.Connection, row: sqlite3.Row) -> bool:
     take the same slot: a task never runs twice for one slot (and a crash right after this
     loses the slot rather than doubling it).
     """
+    try:
+        following = timing.next_run(json.loads(row["schedule"]), _now()).isoformat()
+    except ValueError:
+        # A rule that no longer matches any date (a 29 February that is years away, say): the
+        # task is paused with a reason instead of failing every round for all the others.
+        cur = conn.execute(
+            "UPDATE scheduled_tasks SET enabled = 0, last_result = 'schedule.no_next_run'"
+            " WHERE id = ? AND next_run = ?",
+            (row["id"], row["next_run"]),
+        )
+        conn.commit()
+        return cur.rowcount == 1
     cur = conn.execute(
         "UPDATE scheduled_tasks SET next_run = ? WHERE id = ? AND next_run = ?",
-        (
-            timing.next_run(json.loads(row["schedule"]), _now()).isoformat(),
-            row["id"],
-            row["next_run"],
-        ),
+        (following, row["id"], row["next_run"]),
     )
     conn.commit()
     return cur.rowcount == 1
 
 
-def set_skipped(conn: sqlite3.Connection, task_id: str) -> None:
-    """Remember that a slot was missed (the hub was down); `last_run` stays what it was."""
-    conn.execute("UPDATE scheduled_tasks SET last_result = 'skipped' WHERE id = ?", (task_id,))
+def set_skipped(conn: sqlite3.Connection, task_id: str, slot: str) -> None:
+    """Remember that the run due at `slot` was missed (the hub was down), awaiting a decision.
+
+    `last_run` stays what it was.
+    """
+    conn.execute(
+        "UPDATE scheduled_tasks SET last_result = 'skipped', missed_slot = ? WHERE id = ?",
+        (slot, task_id),
+    )
     conn.commit()
+
+
+def clear_missed(conn: sqlite3.Connection, task_id: str, slot: str) -> bool:
+    """Forget a missed run; True only if `slot` was still the one waiting (one decision wins)."""
+    cur = conn.execute(
+        "UPDATE scheduled_tasks SET missed_slot = NULL WHERE id = ? AND missed_slot = ?",
+        (task_id, slot),
+    )
+    conn.commit()
+    return cur.rowcount == 1
 
 
 def set_result(conn: sqlite3.Connection, task_id: str, result: str) -> None:
