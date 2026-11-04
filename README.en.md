@@ -440,16 +440,16 @@ Everything stays editable afterwards in the settings.
 
 **First release**
 
-- [ ] Docker Compose projects, Git (GitHub, GitLab, Gitea / Forgejo, Bitbucket), image tracking
-- [ ] Volume backups, scheduled tasks, availability monitoring
-- [ ] Traefik sites, middlewares, pause, conversions
+- [ ] Docker Compose projects, Git (GitHub, GitLab, Gitea / Forgejo, Bitbucket), image tracking *(Compose projects done; Git and image tracking to come)*
+- [x] Volume backups, scheduled tasks, availability monitoring *(the public status page is still to come)*
+- [ ] Traefik sites, middlewares, pause, conversions *(sites done; the rest to come)*
 - [ ] DNS (OVH, DuckDNS, local) and the link with Traefik
-- [ ] Certificates and traffic statistics
-- [ ] Relationship map
-- [ ] Nodes, workers, rights, audit
+- [ ] Certificates and traffic statistics *(certificates done; traffic statistics to come)*
+- [x] Relationship map
+- [x] Nodes, workers, rights, audit
 - [ ] Vulnerability (CVE) watch for Armadok and your images
-- [ ] Notes, notifications, English and French
-- [ ] API keys, integrations, Prometheus metrics and CLI
+- [x] Notes, notifications, English and French *(browser push to come)*
+- [ ] API keys, integrations, Prometheus metrics and CLI *(CLI to come)*
 
 ---
 

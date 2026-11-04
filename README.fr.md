@@ -440,16 +440,16 @@ Tout reste modifiable ensuite dans les réglages.
 
 **Première version**
 
-- [ ] Projets Docker Compose, Git (GitHub, GitLab, Gitea / Forgejo, Bitbucket), suivi des images
-- [ ] Sauvegarde de volumes, tâches planifiées, surveillance de disponibilité
-- [ ] Sites Traefik, middlewares, pause, conversions
+- [ ] Projets Docker Compose, Git (GitHub, GitLab, Gitea / Forgejo, Bitbucket), suivi des images *(projets Compose faits ; Git et suivi des images à venir)*
+- [x] Sauvegarde de volumes, tâches planifiées, surveillance de disponibilité *(la page d'état publique reste à faire)*
+- [ ] Sites Traefik, middlewares, pause, conversions *(sites faits ; le reste à venir)*
 - [ ] DNS (OVH, DuckDNS, local) et lien avec Traefik
-- [ ] Certificats et statistiques du trafic
-- [ ] Carte des relations
-- [ ] Nœuds, workers, droits, audit
+- [ ] Certificats et statistiques du trafic *(certificats faits ; statistiques du trafic à venir)*
+- [x] Carte des relations
+- [x] Nœuds, workers, droits, audit
 - [ ] Surveillance des failles (CVE) d'Armadok et de vos images
-- [ ] Notes, notifications, français et anglais
-- [ ] Clés d'API, intégrations, métriques Prometheus et CLI
+- [x] Notes, notifications, français et anglais *(notifications du navigateur à venir)*
+- [ ] Clés d'API, intégrations, métriques Prometheus et CLI *(CLI à venir)*
 
 ---
 
