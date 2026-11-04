@@ -442,13 +442,13 @@ Everything stays editable afterwards in the settings.
 
 - [ ] Docker Compose projects, Git (GitHub, GitLab, Gitea / Forgejo, Bitbucket), image tracking *(Compose projects done; Git and image tracking to come)*
 - [x] Volume backups, scheduled tasks, availability monitoring *(the public status page is still to come)*
-- [ ] Traefik sites, middlewares, pause, conversions *(sites and ready-made middlewares done; the rest to come)*
+- [ ] Traefik sites, middlewares, pause, conversions *(sites, ready-made middlewares and the configuration check done; cascading rename, tidy-up assistant, Docker-label mode, static configuration and conversions to come)*
 - [ ] DNS (OVH, DuckDNS, local) and the link with Traefik
 - [ ] Certificates and traffic statistics *(certificates done; traffic statistics to come)*
 - [x] Relationship map
 - [x] Nodes, workers, rights, audit
-- [ ] Vulnerability (CVE) watch for Armadok and your images *(Armadok's own Python packages done; container images and web packages to come)*
-- [x] Notes, notifications, English and French *(browser push to come)*
+- [ ] Vulnerability (CVE) watch for Armadok and your images *(Armadok's Python packages and Debian, Ubuntu and Alpine container images done; web packages to come)*
+- [x] Notes (private, optionally shared read-only), notifications, search, installable app, help page, English and French *(browser push to come)*
 - [x] API keys, integrations, Prometheus metrics and CLI
 
 ---
