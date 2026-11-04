@@ -30,5 +30,7 @@
   "types.service": "Service",
   "kinds.targets": "cible",
   "types.certificate": "Certificat",
-  "kinds.covers": "couvre"
+  "kinds.covers": "couvre",
+  "types.probe": "Sonde de disponibilité",
+  "kinds.watches": "surveille"
 }

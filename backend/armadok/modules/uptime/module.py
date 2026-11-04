@@ -1,7 +1,14 @@
 """Declaration of the `uptime` module: availability probes of sites and services."""
 
-from armadok.core.module import Module, NotificationEvent, Right, Signal, WorkerOp
-from armadok.modules.uptime import repository
+from armadok.core.module import (
+    Module,
+    NotificationEvent,
+    RelationProvider,
+    Right,
+    Signal,
+    WorkerOp,
+)
+from armadok.modules.uptime import relations, repository
 from armadok.modules.uptime.routes import router
 from armadok.modules.uptime.watch import watch_loop
 
@@ -9,7 +16,7 @@ _NODE_TYPES = ("network", "full")
 
 module = Module(
     name="uptime",
-    requires=("workers",),
+    requires=("workers", "relations"),
     routes=(router,),
     rights=(
         Right("uptime.read", depends_on=("nodes.read",), node_owner=True, level="view"),
@@ -48,4 +55,9 @@ module = Module(
     worker_ops=(WorkerOp("uptime.tcp", _NODE_TYPES), WorkerOp("uptime.http", _NODE_TYPES)),
     migrations=(repository.MIGRATION, repository.RECOVERY),
     tasks=(watch_loop,),
+    relations=(
+        RelationProvider(
+            name="uptime", right="uptime.read", node_types=_NODE_TYPES, provide=relations.provide
+        ),
+    ),
 )

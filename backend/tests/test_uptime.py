@@ -549,3 +549,22 @@ def test_the_dotted_mapped_form_is_not_a_valid_host_and_is_refused_all_the_same(
     assert uptime_ops.refused("::ffff:169.254.169.254") is True
     with pytest.raises(OperationError):
         uptime_ops.probe_tcp({"host": "::ffff:169.254.169.254", "port": 80})
+
+
+def test_a_probe_is_linked_to_the_domain_it_watches(box):
+    from armadok.core.module import RelationData
+    from armadok.modules.uptime import relations
+
+    client, admin, node, app = box
+    made = make(client, admin, node, name="Blog", url="http://blog.example.com/ok")
+    assert made.status_code == 201, made.text
+    tcp = make(client, admin, node, name="Port", kind="tcp", url=None, host="127.0.0.1", port=80)
+    data = asyncio.run(relations.provide(app, node, None))
+    assert isinstance(data, RelationData)
+    labels = {o.label for o in data.objects}
+    assert any(label.startswith("Blog (") for label in labels)
+    # Only the web probe points at a domain; a port probe has nothing to link to.
+    assert [(link.target, link.kind) for link in data.links] == [
+        (("domain", "blog.example.com"), "watches")
+    ]
+    assert tcp.status_code in (201, 422)
