@@ -7,7 +7,7 @@ NAME=armadok-e2e
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; docker network rm "$NET" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 cleanup
-docker compose build >/dev/null
+docker build -q -t armadok:local . >/dev/null
 docker network create "$NET" >/dev/null
 KEY=$(docker run --rm armadok:local python -c "from cryptography.fernet import Fernet;print(Fernet.generate_key().decode())")
 docker run -d --name "$NAME" --network "$NET" -e ARMADOK_COOKIE_SECURE=false -e ARMADOK_ENCRYPTION_KEY="$KEY" armadok:local >/dev/null
