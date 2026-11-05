@@ -11,6 +11,7 @@ import { features } from '../enabled'
 import { useFeatures } from '../../core/useFeatures'
 import { NodeIcon } from '../../components/NodeIcon'
 import type { Node } from './types'
+import { NotesExport } from './NotesExport'
 import { Problem } from '../../components/Problem'
 
 export function NodePage() {
@@ -138,6 +139,7 @@ export function NodePage() {
                 <summary>{t('nodes:delete.zone')}</summary>
                 <h3>{t('nodes:delete.title')}</h3>
                 <p>{t('nodes:delete.explain')}</p>
+                <NotesExport nodeId={nodeId} nodeName={node.data.name} />
                 {remove.isError && (
                   <Problem error={remove.error} />
                 )}
