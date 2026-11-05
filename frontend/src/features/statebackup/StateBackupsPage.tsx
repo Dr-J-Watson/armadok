@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, downloadWith } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Backup {
   name: string
@@ -50,9 +50,7 @@ export function StateBackupsPage() {
       <h1>{t('statebackup:title')}</h1>
       <p>{t('statebackup:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {list.isPending && <p>{t('loading')}</p>}
       {data && !data.ready && <p className="notice">{t('statebackup:noKey')}</p>}

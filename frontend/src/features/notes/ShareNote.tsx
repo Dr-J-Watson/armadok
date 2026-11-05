@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Person {
   user_id: string
@@ -74,7 +74,7 @@ export function ShareNote({ noteId, nodeId }: { noteId: string; nodeId: string }
         ))}
       </ul>
       <p className="hint">{t('notes:shareHint')}</p>
-      {failed != null && <p role="alert" className="error">{errorMessage(t, failed)}</p>}
+      {failed != null && <Problem error={failed} />}
     </div>
   )
 }

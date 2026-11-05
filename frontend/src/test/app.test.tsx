@@ -97,6 +97,8 @@ describe('application', () => {
       'GET /nodes': () => new Response(JSON.stringify({ error: { code: 'rights.missing' } }), { status: 403 }),
     })
     renderApp()
+    // The overview leaves out what it cannot read; the machines page says why.
+    await userEvent.click(await screen.findByRole('link', { name: 'Machines' }))
     expect(await screen.findByText('You do not have the right to do this.')).toBeInTheDocument()
   })
 })

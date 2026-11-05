@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
 import { useCan } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 export interface Account {
   id: string
@@ -40,9 +40,7 @@ export function UsersPage() {
     <>
       <h1>{t('users:title')}</h1>
       {users.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, users.error)}
-        </p>
+        <Problem error={users.error} />
       )}
       <ul className="cards">
         {users.data?.map((account) => (
@@ -89,9 +87,7 @@ export function UsersPage() {
             />
             <p className="hint">{t('users:create.passwordHint')}</p>
             {create.isError && (
-              <p role="alert" className="error">
-                {errorMessage(t, create.error)}
-              </p>
+              <Problem error={create.error} />
             )}
             <button type="submit" className="primary" disabled={create.isPending}>
               {t('users:create.submit')}

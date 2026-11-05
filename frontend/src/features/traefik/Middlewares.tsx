@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 const INTENTS = ['local_only', 'basic_auth', 'security_headers', 'redirect_https', 'strip_prefix', 'rate_limit', 'compress', 'forward_auth'] as const
 type Intent = (typeof INTENTS)[number]
@@ -142,9 +142,7 @@ export function Middlewares({ nodeId }: { nodeId: string }) {
       <h2>{t('traefik:middlewares.title')}</h2>
       <p>{t('traefik:middlewares.explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {list.data?.middlewares.length === 0 && <p className="empty">{t('traefik:middlewares.none')}</p>}
       <ul className="links">

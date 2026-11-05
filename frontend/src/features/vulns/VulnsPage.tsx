@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Finding {
   id: number
@@ -58,9 +58,7 @@ export function VulnsPage() {
       <h1>{t('vulns:title')}</h1>
       <p>{t('vulns:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {list.isPending && <p>{t('loading')}</p>}
       {data && !data.enabled && <p className="notice">{t('vulns:off')}</p>}

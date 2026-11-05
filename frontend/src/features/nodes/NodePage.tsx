@@ -5,13 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
 import { useAuth, useCanFn } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
 import { useModules } from '../../core/modules'
 import type { NodeTab } from '../../core/registry'
 import { features } from '../enabled'
 import { useFeatures } from '../../core/useFeatures'
 import { NodeIcon } from '../../components/NodeIcon'
 import type { Node } from './types'
+import { Problem } from '../../components/Problem'
 
 export function NodePage() {
   const { t } = useTranslation(['nodes', 'errors'])
@@ -57,9 +57,7 @@ export function NodePage() {
   if (node.isError) {
     return (
       <>
-        <p role="alert" className="error">
-          {errorMessage(t, node.error)}
-        </p>
+        <Problem error={node.error} />
         <Link to="/nodes">{t('nodes:back')}</Link>
       </>
     )
@@ -84,7 +82,9 @@ export function NodePage() {
             <span className="badge">{t(`nodes:types.${node.data.type}`)}</span>
             {node.data.local && <span className="badge ok">{t('nodes:local')}</span>}
           </h1>
-          {node.data.description && <p className="hint">{node.data.description}</p>}
+          {(node.data.local || node.data.description) && (
+            <p className="hint">{node.data.local ? t('nodes:localDescription') : node.data.description}</p>
+          )}
         </div>
       </header>
 
@@ -139,9 +139,7 @@ export function NodePage() {
                 <h3>{t('nodes:delete.title')}</h3>
                 <p>{t('nodes:delete.explain')}</p>
                 {remove.isError && (
-                  <p role="alert" className="error">
-                    {errorMessage(t, remove.error)}
-                  </p>
+                  <Problem error={remove.error} />
                 )}
                 {confirmDelete ? (
                   <>

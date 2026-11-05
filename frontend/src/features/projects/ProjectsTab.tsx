@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import { FileEditor } from '../../shell/FileEditor'
 import { ProjectRun } from './ProjectRun'
+import { Problem } from '../../components/Problem'
 
 interface Project {
   name: string
@@ -32,9 +32,7 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
   if (projects.isPending) return <p>{t('loading')}</p>
   if (projects.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, projects.error)}
-      </p>
+      <Problem error={projects.error} />
     )
   if (projects.data.projects.length === 0) return <p className="empty">{t('projects:empty')}</p>
 

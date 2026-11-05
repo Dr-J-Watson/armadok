@@ -9,6 +9,7 @@ import { errorMessage } from '../../core/errors'
 import { EffectiveSection } from '../roles/EffectiveSection'
 import { GrantsSection } from './GrantsSection'
 import type { Account } from './UsersPage'
+import { Problem } from '../../components/Problem'
 
 export function UserPage() {
   const { t } = useTranslation(['users', 'errors'])
@@ -67,9 +68,7 @@ export function UserPage() {
         {!account.is_active && <span className="badge off">{t('users:disabled')}</span>}
       </h1>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {done && (
         <p role="status" className="ok-text">

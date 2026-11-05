@@ -91,7 +91,7 @@ describe('projects tab', () => {
       json({ error: { code: 'worker.projects_not_configured' } }, 409),
     )
     renderTab()
-    expect(await screen.findByRole('alert')).toHaveTextContent('No projects folder is configured')
+    expect(await screen.findByRole('status')).toHaveTextContent('No projects folder is configured')
   })
 
   it('shows an empty state when the folder has no Compose project', async () => {

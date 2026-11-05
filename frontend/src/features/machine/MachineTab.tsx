@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Stats {
   cpu_percent: number
@@ -21,13 +21,26 @@ interface Stats {
 
 const gib = (n: number) => `${(n / 1073741824).toFixed(1)} GiB`
 
+// One figure as a card: its name, the value in words, and a bar that turns amber then red as the
+// resource fills up. The bar is a `meter` for assistive technology too.
 function Meter({ label, value, max, text }: { label: string; value: number; max: number; text: string }) {
+  const share = Math.max(0, Math.min(1, max > 0 ? value / max : 0))
+  const tone = share >= 0.9 ? 'danger' : share >= 0.7 ? 'warn' : 'ok'
   return (
-    <p>
-      <label>
-        {label} <meter value={value} max={max} low={max * 0.7} high={max * 0.9} optimum={0} /> {text}
-      </label>
-    </p>
+    <div className="stat">
+      <span className="stat-label">{label}</span>
+      <strong className="stat-value">{text}</strong>
+      <div
+        className={`bar bar-${tone}`}
+        role="meter"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={value}
+      >
+        <span style={{ width: `${Math.round(share * 100)}%` }} />
+      </div>
+    </div>
   )
 }
 
@@ -48,15 +61,14 @@ export function MachineTab({ nodeId }: { nodeId: string }) {
   if (stats.isPending) return <p>{t('loading')}</p>
   if (stats.isError) {
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, stats.error)}
-      </p>
+      <Problem error={stats.error} />
     )
   }
   const s = stats.data
   const used = s.memory_total - s.memory_available
   return (
     <section aria-label={t('machine:tab')}>
+      <div className="stat-grid">
       <Meter label={t('machine:cpu', { count: s.cpu_count })} value={s.cpu_percent} max={100} text={`${s.cpu_percent}%`} />
       <Meter label={t('machine:memory')} value={used} max={s.memory_total || 1} text={`${gib(used)} / ${gib(s.memory_total)}`} />
       {s.swap_total > 0 && (
@@ -65,6 +77,7 @@ export function MachineTab({ nodeId }: { nodeId: string }) {
       {s.disks.map((d) => (
         <Meter key={d.name} label={t(`machine:disk.${d.name}`)} value={d.total - d.free} max={d.total} text={t('machine:free', { free: gib(d.free), total: gib(d.total) })} />
       ))}
+      </div>
       <ul className="links">
         <li>{t('machine:load', { a: s.load[0], b: s.load[1], c: s.load[2] })}</li>
         <li>{t('machine:uptime')} {uptime(s.uptime_seconds, t)}</li>

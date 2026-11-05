@@ -4,8 +4,8 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import type { Domain } from './DomainsSection'
+import { Problem } from '../../components/Problem'
 
 interface DnsRecord {
   id: string
@@ -67,7 +67,7 @@ export function DomainPage() {
     <>
       <p><Link to="/dns">{t('dns:back')}</Link></p>
       <h1>{domain.name}</h1>
-      {failed != null && <p role="alert" className="error">{errorMessage(t, failed)}</p>}
+      {failed != null && <Problem error={failed} />}
       {caps.length === 0 && <p className="notice">{t('dns:records.localExplain')}</p>}
       {caps.includes('publish_ip') && !caps.includes('write') && <p className="notice">{t('dns:records.publishIpExplain')}</p>}
 

@@ -3,8 +3,8 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import type { RightInfo } from '../account/rights'
+import { Problem } from '../../components/Problem'
 
 interface Account {
   id: string
@@ -55,9 +55,7 @@ export function ServiceAccountsPage() {
       <h1>{t('serviceAccounts:title')}</h1>
       <p>{t('serviceAccounts:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       <form onSubmit={submit} aria-label={t('serviceAccounts:new')}>
         <label>
@@ -126,9 +124,7 @@ function Keys({ accountId }: { accountId: string }) {
   return (
     <div>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {shown && (
         <div role="status" className="notice">

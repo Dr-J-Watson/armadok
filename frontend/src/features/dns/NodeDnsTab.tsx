@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Host {
   host: string
@@ -25,14 +25,14 @@ export function NodeDnsTab({ nodeId }: { nodeId: string }) {
   })
 
   if (report.isPending) return <p>{t('loading')}</p>
-  if (report.isError) return <p role="alert" className="error">{errorMessage(t, report.error)}</p>
+  if (report.isError) return <Problem error={report.error} />
   const hosts = report.data.hosts
   if (hosts.length === 0) return <p className="empty">{t('dns:report.empty')}</p>
 
   return (
     <>
       <p>{t('dns:report.explain')}</p>
-      {fix.isError && <p role="alert" className="error">{errorMessage(t, fix.error)}</p>}
+      {fix.isError && <Problem error={fix.error} />}
       <table className="table">
         <thead>
           <tr><th>{t('dns:report.host')}</th><th>{t('dns:report.status')}</th><th>{t('dns:report.resolves')}</th><th /></tr>

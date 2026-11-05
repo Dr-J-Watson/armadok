@@ -4,8 +4,8 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { useCan } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
 import type { Group } from './types'
+import { Problem } from '../../components/Problem'
 
 interface User {
   id: string
@@ -43,9 +43,7 @@ export function GroupsTab() {
   if (groups.isPending) return <p>{t('loading')}</p>
   if (groups.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, groups.error)}
-      </p>
+      <Problem error={groups.error} />
     )
   const failed = create.error ?? remove.error ?? join.error ?? leave.error
 
@@ -57,9 +55,7 @@ export function GroupsTab() {
   return (
     <>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {canManage && (
         <form onSubmit={submit} aria-label={t('roles:groups.new')}>

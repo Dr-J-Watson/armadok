@@ -3,9 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import { NoteItem } from './NotesPanel'
 import type { Note } from './NotesPanel'
+import { Problem } from '../../components/Problem'
 
 // All the caller's notes, with search and a filter on open reminders.
 export function NotesPage() {
@@ -59,7 +59,7 @@ export function NotesPage() {
           <h2>{t('notes:mine')}</h2>
         </>
       )}
-      {notes.isError && <p role="alert" className="error">{errorMessage(t, notes.error)}</p>}
+      {notes.isError && <Problem error={notes.error} />}
       {notes.data?.length === 0 && <p className="empty">{t('notes:empty')}</p>}
       <ul className="notes-list">
         {notes.data?.map((n) => (

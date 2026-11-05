@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface AdminNode {
   id: string
@@ -69,9 +69,7 @@ export function NodeAdminPage() {
       <h1>{t('nodeadmin:title')}</h1>
       <p>{t('nodeadmin:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       <table className="table">
         <tbody>

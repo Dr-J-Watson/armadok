@@ -4,9 +4,9 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { useCan } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
 import type { RightInfo } from '../account/rights'
 import type { Role } from './types'
+import { Problem } from '../../components/Problem'
 
 // Built-in roles carry a translated name; custom roles show the name they were given.
 export function roleLabel(t: (key: string) => string, role: { name: string; builtin: boolean }) {
@@ -42,9 +42,7 @@ export function RolesTab() {
   if (roles.isPending) return <p>{t('loading')}</p>
   if (roles.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, roles.error)}
-      </p>
+      <Problem error={roles.error} />
     )
   const sensitive = new Set((catalogue.data ?? []).filter((r) => r.sensitive).map((r) => r.id))
   const assignable = (catalogue.data ?? [])
@@ -61,9 +59,7 @@ export function RolesTab() {
     <>
       <p>{t('roles:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {canManage && !editing && (
         <div className="actions">

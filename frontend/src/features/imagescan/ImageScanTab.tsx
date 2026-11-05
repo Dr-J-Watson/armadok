@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Finding {
   component: string
@@ -50,9 +50,7 @@ export function ImageScanTab({ nodeId }: { nodeId: string }) {
     <>
       <p>{t('imagescan:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {data && !data.enabled && <p className="notice">{t('imagescan:off')}</p>}
       {data?.can_run && data.enabled && (

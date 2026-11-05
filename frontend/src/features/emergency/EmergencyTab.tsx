@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Notice {
   id: string
@@ -43,9 +43,7 @@ export function EmergencyTab({ nodeId }: { nodeId: string }) {
     <>
       <p>{t('emergency:explain')}</p>
       {(ack.isError || cut.isError) && (
-        <p role="alert" className="error">
-          {errorMessage(t, ack.error ?? cut.error)}
-        </p>
+        <Problem error={ack.error ?? cut.error} />
       )}
       <ul className="links">
         {notices.data.map((n) => (

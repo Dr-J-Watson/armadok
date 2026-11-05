@@ -97,7 +97,7 @@ describe('relations map', () => {
     serve({ objects: [], links: [], unavailable: { docker: 'worker.not_connected' } })
     renderMap()
     expect(await screen.findByText(/Some relations could not be loaded \(Docker\)/)).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent('No worker is connected for this node.')
+    expect(screen.getByRole('status')).toHaveTextContent('No worker is connected for this machine.')
     expect(screen.getByText(/Nothing to show yet/)).toBeInTheDocument()
   })
 

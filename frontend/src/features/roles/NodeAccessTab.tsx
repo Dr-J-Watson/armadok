@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 // "Who can what" on one node: the rights that actually work there for each account.
 export function NodeAccessTab({ nodeId }: { nodeId: string }) {
@@ -14,9 +14,7 @@ export function NodeAccessTab({ nodeId }: { nodeId: string }) {
   if (access.isPending) return <p>{t('loading')}</p>
   if (access.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, access.error)}
-      </p>
+      <Problem error={access.error} />
     )
   return (
     <>

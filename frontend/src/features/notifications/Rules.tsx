@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import type { Channel } from './Channels'
+import { Problem } from '../../components/Problem'
 
 interface EventInfo {
   name: string
@@ -72,7 +72,7 @@ export function Rules() {
   return (
     <>
       <p>{t('notifications:rules.explain')}</p>
-      {(save.error ?? rules.error) != null && <p role="alert" className="error">{errorMessage(t, save.error ?? rules.error)}</p>}
+      {(save.error ?? rules.error) != null && <Problem error={save.error ?? rules.error} />}
       <table className="table">
         <thead>
           <tr>

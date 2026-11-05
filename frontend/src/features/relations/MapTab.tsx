@@ -3,12 +3,13 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
-import { codeMessage, errorMessage } from '../../core/errors'
+import { codeMessage } from '../../core/errors'
 import { readPref, writePref } from '../../core/storage'
 import { GraphView } from './GraphView'
 import { RelationsPanel } from './RelationsPanel'
 import { buildElements, matchesSearch, objectKey, typesOf } from './graph'
 import type { RelationsMap } from './graph'
+import { Problem } from '../../components/Problem'
 
 // Which types are hidden is remembered per node (a display preference, nothing else).
 function hiddenKey(nodeId: string) {
@@ -66,9 +67,7 @@ export function MapTab({ nodeId }: { nodeId: string }) {
   if (map.isPending) return <p>{t('loading')}</p>
   if (map.isError) {
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, map.error)}
-      </p>
+      <Problem error={map.error} />
     )
   }
 

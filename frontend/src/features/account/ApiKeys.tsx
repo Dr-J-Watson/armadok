@@ -4,10 +4,10 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import type { User } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
 import { stillValid } from '../../core/time'
 import { withDependencies, withoutDependents } from './rights'
 import type { RightInfo } from './rights'
+import { Problem } from '../../components/Problem'
 
 interface ApiKey {
   id: string
@@ -76,9 +76,7 @@ export function ApiKeys({ me }: { me: User }) {
       <h2>{t('account:keys.title')}</h2>
       <p>{t('account:keys.explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
 
       {created && (

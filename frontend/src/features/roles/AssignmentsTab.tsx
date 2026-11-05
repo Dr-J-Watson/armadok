@@ -4,10 +4,10 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { useCan } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
 import type { Node } from '../nodes/types'
 import { roleLabel } from './RolesTab'
 import type { Assignment, Group, Role } from './types'
+import { Problem } from '../../components/Problem'
 
 interface User {
   id: string
@@ -43,9 +43,7 @@ export function AssignmentsTab() {
   if (list.isPending) return <p>{t('loading')}</p>
   if (list.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, list.error)}
-      </p>
+      <Problem error={list.error} />
     )
   const subjects = form.type === 'user' ? (users.data ?? []).map((u) => ({ id: u.id, name: u.username })) : (groups.data ?? [])
   const scopeName = (scope: string) =>
@@ -60,9 +58,7 @@ export function AssignmentsTab() {
   return (
     <>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {canManage && (
         <form onSubmit={submit} aria-label={t('roles:assign.title')}>

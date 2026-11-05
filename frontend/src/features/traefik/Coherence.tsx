@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Issue {
   severity: 'error' | 'warning' | 'info'
@@ -32,9 +32,7 @@ export function Coherence({ nodeId, onOpenFile }: { nodeId: string; onOpenFile: 
         {t('traefik:coherence.recheck')}
       </button>
       {check.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, check.error)}
-        </p>
+        <Problem error={check.error} />
       )}
       {data && (
         <>

@@ -2,8 +2,8 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
 import { AuthLayout } from './AuthLayout'
+import { Problem } from '../../components/Problem'
 
 const MIN_PASSWORD = 12
 
@@ -82,9 +82,7 @@ export function SetupPage() {
           </p>
         )}
         {error !== null && (
-          <p role="alert" className="error">
-            {errorMessage(t, error)}
-          </p>
+          <Problem error={error} />
         )}
         <button type="submit" className="primary" disabled={busy}>
           {t('auth:setup.submit')}

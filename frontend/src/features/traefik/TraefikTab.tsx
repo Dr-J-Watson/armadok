@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import { FileEditor } from '../../shell/FileEditor'
 import { Coherence } from './Coherence'
 import { DomainSwitch } from './DomainSwitch'
@@ -10,6 +9,7 @@ import { ManagedSites } from './ManagedSites'
 import { Middlewares } from './Middlewares'
 import { SitesView } from './SitesView'
 import { StaticConfig } from './StaticConfig'
+import { Problem } from '../../components/Problem'
 
 type View = 'sites' | 'managed' | 'middlewares' | 'coherence' | 'static' | 'files'
 
@@ -74,9 +74,7 @@ function FilesView({ nodeId, file, onPick }: { nodeId: string; file: string | nu
   if (files.isPending) return <p>{t('loading')}</p>
   if (files.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, files.error)}
-      </p>
+      <Problem error={files.error} />
     )
   if (files.data.files.length === 0) return <p className="empty">{t('traefik:noFiles')}</p>
 

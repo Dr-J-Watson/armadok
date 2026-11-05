@@ -1,7 +1,7 @@
 {
   "tab": "Carte",
   "canvasLabel": "Carte des objets et de leurs liens. Une liste textuelle avec les mêmes choix suit.",
-  "empty": "Rien à afficher pour l'instant. Connectez un worker à un nœud Docker pour voir ses conteneurs et ce à quoi ils sont liés.",
+  "empty": "Rien à afficher pour l'instant. Connectez un worker à une machine Docker pour voir ses conteneurs et ce à quoi ils sont liés.",
   "show": "Afficher",
   "list": "Liste textuelle des objets",
   "search": "Chercher un objet",

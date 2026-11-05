@@ -2,10 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import { SiteFollowUp } from './SiteFollowUp'
 import { SiteForm } from './SiteForm'
 import type { SiteSpec } from './SiteForm'
+import { Problem } from '../../components/Problem'
 
 interface Managed {
   name: string
@@ -82,9 +82,7 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
   if (list.isPending) return <p>{t('loading')}</p>
   if (list.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, list.error)}
-      </p>
+      <Problem error={list.error} />
     )
   return (
     <>
@@ -94,9 +92,7 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
         </button>
       </div>
       {act.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, act.error)}
-        </p>
+        <Problem error={act.error} />
       )}
       {list.data.sites.length === 0 && <p className="empty">{t('traefik:managed.none')}</p>}
       <label className="site-search">
@@ -198,9 +194,7 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
             {historyOf === s.name && (
               <div>
                 {versions.isError ? (
-                  <p role="alert" className="error">
-                    {errorMessage(t, versions.error)}
-                  </p>
+                  <Problem error={versions.error} />
                 ) : versions.data && versions.data.versions.length === 0 ? (
                   <p className="empty">{t('traefik:managed.noHistory')}</p>
                 ) : (

@@ -7,7 +7,7 @@
   "start.step3": "Open Projects to deploy a Compose project, or Traefik to publish a site with HTTPS.",
   "start.step4": "Open the Map tab of a machine to see what is connected to what.",
   "words.title": "The words",
-  "words.node.name": "Machine (node)",
+  "words.node.name": "Machine",
   "words.node.text": "A server Armadok manages. Each machine has an owner, members and its own rights.",
   "words.worker.name": "Worker",
   "words.worker.text": "The small program on a machine. It connects out to Armadok and only runs a fixed list of operations in allowed folders.",

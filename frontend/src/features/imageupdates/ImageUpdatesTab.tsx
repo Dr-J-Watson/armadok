@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { codeMessage, errorMessage } from '../../core/errors'
+import { codeMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Item {
   ref: string
@@ -33,9 +34,7 @@ export function ImageUpdatesTab({ nodeId }: { nodeId: string }) {
       <h2>{t('imageupdates:title')}</h2>
       <p className="hint">{t('imageupdates:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {list.data?.can_check && (
         <div className="actions">

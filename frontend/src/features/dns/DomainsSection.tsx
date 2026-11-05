@@ -4,8 +4,8 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import type { Node } from '../nodes/types'
+import { Problem } from '../../components/Problem'
 
 export interface Domain {
   id: string
@@ -77,7 +77,7 @@ export function DomainsSection() {
   return (
     <section>
       <h2>{t('dns:domains.title')}</h2>
-      {failed != null && <p role="alert" className="error">{errorMessage(t, failed)}</p>}
+      {failed != null && <Problem error={failed} />}
       {domains.data?.length === 0 && <p className="empty">{t('dns:domains.empty')}</p>}
       <ul className="cards">
         {domains.data?.map((d) => (

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, api } from '../core/api'
-import { errorMessage } from '../core/errors'
+import { Problem } from '../components/Problem'
 
 interface FileContent {
   content: string
@@ -69,9 +69,7 @@ export function FileEditor({ path, title, fileName, queryKey: key }: Props) {
   if (loaded.isPending) return <p>{t('loading')}</p>
   if (loaded.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, loaded.error)}
-      </p>
+      <Problem error={loaded.error} />
     )
 
   return (
@@ -91,9 +89,7 @@ export function FileEditor({ path, title, fileName, queryKey: key }: Props) {
         </div>
       )}
       {save.isError && !conflict && (
-        <p role="alert" className="error">
-          {errorMessage(t, save.error)}
-        </p>
+        <Problem error={save.error} />
       )}
       {saved && !dirty && !conflict && (
         <p role="status" className="ok-text">

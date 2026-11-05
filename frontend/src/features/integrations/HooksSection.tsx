@@ -3,8 +3,8 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import type { Node } from '../nodes/types'
+import { Problem } from '../../components/Problem'
 
 interface Hook {
   id: string
@@ -72,9 +72,7 @@ export function HooksSection() {
       <h2>{t('integrations:hooks.title')}</h2>
       <p>{t('integrations:hooks.explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {created && (
         <div role="status" className="notice">

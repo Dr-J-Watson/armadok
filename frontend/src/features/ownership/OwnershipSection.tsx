@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Item {
   type: string
@@ -64,7 +64,7 @@ function Preview({ nodeId, mode, only }: { nodeId: string; mode: 'give' | 'take'
     queryKey: ['ownership', 'cascade', nodeId, mode, only],
     queryFn: () => api.get<{ items: Item[] }>(`/nodes/${nodeId}/ownership/cascade?mode=${mode}&only_type=${encodeURIComponent(only)}`),
   })
-  if (list.isError) return <p role="alert" className="error">{errorMessage(t, list.error)}</p>
+  if (list.isError) return <Problem error={list.error} />
   return (
     <div>
       <p className="hint">{t('ownership:willMove', { count: list.data?.items.length ?? 0 })}</p>
@@ -142,7 +142,7 @@ function GiveForm({ nodeId, target, only, onDone }: { nodeId: string; target: It
         </>
       )}
       {sent && <p role="status">{t('ownership:giftSent')}</p>}
-      {(found.error ?? give.error) && <p role="alert" className="error">{errorMessage(t, found.error ?? give.error)}</p>}
+      {(found.error ?? give.error) && <Problem error={found.error ?? give.error} />}
     </div>
   )
 }
@@ -174,7 +174,7 @@ function TakeForm({ nodeId, target, only, onDone }: { nodeId: string; target: It
       <button type="button" disabled={take.isPending} onClick={() => take.mutate()}>
         {t('ownership:takeNow')}
       </button>
-      {take.isError && <p role="alert" className="error">{errorMessage(t, take.error)}</p>}
+      {take.isError && <Problem error={take.error} />}
     </div>
   )
 }

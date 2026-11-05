@@ -3,8 +3,8 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import { roleLabel } from '../roles/RolesTab'
+import { Problem } from '../../components/Problem'
 
 interface Member {
   assignment_id: string
@@ -115,9 +115,7 @@ export function MembersTab({ nodeId }: { nodeId: string }) {
         {t('members:owner')}: <strong>{list.data.owner.name}</strong>
       </p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       <form onSubmit={submit} aria-label={t('members:add')}>
         <PersonPicker value={person} onPick={setPerson} />

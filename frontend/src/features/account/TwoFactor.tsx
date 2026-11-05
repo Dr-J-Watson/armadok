@@ -3,9 +3,9 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import type { User } from '../../core/auth'
 import { QrCode } from './QrCode'
+import { Problem } from '../../components/Problem'
 
 interface Enrolment {
   secret: string
@@ -65,9 +65,7 @@ export function TwoFactor({ me }: { me: User }) {
         )}
       </p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
 
       {backupCodes && (

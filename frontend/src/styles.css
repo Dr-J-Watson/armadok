@@ -484,3 +484,56 @@ kbd { font-family: var(--mono); font-size: .72rem; color: var(--faint); backgrou
 /* Buttons inside table rows are smaller: they are many and secondary. */
 .table button { min-height: 2rem; padding: .15rem .7rem; font-size: .85rem; box-shadow: none; }
 .table td .actions, .table td > div { gap: .35rem; }
+
+/* Figures as cards */
+.stat-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); margin-bottom: 1rem; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 1rem 1.15rem; display: grid; gap: .35rem; }
+.stat-label { color: var(--muted); font-size: .82rem; font-weight: 600; letter-spacing: .02em; }
+.stat-value { font-size: 1.2rem; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.bar { height: .5rem; border-radius: 999px; background: var(--surface-3); overflow: hidden; margin-top: .25rem; }
+.bar > span { display: block; height: 100%; border-radius: inherit; background: var(--ok); transition: width .4s ease; }
+.bar-warn > span { background: var(--warn); }
+.bar-danger > span { background: var(--danger); }
+
+/* Wide tables wrap long values instead of running off the page. */
+.table td { overflow-wrap: anywhere; word-break: break-word; }
+.table td .badge { white-space: nowrap; }
+.table { table-layout: auto; }
+
+/* "Not set up yet" is a hint, not an alarm. */
+.setup-hint { display: flex; align-items: flex-start; gap: .65rem; padding: .85rem 1rem; margin: .75rem 0; border: 1px dashed var(--border-strong); border-radius: var(--radius); background: var(--surface); color: var(--muted); }
+.setup-hint svg { flex: none; margin-top: .15rem; color: var(--accent); }
+
+/* Tabs wrap instead of scrolling out of sight; the active one is a soft pill. */
+.tabs { flex-wrap: wrap; overflow: visible; border-bottom: 0; gap: .35rem; margin-bottom: 1.25rem; }
+.tabs [role='tab'] { border: 0; border-radius: 999px; min-height: 2.2rem; padding: .25rem .9rem; font-size: .9rem; }
+.tabs [role='tab']:hover { background: var(--surface-2); }
+.tabs [aria-selected='true'] { background: var(--accent-soft); color: var(--accent); border: 0; }
+
+/* A form made of labels is laid out as a calm column wherever it sits. */
+[role='tabpanel'] form:has(> label), .content > form:has(> label), .panel form:has(> label) { display: grid; gap: .9rem; max-width: 36rem; }
+[role='tabpanel'] form:has(> label) label, .content > form:has(> label) label, .panel form:has(> label) label { display: grid; gap: .3rem; }
+
+/* Overview */
+.stat-link { color: var(--text); text-decoration: none; transition: border-color .14s, box-shadow .14s, transform .14s; }
+.stat-link:hover { border-color: var(--accent-line); box-shadow: var(--shadow); transform: translateY(-1px); text-decoration: none; }
+.stat-bad { border-color: color-mix(in srgb, var(--danger) 35%, transparent); background: var(--danger-soft); }
+.stat-bad .stat-value { color: var(--danger); }
+.stat-warn { border-color: color-mix(in srgb, var(--warn) 35%, transparent); background: var(--warn-soft); }
+.stat-warn .stat-value { color: var(--warn); }
+.stat .hint { margin: 0; }
+.all-good { display: flex; align-items: center; gap: .5rem; color: var(--ok); font-weight: 550; }
+.attention .attention-icon { color: var(--warn); display: inline-flex; }
+.attention a { color: var(--text); font-weight: 550; }
+.status-dot { width: .55rem; height: .55rem; border-radius: 50%; background: var(--faint); flex: none; }
+.status-dot.on { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+.status-dot.off { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+.node-meta { align-items: center; }
+.button-link { display: inline-flex; align-items: center; gap: .45rem; padding: .45rem 1rem; border-radius: var(--radius); background: var(--accent); color: var(--accent-text); font-weight: 550; text-decoration: none; }
+.button-link:hover { background: var(--accent-hover); text-decoration: none; }
+.activity { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.activity li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem; padding: .7rem 1rem; border-bottom: 1px solid var(--border); }
+.activity li:last-child { border-bottom: 0; }
+.activity-time { color: var(--muted); font-size: .85rem; min-width: 11rem; font-variant-numeric: tabular-nums; }
+
+.stat-grid .stat { align-content: start; min-height: 8.5rem; }

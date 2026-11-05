@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Setting {
   enabled: boolean
@@ -42,9 +42,7 @@ export function Quiet() {
       <h3>{t('notifications:quiet.title')}</h3>
       <p>{t('notifications:quiet.explain')}</p>
       {(current.error ?? save.error) != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, current.error ?? save.error)}
-        </p>
+        <Problem error={current.error ?? save.error} />
       )}
       <label>
         <input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} /> {t('notifications:quiet.enabled')}

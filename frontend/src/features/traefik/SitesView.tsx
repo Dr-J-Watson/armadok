@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Router {
   id: string
@@ -34,9 +34,7 @@ export function SitesView({ nodeId, onOpenFile }: { nodeId: string; onOpenFile: 
   if (sites.isPending) return <p>{t('loading')}</p>
   if (sites.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, sites.error)}
-      </p>
+      <Problem error={sites.error} />
     )
   const { routers, errors, truncated } = sites.data
   return (

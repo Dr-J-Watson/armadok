@@ -47,7 +47,7 @@ describe('certificates tab', () => {
 
   it('says why the certificates cannot be read instead of failing silently', async () => {
     renderTab({ error: { code: 'worker.acme_not_configured' } }, 409)
-    expect(await screen.findByRole('alert')).toHaveTextContent('No acme.json is configured')
+    expect(await screen.findByRole('status')).toHaveTextContent('No acme.json is configured')
   })
 
   it('shows an empty state and never offers anything that could hold a key', async () => {

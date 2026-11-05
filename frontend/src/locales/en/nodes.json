@@ -30,5 +30,6 @@
   "details.type": "Type",
   "delete.zone": "Danger zone",
   "open": "Open",
-  "create.cancel": "Cancel"
+  "create.cancel": "Cancel",
+  "localDescription": "The machine Armadok itself runs on."
 }

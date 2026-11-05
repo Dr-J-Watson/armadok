@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Port {
   private: number | null
@@ -75,9 +75,7 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
   if (containers.isPending) return <p>{t('loading')}</p>
   if (containers.isError) {
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, containers.error)}
-      </p>
+      <Problem error={containers.error} />
     )
   }
   const { containers: list, truncated } = containers.data
@@ -90,9 +88,7 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
         <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} /> {t('docker:live.toggle')}
       </label>
       {live && stats.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, stats.error)}
-        </p>
+        <Problem error={stats.error} />
       )}
       {live && stats.data?.truncated && <p className="notice">{t('docker:live.truncated')}</p>}
       <table className="table">
@@ -164,17 +160,13 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
         </tbody>
       </table>
       {act.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, act.error)}
-        </p>
+        <Problem error={act.error} />
       )}
       {logsOf && (
         <section aria-label={t('docker:logsTitle')}>
           <h3>{t('docker:logsTitle')}</h3>
           {logs.isError ? (
-            <p role="alert" className="error">
-              {errorMessage(t, logs.error)}
-            </p>
+            <Problem error={logs.error} />
           ) : (
             <pre className="output">{logs.data?.output ?? t('loading')}</pre>
           )}

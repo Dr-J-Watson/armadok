@@ -3,8 +3,8 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../core/api'
 import { useAuth } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
 import { AuthLayout } from './AuthLayout'
+import { Problem } from '../../components/Problem'
 
 export function LoginPage() {
   const { t } = useTranslation(['auth', 'errors'])
@@ -67,9 +67,7 @@ export function LoginPage() {
           </>
         )}
         {error !== null && (
-          <p role="alert" className="error">
-            {errorMessage(t, error)}
-          </p>
+          <Problem error={error} />
         )}
         <button type="submit" className="primary" disabled={busy}>
           {t('auth:login.submit')}

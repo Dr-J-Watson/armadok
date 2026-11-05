@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Archive {
   name: string
@@ -109,9 +109,7 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
     <>
       <p>{t('backups:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {list.isPending && <p>{t('loading')}</p>}
       {data && !data.configured && <p className="notice">{t('backups:notConfigured')}</p>}

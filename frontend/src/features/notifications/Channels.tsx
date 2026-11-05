@@ -3,9 +3,10 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { codeMessage, errorMessage } from '../../core/errors'
+import { codeMessage } from '../../core/errors'
 import { leaveThisBrowser } from '../../core/push'
 import { BrowserPush } from './BrowserPush'
+import { Problem } from '../../components/Problem'
 
 export interface Channel {
   id: string
@@ -94,7 +95,7 @@ export function Channels() {
   return (
     <>
       <p>{t('notifications:channels.explain')}</p>
-      {failed != null && <p role="alert" className="error">{errorMessage(t, failed)}</p>}
+      {failed != null && <Problem error={failed} />}
       {secret && (
         <div className="notice">
           <p>{t('notifications:channels.secret')}</p>
@@ -160,7 +161,7 @@ export function Channels() {
           </label>
           <p>{t('notifications:platform.explain')}</p>
           {switchEmail.isError && (
-            <p role="alert" className="error">{errorMessage(t, switchEmail.error)}</p>
+            <Problem error={switchEmail.error} />
           )}
         </div>
       )}

@@ -20,7 +20,7 @@ function Landing({ nav }: { nav: NavItem[] }) {
   const showStart = can('users.create') && readPref(DISMISSED) !== '1' && nav.some((n) => n.id === 'start')
   // The first page this account is allowed to open, so nobody lands on a page that refuses them.
   const first = nav.find((n) => n.id !== 'start' && (!n.requiresRight || can(n.requiresRight)))
-  return <Navigate to={showStart ? '/start' : (first?.to ?? '/nodes')} replace />
+  return <Navigate to={showStart ? '/start' : nav.some((n) => n.id === 'dashboard') ? '/dashboard' : (first?.to ?? '/nodes')} replace />
 }
 
 // Features whose backend module is not enabled are left out entirely.

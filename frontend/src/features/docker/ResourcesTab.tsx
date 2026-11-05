@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Item {
   id?: string
@@ -30,9 +30,7 @@ function Kind({ nodeId, kind }: { nodeId: string; kind: (typeof KINDS)[number] }
     <section aria-label={t(`docker:resources.${kind}`)}>
       <h3>{t(`docker:resources.${kind}`)}</h3>
       {list.isError ? (
-        <p role="alert" className="error">
-          {errorMessage(t, list.error)}
-        </p>
+        <Problem error={list.error} />
       ) : list.data && list.data.items.length === 0 ? (
         <p className="empty">{t('docker:resources.none')}</p>
       ) : (
@@ -94,9 +92,7 @@ function Cleanup({ nodeId }: { nodeId: string }) {
         <p role="status">{t('docker:prune.done', { count: prune.data.removed, mib: Math.round(prune.data.space / 1048576) })}</p>
       )}
       {prune.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, prune.error)}
-        </p>
+        <Problem error={prune.error} />
       )}
     </section>
   )

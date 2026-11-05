@@ -3,8 +3,8 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import { EMPTY_WHEN, WhenPicker, toSchedule, type Schedule, type When } from './WhenPicker'
+import { Problem } from '../../components/Problem'
 
 interface Field {
   name: string
@@ -98,9 +98,7 @@ export function ScheduleTab({ nodeId }: { nodeId: string }) {
     <>
       <p>{t('schedule:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {run.data && (
         <p role="status" className="notice">

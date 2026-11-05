@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { codeMessage, errorMessage } from '../../core/errors'
+import { codeMessage } from '../../core/errors'
 import { Sparkline } from './Sparkline'
+import { Problem } from '../../components/Problem'
 
 const RANGES = ['1h', '24h', '7d', '30d'] as const
 type Range = (typeof RANGES)[number]
@@ -69,9 +70,7 @@ export function TrafficTab({ nodeId }: { nodeId: string }) {
       <h2>{t('traffic:title')}</h2>
       <p className="hint">{t('traffic:privacy')}</p>
       {stats.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, stats.error)}
-        </p>
+        <Problem error={stats.error} />
       )}
       <div className="actions">
         {RANGES.map((r) => (

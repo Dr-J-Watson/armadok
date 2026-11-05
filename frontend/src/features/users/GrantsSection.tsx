@@ -4,9 +4,9 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { useCan } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
 import type { RightInfo } from '../account/rights'
 import type { Node } from '../nodes/types'
+import { Problem } from '../../components/Problem'
 
 interface StoredGrant {
   id: string
@@ -56,9 +56,7 @@ export function GrantsSection({ userId }: { userId: string }) {
     <section>
       <h2>{t('users:grants.title')}</h2>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {grants.data?.length === 0 && <p className="empty">{t('users:grants.empty')}</p>}
       <ul className="links">

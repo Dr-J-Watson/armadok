@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { rememberThisBrowser } from '../../core/push'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 // The browser wants the server's public key as bytes; the server sends it as base64url.
 export function keyToBytes(text: string): Uint8Array<ArrayBuffer> {
@@ -67,7 +67,7 @@ export function BrowserPush({ onDone }: { onDone: () => void }) {
         {t('notifications:push.enable')}
       </button>
       {failure && <p role="alert" className="error">{t(`notifications:push.${failure}`)}</p>}
-      {enable.isError && <p role="alert" className="error">{errorMessage(t, enable.error)}</p>}
+      {enable.isError && <Problem error={enable.error} />}
     </section>
   )
 }

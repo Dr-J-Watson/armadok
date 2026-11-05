@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Entry {
   id: number
@@ -40,7 +40,7 @@ export function Inbox() {
 
   return (
     <>
-      {inbox.isError && <p role="alert" className="error">{errorMessage(t, inbox.error)}</p>}
+      {inbox.isError && <Problem error={inbox.error} />}
       {inbox.isSuccess && entries.length === 0 && <p className="empty">{t('notifications:inbox.empty')}</p>}
       {entries.some((e) => !e.read) && (
         <button type="button" onClick={() => readAll.mutate()}>{t('notifications:inbox.readAll')}</button>

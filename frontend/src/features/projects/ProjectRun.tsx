@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Service {
   service: string
@@ -73,9 +73,7 @@ export function ProjectRun({ nodeId, project }: { nodeId: string; project: strin
         </button>
       </div>
       {run.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, run.error)}
-        </p>
+        <Problem error={run.error} />
       )}
       {task.data && (
         <div role="status">
@@ -84,15 +82,11 @@ export function ProjectRun({ nodeId, project }: { nodeId: string; project: strin
         </div>
       )}
       {task.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, task.error)}
-        </p>
+        <Problem error={task.error} />
       )}
       <h4>{t('projects:run.services')}</h4>
       {status.isError ? (
-        <p role="alert" className="error">
-          {errorMessage(t, status.error)}
-        </p>
+        <Problem error={status.error} />
       ) : status.data && status.data.services.length > 0 ? (
         <ul className="links">
           {status.data.services.map((s) => (
@@ -108,9 +102,7 @@ export function ProjectRun({ nodeId, project }: { nodeId: string; project: strin
         <>
           <h4>{t('projects:run.logs')}</h4>
           {logs.isError ? (
-            <p role="alert" className="error">
-              {errorMessage(t, logs.error)}
-            </p>
+            <Problem error={logs.error} />
           ) : (
             <pre className="output">{logs.data?.output ?? t('loading')}</pre>
           )}

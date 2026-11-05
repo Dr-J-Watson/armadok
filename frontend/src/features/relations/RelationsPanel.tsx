@@ -5,9 +5,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { useFeatures } from '../../core/useFeatures'
-import { errorMessage } from '../../core/errors'
 import { objectKey } from './graph'
 import type { RelationObject } from './graph'
+import { Problem } from '../../components/Problem'
 
 interface Panel {
   object: RelationObject
@@ -44,9 +44,7 @@ export function RelationsPanel({ nodeId, object, onSelect, extra }: Props) {
       {extra}
       {panel.isPending && <p>{t('loading')}</p>}
       {panel.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, panel.error)}
-        </p>
+        <Problem error={panel.error} />
       )}
       {panel.data && panel.data.links.length === 0 && <p className="empty">{t('relations:noLinks')}</p>}
       {panel.data && panel.data.links.length > 0 && (

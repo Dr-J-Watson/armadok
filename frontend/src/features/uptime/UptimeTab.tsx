@@ -3,8 +3,8 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import { PublishControl } from '../status/PublishControl'
+import { Problem } from '../../components/Problem'
 
 interface Result {
   at: string
@@ -84,9 +84,7 @@ export function UptimeTab({ nodeId }: { nodeId: string }) {
     <>
       <p>{t('uptime:explain')}</p>
       {failed != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, failed)}
-        </p>
+        <Problem error={failed} />
       )}
       {list.isPending && <p>{t('loading')}</p>}
       {list.data && list.data.probes.length === 0 && <p className="empty">{t('uptime:none')}</p>}

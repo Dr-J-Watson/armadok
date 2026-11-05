@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import type { User } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
 import { useModules } from '../../core/modules'
 import { ApiKeys } from './ApiKeys'
 import { TwoFactor } from './TwoFactor'
+import { Problem } from '../../components/Problem'
 
 export function AccountPage() {
   const { t } = useTranslation(['account', 'errors'])
@@ -16,9 +16,7 @@ export function AccountPage() {
   if (me.isPending) return <p>{t('loading')}</p>
   if (me.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, me.error)}
-      </p>
+      <Problem error={me.error} />
     )
   return (
     <>

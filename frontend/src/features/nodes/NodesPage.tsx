@@ -8,6 +8,7 @@ import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
 import { NodeIcon } from '../../components/NodeIcon'
 import type { Node, NodeType } from './types'
+import { Problem } from '../../components/Problem'
 
 const TYPES: NodeType[] = ['full', 'docker', 'network']
 
@@ -86,9 +87,7 @@ export function NodesPage() {
 
       {nodes.isPending && <p className="loading">{t('loading')}</p>}
       {nodes.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, nodes.error)}
-        </p>
+        <Problem error={nodes.error} />
       )}
       {nodes.data?.length === 0 && !adding && (
         <div className="empty">
@@ -116,7 +115,9 @@ export function NodesPage() {
                     </span>
                   )}
                 </span>
-                {node.description && <span className="hint">{node.description}</span>}
+                {(node.local || node.description) && (
+                  <span className="hint">{node.local ? t('nodes:localDescription') : node.description}</span>
+                )}
               </span>
               <ChevronRight size={18} aria-hidden="true" className="chevron" />
             </Link>

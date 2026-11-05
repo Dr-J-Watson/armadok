@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Offer {
   id: string
@@ -64,7 +64,7 @@ export function OwnershipPage() {
     <>
       <h1>{t('ownership:page')}</h1>
       <p className="hint">{t('ownership:intro')}</p>
-      {failed && <p role="alert" className="error">{errorMessage(t, failed)}</p>}
+      {failed && <Problem error={failed} />}
       <h2>{t('ownership:received')}</h2>
       {offers.data?.received.length === 0 && <p className="empty">{t('ownership:noneReceived')}</p>}
       {offers.data && list(offers.data.received, true)}

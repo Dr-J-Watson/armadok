@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import { lineDiff } from './lineDiff'
+import { Problem } from '../../components/Problem'
 
 interface StaticFile {
   configured: boolean
@@ -67,9 +67,7 @@ export function StaticConfig({ nodeId }: { nodeId: string }) {
   if (loaded.isPending) return <p>{t('loading')}</p>
   if (failed) {
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, failed)}
-      </p>
+      <Problem error={failed} />
     )
   }
   if (!loaded.data?.configured) {
@@ -184,9 +182,7 @@ function Restart({ nodeId }: { nodeId: string }) {
       </button>
       {done && <p role="status">{t('traefik:static.restarted')}</p>}
       {restart.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, restart.error)}
-        </p>
+        <Problem error={restart.error} />
       )}
     </div>
   )

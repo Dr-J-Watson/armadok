@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Line {
   right: string
@@ -21,9 +21,7 @@ export function EffectiveSection({ userId }: { userId: string }) {
   if (got.isPending) return null
   if (got.isError)
     return (
-      <p role="alert" className="error">
-        {errorMessage(t, got.error)}
-      </p>
+      <Problem error={got.error} />
     )
   const rows = [
     ...got.data.direct.map((l) => ({ ...l, source: t('roles:effective.direct') })),

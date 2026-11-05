@@ -24,6 +24,7 @@ import { rolesFeature } from './roles/feature'
 import { scheduleFeature } from './schedule/feature'
 import { uptimeFeature } from './uptime/feature'
 import { imageScanFeature } from './imagescan/feature'
+import { dashboardFeature } from './dashboard/feature'
 import { helpFeature } from './help/feature'
 import { trafficFeature } from './traffic/feature'
 import { imageUpdatesFeature } from './imageupdates/feature'
@@ -36,6 +37,7 @@ import { usersFeature } from './users/feature'
 import { workersFeature } from './workers/feature'
 
 export const features: Feature[] = [
+  dashboardFeature,
   startFeature,
   paletteFeature,
   nodesFeature,

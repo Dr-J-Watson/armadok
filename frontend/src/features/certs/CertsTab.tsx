@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Certificate {
   resolver: string
@@ -30,7 +30,7 @@ export function CertsTab({ nodeId }: { nodeId: string }) {
   })
 
   if (certs.isPending) return <p>{t('loading')}</p>
-  if (certs.isError) return <p role="alert" className="error">{errorMessage(t, certs.error)}</p>
+  if (certs.isError) return <Problem error={certs.error} />
   const { certificates, hosts, truncated } = certs.data
   const problems = hosts.filter((h) => h.state !== 'ok')
 

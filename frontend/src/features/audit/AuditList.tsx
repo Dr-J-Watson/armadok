@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, download } from '../../core/api'
 import { useCan } from '../../core/auth'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface Entry {
   id: number
@@ -100,9 +100,7 @@ export function AuditList({ nodeId }: { nodeId?: string }) {
         </p>
       )}
       {(log.error ?? verify.error ?? exportAs.error) != null && (
-        <p role="alert" className="error">
-          {errorMessage(t, log.error ?? verify.error ?? exportAs.error)}
-        </p>
+        <Problem error={log.error ?? verify.error ?? exportAs.error} />
       )}
       {log.isPending && <p>{t('loading')}</p>}
       {log.isSuccess && entries.length === 0 && <p className="empty">{t('audit:empty')}</p>}

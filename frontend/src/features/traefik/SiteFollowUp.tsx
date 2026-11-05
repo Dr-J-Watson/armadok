@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 interface DnsHost {
   host: string
@@ -93,9 +93,7 @@ export function SiteFollowUp({ nodeId, hosts, https, onDone }: { nodeId: string;
         </tbody>
       </table>
       {fix.isError && (
-        <p role="alert" className="error">
-          {errorMessage(t, fix.error)}
-        </p>
+        <Problem error={fix.error} />
       )}
       {https && <p className="hint">{t('traefik:followUp.certHint')}</p>}
       <div className="actions">

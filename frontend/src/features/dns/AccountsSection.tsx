@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
+import { Problem } from '../../components/Problem'
 
 export interface Provider {
   name: string
@@ -52,7 +52,7 @@ export function AccountsSection({ providers }: { providers: Provider[] }) {
     <section>
       <h2>{t('dns:accounts.title')}</h2>
       <p>{t('dns:accounts.explain')}</p>
-      {failed != null && <p role="alert" className="error">{errorMessage(t, failed)}</p>}
+      {failed != null && <Problem error={failed} />}
       {accounts.data?.length === 0 && <p className="empty">{t('dns:accounts.empty')}</p>}
       <ul className="cards">
         {accounts.data?.map((a) => (

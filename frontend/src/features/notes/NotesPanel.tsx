@@ -3,8 +3,8 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, api } from '../../core/api'
-import { errorMessage } from '../../core/errors'
 import { ShareNote } from './ShareNote'
+import { Problem } from '../../components/Problem'
 
 export interface Note {
   id: string
@@ -63,7 +63,7 @@ export function NoteItem({ note, onChanged }: { note: Note; onChanged: () => voi
           </label>
           <textarea id={`note-${note.id}`} className="note-text" maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} />
           {conflict && <p role="alert" className="error">{t('errors:notes.conflict')}</p>}
-          {patch.isError && !conflict && <p role="alert" className="error">{errorMessage(t, patch.error)}</p>}
+          {patch.isError && !conflict && <Problem error={patch.error} />}
           <button type="button" className="primary" disabled={!text.trim()} onClick={() => patch.mutate({ body: text })}>
             {t('notes:save')}
           </button>{' '}
@@ -132,7 +132,7 @@ export function NotesPanel({ nodeId, objectType, objectId }: Props) {
     <section className="notes">
       <h3>{t('notes:title')}</h3>
       <p className="hint">{t('notes:private')}</p>
-      {notes.isError && <p role="alert" className="error">{errorMessage(t, notes.error)}</p>}
+      {notes.isError && <Problem error={notes.error} />}
       <ul className="notes-list">
         {notes.data?.map((n) => <NoteItem key={`${n.id}:${n.updated_at}`} note={n} onChanged={() => void refresh()} />)}
       </ul>
@@ -145,7 +145,7 @@ export function NotesPanel({ nodeId, objectType, objectId }: Props) {
         </select>
         <label htmlFor={`note-remind-${objectId}`}>{t('notes:remind')}</label>
         <input id={`note-remind-${objectId}`} type="datetime-local" value={remind} onChange={(e) => setRemind(e.target.value)} />
-        {create.isError && <p role="alert" className="error">{errorMessage(t, create.error)}</p>}
+        {create.isError && <Problem error={create.error} />}
         <button type="submit" className="primary" disabled={create.isPending || !body.trim()}>{t('notes:add')}</button>
       </form>
     </section>

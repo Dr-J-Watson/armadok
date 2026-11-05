@@ -5,6 +5,7 @@ import {
   Bug,
   Circle,
   Gift,
+  LayoutDashboard,
   Globe,
   HardDrive,
   KeyRound,
@@ -22,6 +23,7 @@ import type { LucideIcon } from 'lucide-react'
 // Icons a feature can ask for by name in its menu entry, so the shell never imports them one by
 // one for each feature. An unknown name gets a plain dot, never a broken menu.
 const ICONS: Record<string, LucideIcon> = {
+  dashboard: LayoutDashboard,
   rocket: Rocket,
   server: Server,
   globe: Globe,

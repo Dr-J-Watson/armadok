@@ -30,5 +30,6 @@
   "details.type": "Type",
   "delete.zone": "Zone dangereuse",
   "open": "Ouvrir",
-  "create.cancel": "Annuler"
+  "create.cancel": "Annuler",
+  "localDescription": "La machine sur laquelle tourne Armadok."
 }
