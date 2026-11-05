@@ -1,7 +1,7 @@
 {
   "app.name": "Armadok",
   "loading": "Chargement…",
-  "notFound": "Page introuvable.",
+  "notFound": "Cette page n'existe pas",
   "nav.main": "Navigation principale",
   "nav.nodes": "Machines",
   "prefs.language": "Langue",
@@ -43,5 +43,11 @@
   "nav.dashboard": "Vue d'ensemble",
   "confirm.yes": "Oui, continuer",
   "confirm.no": "Annuler",
-  "nav.convert": "Convertisseur"
+  "nav.convert": "Convertisseur",
+  "nav.skip": "Aller au contenu",
+  "notFoundHint": "L'adresse est peut-être mal saisie, ou la page a changé de place.",
+  "crash.title": "Un problème est survenu sur cet écran",
+  "crash.text": "Rien n'a été perdu ni modifié à cause de cela. Vous pouvez réessayer ou recharger la page.",
+  "crash.reload": "Recharger la page",
+  "crash.retry": "Réessayer"
 }

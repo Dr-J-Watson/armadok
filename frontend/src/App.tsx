@@ -11,6 +11,8 @@ import { RealtimeProvider } from './core/RealtimeProvider'
 import { features } from './features/enabled'
 import { LoginPage } from './features/auth/LoginPage'
 import { SetupPage } from './features/auth/SetupPage'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { NotFound } from './components/NotFound'
 import { Layout } from './shell/Layout'
 
 // Where to land: the checklist for an administrator who has not hidden it yet, else the first
@@ -39,11 +41,11 @@ function AuthenticatedApp() {
         children: [
           ...enabled.flatMap((f) => f.routes ?? []),
           { index: true, element: <Landing nav={nav} /> },
-          { path: '*', element: <p>{t('notFound')}</p> },
+          { path: '*', element: <NotFound /> },
         ],
       },
     ],
-    [enabled, nav, t],
+    [enabled, nav],
   )
   const element = useRoutes(routes)
   return modules ? element : <p className="loading">{t('loading')}</p>
@@ -72,8 +74,10 @@ function PublicOrGate() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <PublicOrGate />
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <PublicOrGate />
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }

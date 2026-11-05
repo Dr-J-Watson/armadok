@@ -36,6 +36,13 @@ export function Layout({ nav }: { nav: NavItem[] }) {
   const widgets = all.filter((w) => w.id !== 'command-palette')
   const [open, setOpen] = useState(false)
   const location = useLocation()
+  // The tab's title names the page, so several tabs of Armadok can be told apart (and a screen
+  // reader announces where it went).
+  const here = nav.find((n) => location.pathname === n.to || location.pathname.startsWith(`${n.to}/`))
+  const pageTitle = here ? `${t(here.labelKey)} · ${t('app.name')}` : t('app.name')
+  useEffect(() => {
+    document.title = pageTitle
+  }, [pageTitle])
   // Going to another page closes the drawer (adjusted while rendering, not in an effect).
   const [seen, setSeen] = useState(location.pathname)
   if (seen !== location.pathname) {
@@ -50,6 +57,9 @@ export function Layout({ nav }: { nav: NavItem[] }) {
   }, [open])
   return (
     <div className="shell">
+      <a className="skip-link" href="#main">
+        {t('nav.skip')}
+      </a>
       <header className="mobilebar">
         <span className="brand">
           <Logo size={26} />
@@ -101,7 +111,7 @@ export function Layout({ nav }: { nav: NavItem[] }) {
           <AccountMenu />
         </div>
       </aside>
-      <main className="content">
+      <main className="content" id="main" tabIndex={-1}>
         <Outlet />
       </main>
     </div>

@@ -556,3 +556,7 @@ kbd { font-family: var(--mono); font-size: .72rem; color: var(--faint); backgrou
 ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
 .actions.between { justify-content: space-between; margin: 1.5rem 0 .5rem; }
 .actions.between h2 { margin: 0; }
+
+.skip-link { position: absolute; left: .75rem; top: -4rem; z-index: 100; padding: .6rem 1rem; background: var(--accent); color: var(--accent-text); border-radius: var(--radius); font-weight: 600; text-decoration: none; transition: top .12s; }
+.skip-link:focus { top: .75rem; }
+.content:focus { outline: none; }
