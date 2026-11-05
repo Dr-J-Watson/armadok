@@ -4,5 +4,10 @@
   "use": "Utiliser",
   "delete": "Supprimer",
   "keep": "Garder comme modèle",
-  "kept": "Modèle gardé."
+  "kept": "Modèle gardé.",
+  "sharedBy": "partagé par {{name}}",
+  "sharing.title": "Partage",
+  "sharing.everyone": "Tout le monde sur cet Armadok",
+  "sharing.group": "Membres de {{name}}",
+  "sharing.hint": "Ils peuvent créer des projets à partir de lui, pas le modifier ni le supprimer. Ne mets jamais de secret dans un modèle partagé."
 }

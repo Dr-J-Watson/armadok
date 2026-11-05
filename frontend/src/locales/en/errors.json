@@ -238,5 +238,6 @@
   "templates.not_found": "This template does not exist.",
   "templates.too_many": "You already keep the most templates allowed.",
   "templates.not_with_key": "Templates are reached with your own session, not with an API key.",
-  "templates.unreadable": "This template cannot be read (the encryption key changed)."
+  "templates.unreadable": "This template cannot be read (the encryption key changed).",
+  "templates.not_your_group": "You can only share with groups you belong to."
 }

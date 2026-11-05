@@ -4,5 +4,10 @@
   "use": "Use",
   "delete": "Delete",
   "keep": "Keep as a template",
-  "kept": "Template kept."
+  "kept": "Template kept.",
+  "sharedBy": "shared by {{name}}",
+  "sharing.title": "Sharing",
+  "sharing.everyone": "Everybody on this Armadok",
+  "sharing.group": "Members of {{name}}",
+  "sharing.hint": "They can start projects from it, not change or delete it. Never put secrets in a template you share."
 }

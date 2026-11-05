@@ -10,6 +10,6 @@ module = Module(
     routes=(router,),
     # Everyone may keep their own templates: they give access to nothing.
     rights=(Right("templates.use", baseline=True),),
-    audit_events=("templates.create", "templates.delete"),
-    migrations=(repository.MIGRATION,),
+    audit_events=("templates.create", "templates.delete", "templates.share"),
+    migrations=(repository.MIGRATION, repository.SHARING_MIGRATION),
 )

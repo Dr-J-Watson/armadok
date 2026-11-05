@@ -67,3 +67,44 @@ def test_templates_refuse_api_keys_and_oversized_texts(box):
         ).status_code
         == 422
     )
+
+
+def test_a_template_can_be_shared_with_everyone_or_with_your_groups_but_only_you_change_it(box):
+    client, admin, app = box
+    tid = client.post(
+        "/api/v1/templates", headers=admin, json={"name": "web", "compose": COMPOSE}
+    ).json()["id"]
+    pat_id, pat = person(client, admin, "pat")
+    _, lou = person(client, admin, "lou")
+    conn = app.state.settings.open_db()
+    admin_id = conn.execute("SELECT id FROM users WHERE username = 'admin'").fetchone()["id"]
+    conn.executemany(
+        "INSERT INTO groups (id, name, created_at) VALUES (?, ?, 'now')",
+        [("g1", "team"), ("g2", "other")],
+    )
+    conn.executemany(
+        "INSERT INTO group_members (group_id, user_id) VALUES (?, ?)",
+        [("g1", admin_id), ("g1", pat_id), ("g2", pat_id)],
+    )
+    conn.commit()
+    conn.close()
+    url = f"/api/v1/templates/{tid}"
+    assert client.get(url, headers=pat).status_code == 404  # private until shared
+    # You may only share with groups you belong to.
+    refused = client.put(url + "/sharing", headers=admin, json={"groups": ["g2"]})
+    assert refused.status_code == 422
+    assert client.put(url + "/sharing", headers=admin, json={"groups": ["g1"]}).status_code == 204
+    assert client.get(url, headers=pat).json()["compose"] == COMPOSE
+    listed = client.get("/api/v1/templates", headers=pat).json()
+    assert listed[0]["mine"] is False and listed[0]["owner_name"] == "admin"
+    assert client.get(url, headers=lou).status_code == 404  # not in the group
+    # Using is not owning: no sharing change, no deletion.
+    assert client.put(url + "/sharing", headers=pat, json={"everyone": True}).status_code == 404
+    assert client.delete(url, headers=pat).status_code == 404
+    assert client.put(url + "/sharing", headers=admin, json={"everyone": True}).status_code == 204
+    assert client.get(url, headers=lou).status_code == 200
+    assert client.put(url + "/sharing", headers=admin, json={}).status_code == 204
+    assert client.get(url, headers=lou).status_code == 404
+    names = [g["name"] for g in client.get("/api/v1/templates/groups", headers=pat).json()]
+    assert names == ["other", "team"]
+    assert "share" in client.get("/api/v1/audit", headers=admin).text

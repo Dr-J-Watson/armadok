@@ -238,5 +238,6 @@
   "templates.not_found": "Ce modèle n'existe pas.",
   "templates.too_many": "Tu gardes déjà le maximum de modèles.",
   "templates.not_with_key": "Les modèles s'ouvrent avec ta propre session, pas avec une clé d'API.",
-  "templates.unreadable": "Ce modèle est illisible (la clé de chiffrement a changé)."
+  "templates.unreadable": "Ce modèle est illisible (la clé de chiffrement a changé).",
+  "templates.not_your_group": "Tu ne peux partager qu'avec les groupes dont tu fais partie."
 }
