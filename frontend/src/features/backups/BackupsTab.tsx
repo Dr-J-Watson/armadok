@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface Archive {
   name: string
@@ -42,6 +43,7 @@ const megabytes = (n: number) => (n < 1048576 ? `${Math.max(1, Math.round(n / 10
 // them. A restore needs the volume's name typed again, because it overwrites files.
 export function BackupsTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['backups', 'errors'])
+  const confirm = useConfirm()
   const client = useQueryClient()
   const [volume, setVolume] = useState('')
   const [keep, setKeep] = useState('7')
@@ -169,7 +171,7 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
                         </button>{' '}
                       </>
                     )}
-                    <button type="button" onClick={() => window.confirm(t('backups:confirmDelete')) && remove.mutate(a)}>
+                    <button type="button" onClick={async () => (await confirm(t('backups:confirmDelete'))) && remove.mutate(a)}>
                       {t('backups:delete')}
                     </button>
                   </span>

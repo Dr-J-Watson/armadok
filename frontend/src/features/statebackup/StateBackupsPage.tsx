@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, downloadWith } from '../../core/api'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface Backup {
   name: string
@@ -26,6 +27,7 @@ const size = (n: number) => (n < 1048576 ? `${Math.max(1, Math.round(n / 1024))}
 // thing they cannot contain: keep it somewhere else. Restoring is a command, not a button.
 export function StateBackupsPage() {
   const { t } = useTranslation(['statebackup', 'errors'])
+  const confirm = useConfirm()
   const client = useQueryClient()
   const [downloading, setDownloading] = useState<string | null>(null)
   const [code, setCode] = useState('')
@@ -96,7 +98,7 @@ export function StateBackupsPage() {
                   }}>
                   {t('statebackup:download')}
                 </button>{' '}
-                <button type="button" onClick={() => window.confirm(t('statebackup:confirmDelete')) && remove.mutate(b)}>
+                <button type="button" onClick={async () => (await confirm(t('statebackup:confirmDelete'))) && remove.mutate(b)}>
                   {t('statebackup:delete')}
                 </button>
                 {downloading === b.name && (

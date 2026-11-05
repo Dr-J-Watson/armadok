@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { EMPTY_WHEN, WhenPicker, toSchedule, type Schedule, type When } from './WhenPicker'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface Field {
   name: string
@@ -41,6 +42,7 @@ const EMPTY = { name: '', action: '', target: {} as Record<string, string> }
 // them up: they are checked again at every run.
 export function ScheduleTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['schedule', 'errors'])
+  const confirm = useConfirm()
   const client = useQueryClient()
   const [form, setForm] = useState(EMPTY)
   const [when, setWhen] = useState<When>(EMPTY_WHEN)
@@ -144,7 +146,7 @@ export function ScheduleTab({ nodeId }: { nodeId: string }) {
                 <button type="button" onClick={() => toggle.mutate(x)}>
                   {t(x.enabled ? 'schedule:pause' : 'schedule:resume')}
                 </button>{' '}
-                <button type="button" onClick={() => window.confirm(t('schedule:confirmDelete')) && remove.mutate(x)}>
+                <button type="button" onClick={async () => (await confirm(t('schedule:confirmDelete'))) && remove.mutate(x)}>
                   {t('schedule:delete')}
                 </button>
               </span>

@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 const INTENTS = ['local_only', 'basic_auth', 'security_headers', 'redirect_https', 'strip_prefix', 'rate_limit', 'compress', 'forward_auth'] as const
 type Intent = (typeof INTENTS)[number]
@@ -93,6 +94,7 @@ function fromSpec(spec: Item['spec']): Form {
 // password"...) and the file is written for you. Passwords are hashed on the server.
 export function Middlewares({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['traefik', 'errors'])
+  const confirm = useConfirm()
   const client = useQueryClient()
   const base = `/nodes/${nodeId}/traefik/middlewares`
   const [form, setForm] = useState<Form | null>(null)
@@ -164,7 +166,7 @@ export function Middlewares({ nodeId }: { nodeId: string }) {
                 </button>{' '}
               </>
             )}
-            <button type="button" disabled={m.used_by.length > 0} title={m.used_by.length > 0 ? t('traefik:middlewares.inUse') : undefined} onClick={() => window.confirm(t('traefik:middlewares.confirmDelete')) && remove.mutate(m)}>
+            <button type="button" disabled={m.used_by.length > 0} title={m.used_by.length > 0 ? t('traefik:middlewares.inUse') : undefined} onClick={async () => (await confirm(t('traefik:middlewares.confirmDelete'))) && remove.mutate(m)}>
               {t('traefik:middlewares.delete')}
             </button>
           </li>

@@ -537,3 +537,18 @@ kbd { font-family: var(--mono); font-size: .72rem; color: var(--faint); backgrou
 .activity-time { color: var(--muted); font-size: .85rem; min-width: 11rem; font-variant-numeric: tabular-nums; }
 
 .stat-grid .stat { align-content: start; min-height: 8.5rem; }
+.attention > li { flex-wrap: nowrap; align-items: flex-start; }
+@media (max-width: 40rem) {
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .stat-grid .stat { min-height: 0; padding: .85rem 1rem; }
+  .stat-value { font-size: 1.35rem; }
+  h1 { font-size: 1.5rem; }
+}
+
+/* Confirmation box */
+.modal-backdrop { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 1rem; background: rgb(8 12 20 / .5); backdrop-filter: blur(3px); animation: fade .12s ease; }
+.modal { width: min(28rem, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); padding: 1.5rem; animation: pop .14s ease; }
+.modal p { margin: 0 0 1.25rem; font-size: 1rem; }
+.modal .actions { margin: 0; justify-content: flex-end; flex-direction: row-reverse; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } }

@@ -40,5 +40,7 @@
   "nav.section.personal": "Personal",
   "app.tagline": "Deploy, publish and see what is connected to what.",
   "prefs.title": "Language and appearance",
-  "nav.dashboard": "Overview"
+  "nav.dashboard": "Overview",
+  "confirm.yes": "Yes, continue",
+  "confirm.no": "Cancel"
 }

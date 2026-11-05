@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { lineDiff } from './lineDiff'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface StaticFile {
   configured: boolean
@@ -146,6 +147,7 @@ export function StaticConfig({ nodeId }: { nodeId: string }) {
 // The restart that makes the saved file count: the person names the Traefik container.
 function Restart({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['traefik', 'errors'])
+  const confirm = useConfirm()
   const containers = useQuery({
     queryKey: ['docker-containers', nodeId],
     queryFn: () => api.get<{ containers: Container[] }>(`/nodes/${nodeId}/docker/containers`),
@@ -176,7 +178,7 @@ function Restart({ nodeId }: { nodeId: string }) {
       <button
         type="button"
         disabled={chosen === '' || restart.isPending}
-        onClick={() => window.confirm(t('traefik:static.confirmRestart')) && restart.mutate()}
+        onClick={async () => (await confirm(t('traefik:static.confirmRestart'))) && restart.mutate()}
       >
         {t('traefik:static.restart')}
       </button>
