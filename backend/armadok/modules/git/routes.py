@@ -20,7 +20,7 @@ from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
-from armadok.modules.git import repository, schemas
+from armadok.modules.git import repository, schemas, service
 from armadok.modules.projects import schemas as project_schemas
 from armadok.modules.workers.access import ask, audit_failure, authorise
 
@@ -67,13 +67,7 @@ def _project(name: str) -> None:
 
 def _login_for(request: Request, conn: sqlite3.Connection, node_id: str, url: str):
     """Return the stored login for the address's host as the worker takes it, or None."""
-    sealed = repository.sealed_login(conn, node_id, schemas.host_of(url))
-    if sealed is None:
-        return None
-    return {
-        "username": sealed[0],
-        "token": crypto.decrypt(request.app.state.settings, sealed[1]),
-    }
+    return service.login_for(request.app.state.settings, conn, node_id, url)
 
 
 @router.get("/logins", summary="Git hosts this machine has a login for")

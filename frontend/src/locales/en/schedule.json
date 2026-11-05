@@ -65,5 +65,6 @@
   "missedRun": "Run it now",
   "missedWait": "Wait for the next time",
   "actions.imagescan.scan": "Scan images for flaws",
-  "actions.images.check": "Check for image updates"
+  "actions.images.check": "Check for image updates",
+  "actions.project.autoupdate": "Update a project when something is new (Git, images)"
 }

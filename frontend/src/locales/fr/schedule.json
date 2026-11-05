@@ -65,5 +65,6 @@
   "missedRun": "La lancer maintenant",
   "missedWait": "Attendre la prochaine fois",
   "actions.imagescan.scan": "Analyser les failles des images",
-  "actions.images.check": "Vérifier les mises à jour d'images"
+  "actions.images.check": "Vérifier les mises à jour d'images",
+  "actions.project.autoupdate": "Mettre à jour un projet quand il y a du neuf (Git, images)"
 }

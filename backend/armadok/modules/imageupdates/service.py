@@ -23,6 +23,8 @@ SAFE_REF = re.compile(r"[^A-Za-z0-9._:/@-]")
 CONCURRENCY = 4
 DEADLINE_SECONDS = 180
 _busy: set[str] = set()
+# Shared by every project check, so many tasks due together do not multiply the requests.
+_GATE = asyncio.Semaphore(CONCURRENCY)
 log = logging.getLogger("armadok.imageupdates")
 
 
@@ -168,6 +170,39 @@ async def check_node(app: Any, node_id: str) -> dict[str, int]:
         return counts
     finally:
         _busy.discard(node_id)
+
+
+async def newer_exists(app: Any, node_id: str, wanted: list[str]) -> bool:
+    """Say whether any of these image references (as containers name them) has a newer version.
+
+    A quick check of a handful of images, for a project: nothing is stored and nobody is
+    notified (the machine-wide check does that). References that cannot be followed, or whose
+    registry does not answer, count as "no news": an update is never guessed.
+    """
+    targets = {p for ref in wanted if (p := refs.parse(ref)) is not None}
+    # Same bounds as the machine-wide check: a container can name any registry.
+    if len({t.host for t in targets}) > MAX_REGISTRIES or len(targets) > MAX_IMAGES:
+        return False
+    if not targets:
+        return False
+    raw = await call_operation(app, app.state.registry, node_id, "docker.images.digests", {})
+    try:
+        listing = LocalImages.model_validate(raw)
+    except ValueError:
+        raise ApiError("worker.invalid_answer", 502) from None
+    mine = {i.ref: i for i in listing.images if refs.parse(i.ref) in targets}
+    if not mine:
+        return False
+    logins = await asyncio.to_thread(_open_logins, app, node_id)
+    allow_private = app.state.settings.allow_private_outbound
+    try:
+        async with asyncio.timeout(DEADLINE_SECONDS // 3):
+            results = await asyncio.gather(
+                *(_compare(i, allow_private, _GATE, logins) for i in mine.values())
+            )
+    except TimeoutError:
+        raise ApiError("imageupdates.timeout", 504) from None
+    return any(item["state"] == "update" for item in results)
 
 
 def _store(app: Any, node_id: str, results: list[dict[str, Any]], announce: list) -> None:

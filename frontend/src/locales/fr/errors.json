@@ -217,6 +217,7 @@
   "images.not_followed": "Cette référence ne peut pas être suivie (épinglée par empreinte ou inhabituelle).",
   "images.no_digest": "Construite ou chargée sur cette machine : pas de version de registre à comparer.",
   "imageupdates.too_soon": "Attendez une minute entre deux vérifications.",
+  "autoupdate.already_scheduled": "Ce projet a déjà une mise à jour automatique.",
   "imageupdates.busy": "Une vérification est déjà en cours.",
   "outbound.too_large": "La réponse était trop volumineuse.",
   "imageupdates.timeout": "La vérification a pris trop de temps et a été arrêtée.",

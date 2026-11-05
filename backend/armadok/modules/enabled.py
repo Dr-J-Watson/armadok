@@ -42,4 +42,5 @@ ENABLED_MODULES: tuple[str, ...] = (
     "templates",
     "git",
     "terminal",
+    "autoupdate",
 )

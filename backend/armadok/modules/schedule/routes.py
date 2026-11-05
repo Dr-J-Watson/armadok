@@ -149,6 +149,8 @@ def create_task(
     if target.get("node_id") != node_id:
         raise ApiError("schedule.invalid_target", 422)
     who.require(action.right, registry.rights(), f"node:{node_id}")
+    if action.check is not None:
+        action.check(conn, registry, who, target)
     schedule = _schedule(body.schedule)
     if repo.count(conn, node_id) >= MAX_PER_NODE or repo.count(conn) >= MAX_TOTAL:
         raise ApiError("schedule.too_many", 409)

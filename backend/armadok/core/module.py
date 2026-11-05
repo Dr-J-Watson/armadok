@@ -72,6 +72,9 @@ class HookAction:
     # What the target needs besides the machine, for forms: `(field, choices)`; no choices
     # means free text.
     fields: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    # Extra checks when a schedule is created, beyond `right` on the machine: `check(conn,
+    # registry, who, target)` raises `ApiError` (for the object's own rights, duplicates...).
+    check: Callable[[Any, Any, Any, dict[str, Any]], None] | None = None
 
 
 @dataclass(frozen=True)

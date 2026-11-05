@@ -217,6 +217,7 @@
   "images.not_followed": "This reference cannot be followed (pinned by digest or unusual).",
   "images.no_digest": "Built or loaded on this machine: there is no registry version to compare with.",
   "imageupdates.too_soon": "Wait a minute between two checks.",
+  "autoupdate.already_scheduled": "This project already has an automatic update.",
   "imageupdates.busy": "A check is already running.",
   "outbound.too_large": "The answer was too large.",
   "imageupdates.timeout": "The check took too long and was stopped.",
