@@ -302,6 +302,35 @@ def test_a_round_replaces_a_providers_names_and_a_failure_keeps_the_old_ones(box
     assert asyncio.iscoroutinefunction(index.index_loop)
 
 
+def test_a_change_made_in_armadok_refreshes_the_machine_soon_and_once_per_burst(box, monkeypatch):
+    import asyncio
+
+    from armadok.modules.search import index
+
+    client, admin, app = box
+    node = client.post(
+        "/api/v1/nodes", headers=admin, json={"name": "hot", "type": "docker"}
+    ).json()
+    seen = []
+
+    async def fake_refresh(_app, n):
+        seen.append(n["id"])
+        return 0
+
+    monkeypatch.setattr(index, "refresh_node", fake_refresh)
+    monkeypatch.setattr(index, "REFRESH_AFTER_CHANGE_SECONDS", 0.05)
+
+    async def burst():
+        await index.on_signal(app, "docker.changed", node["id"])
+        await index.on_signal(app, "projects.changed", node["id"])  # same burst: no second run
+        await index.on_signal(app, "notes.changed", node["id"])  # not about what is indexed
+        await index.on_signal(app, "docker.changed", None)
+        await asyncio.sleep(0.4)
+
+    client.portal.call(burst)
+    assert seen == [node["id"]]
+
+
 def test_a_deleted_machine_disappears_from_the_index(box):
     client, admin, app = box
     created = client.post("/api/v1/nodes", headers=admin, json={"name": "tmp", "type": "docker"})

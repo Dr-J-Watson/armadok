@@ -36,6 +36,9 @@ MIGRATION = Migration(
 )
 
 ROUND_EVERY_SECONDS = 300
+CHANGING_SIGNALS = frozenset(
+    {"docker.changed", "projects.changed", "traefik.changed", "dns.changed", "nodes.changed"}
+)
 STARTUP_DELAY_SECONDS = 90
 PROVIDER_TIMEOUT_SECONDS = 25
 MAX_PER_PROVIDER = 3000  # names kept per machine and provider
@@ -120,6 +123,45 @@ async def refresh_all(app: Any) -> int:
     for node in await asyncio.to_thread(machines):
         total += await refresh_node(app, node)
     return total
+
+
+# Changes made through Armadok refresh the machine's names a few seconds later (one refresh for a
+# burst of changes); what happens outside Armadok is caught by the periodic round.
+REFRESH_AFTER_CHANGE_SECONDS = 3
+_pending: dict[tuple[int, str], asyncio.Task[None]] = {}
+
+
+async def on_signal(
+    app: Any, signal: str, node_id: str | None, actor_id: str | None = None
+) -> None:
+    """Re-index a machine soon after one of its objects changed (listener of change signals)."""
+    if node_id is None or signal not in CHANGING_SIGNALS or (id(app), node_id) in _pending:
+        return
+
+    async def later() -> None:
+        try:
+            await asyncio.sleep(REFRESH_AFTER_CHANGE_SECONDS)
+            _pending.pop((id(app), node_id), None)
+
+            def get() -> dict[str, Any] | None:
+                from armadok.modules.nodes import repository as nodes_repo
+
+                conn = app.state.settings.open_db()
+                try:
+                    node = nodes_repo.get_node(conn, node_id)
+                    return dict(node) if node else None
+                finally:
+                    conn.close()
+
+            node = await asyncio.to_thread(get)
+            if node is not None:
+                await refresh_node(app, node)
+        except Exception:  # noqa: BLE001  (the periodic round will catch up)
+            log.exception("search index refresh after a change failed")
+        finally:
+            _pending.pop((id(app), node_id), None)
+
+    _pending[(id(app), node_id)] = asyncio.create_task(later())
 
 
 async def index_loop(app: Any) -> None:

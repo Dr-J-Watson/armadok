@@ -11,4 +11,5 @@ module = Module(
     search=(SearchProvider("index", index.run),),
     migrations=(index.MIGRATION,),
     tasks=(index.index_loop,),
+    listeners=(("signal", index.on_signal),),
 )
