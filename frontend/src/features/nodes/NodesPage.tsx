@@ -43,9 +43,12 @@ export function NodesPage() {
           <h1>{t('nodes:title')}</h1>
           <p className="hint">{t('nodes:subtitle')}</p>
         </div>
-        <button type="button" className="primary" onClick={() => setAdding(!adding)} aria-expanded={adding}>
-          <Plus size={16} aria-hidden="true" /> {t('nodes:create.open')}
-        </button>
+        {/* With no machine yet the empty state below carries the one call to action. */}
+        {(nodes.data?.length ?? 0) > 0 || adding ? (
+          <button type="button" className="primary" onClick={() => setAdding(!adding)} aria-expanded={adding}>
+            <Plus size={16} aria-hidden="true" /> {t('nodes:create.open')}
+          </button>
+        ) : null}
       </header>
 
       {adding && (
