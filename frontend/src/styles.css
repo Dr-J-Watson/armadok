@@ -560,3 +560,15 @@ ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
 .skip-link { position: absolute; left: .75rem; top: -4rem; z-index: 100; padding: .6rem 1rem; background: var(--accent); color: var(--accent-text); border-radius: var(--radius); font-weight: 600; text-decoration: none; transition: top .12s; }
 .skip-link:focus { top: .75rem; }
 .content:focus { outline: none; }
+
+/* The project terminal (xterm draws its own content; this is the frame around it). */
+.terminal-box {
+  margin-top: var(--space-3, 12px);
+}
+.terminal-host {
+  height: 360px;
+  padding: 8px;
+  border-radius: var(--radius, 8px);
+  background: #0f1115;
+  overflow: hidden;
+}

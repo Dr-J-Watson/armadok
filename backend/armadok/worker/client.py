@@ -7,7 +7,9 @@ code runs over a real WebSocket and in tests.
 from __future__ import annotations
 
 import json
+import threading
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Protocol
 
 from armadok.worker.ops import Operation, OperationError
@@ -84,6 +86,26 @@ def connect(
     return channel
 
 
+# Operations that wait for a long time (a terminal's output) run in their own threads, so the
+# worker keeps answering everything else meanwhile. All other operations run one at a time, as
+# they always did.
+CONCURRENT_PREFIX = "terminal."
+MAX_CONCURRENT = 8
+
+
+def _answer(call_id: int, handler: Operation | None, args: Any) -> dict[str, Any]:
+    """Run one operation and build the reply; a failure becomes a stable code."""
+    if handler is None or not isinstance(args, dict):
+        return {"id": call_id, "ok": False, "error": "worker.unknown_op"}
+    try:
+        return {"id": call_id, "ok": True, "result": handler(args)}
+    except OperationError as error:
+        return {"id": call_id, "ok": False, "error": error.code}
+    except Exception:
+        # Details stay on the machine; the hub only gets a stable code.
+        return {"id": call_id, "ok": False, "error": MAX_ERROR_CODE}
+
+
 def serve(
     transport: Transport,
     channel: protocol.Channel,
@@ -95,28 +117,38 @@ def serve(
     The hub is authenticated, but its requests are still checked: only listed operations
     run, and a failing operation never takes the worker down.
     """
-    while not should_stop():
-        request = json.loads(channel.open(transport.recv()))
-        call_id = request.get("id") if isinstance(request, dict) else None
-        if type(call_id) is not int:
-            raise protocol.ProtocolError("malformed request")
-        op, args = request.get("op"), request.get("args")
-        handler = operations.get(op) if isinstance(op, str) else None
-        if handler is None or not isinstance(args, dict):
-            answer: dict[str, Any] = {"id": call_id, "ok": False, "error": "worker.unknown_op"}
-        else:
+    # Sealing uses a counter as the nonce: replies must leave in the order they were sealed.
+    send_lock = threading.Lock()
+    pool = ThreadPoolExecutor(max_workers=MAX_CONCURRENT, thread_name_prefix="armadok-op")
+
+    def reply(call_id: int, answer: dict[str, Any]) -> None:
+        with send_lock:
             try:
-                answer = {"id": call_id, "ok": True, "result": handler(args)}
-            except OperationError as error:
-                answer = {"id": call_id, "ok": False, "error": error.code}
-            except Exception:
-                # Details stay on the machine; the hub only gets a stable code.
-                answer = {"id": call_id, "ok": False, "error": MAX_ERROR_CODE}
+                frame = channel.seal(json.dumps(answer).encode())
+            except protocol.ProtocolError:
+                # Too big for the channel: say so instead of dropping the whole connection.
+                frame = channel.seal(
+                    json.dumps({"id": call_id, "ok": False, "error": "worker.too_large"}).encode()
+                )
+            transport.send(frame)
+
+    def run(call_id: int, handler: Operation | None, args: Any) -> None:
         try:
-            frame = channel.seal(json.dumps(answer).encode())
-        except protocol.ProtocolError:
-            # Too big for the channel: say so instead of dropping the whole connection.
-            frame = channel.seal(
-                json.dumps({"id": call_id, "ok": False, "error": "worker.too_large"}).encode()
-            )
-        transport.send(frame)
+            reply(call_id, _answer(call_id, handler, args))
+        except Exception:  # noqa: BLE001  (the connection is gone; the read loop will notice)
+            pass
+
+    try:
+        while not should_stop():
+            request = json.loads(channel.open(transport.recv()))
+            call_id = request.get("id") if isinstance(request, dict) else None
+            if type(call_id) is not int:
+                raise protocol.ProtocolError("malformed request")
+            op, args = request.get("op"), request.get("args")
+            handler = operations.get(op) if isinstance(op, str) else None
+            if isinstance(op, str) and op.startswith(CONCURRENT_PREFIX):
+                pool.submit(run, call_id, handler, args)
+            else:
+                reply(call_id, _answer(call_id, handler, args))
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)

@@ -251,5 +251,8 @@
   "git.no_such_login": "Aucune connexion n'est enregistrée pour cet hébergeur.",
   "git.no_source": "Ce projet n'a pas de source Git.",
   "worker.git_unsafe_tree": "Le dépôt contient des liens symboliques, des sous-modules ou un fichier .env suivi : il est refusé pour qu'on ne puisse rien atteindre hors du projet.",
-  "worker.git_address_not_allowed": "Cette adresse pointe vers le réseau de la machine elle-même, ce qui n'est pas permis pour Git."
+  "worker.git_address_not_allowed": "Cette adresse pointe vers le réseau de la machine elle-même, ce qui n'est pas permis pour Git.",
+  "terminal.disabled": "Le terminal n'est pas activé pour ce projet.",
+  "terminal.too_many": "Trop de terminaux sont ouverts. Ferme-en un d'abord.",
+  "terminal.not_with_key": "Un terminal ne peut être ouvert que par une personne, pas avec une clé d'API."
 }

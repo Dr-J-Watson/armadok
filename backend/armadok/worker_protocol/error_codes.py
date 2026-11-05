@@ -30,6 +30,7 @@ WORKER_ERROR_CODES = frozenset(
         "worker.history_failed",
         # Git (see `worker/git_ops.py`).
         "worker.git_missing",
+        "worker.terminal_not_configured",
         "worker.git_auth",
         "worker.git_branch",
         "worker.git_not_found",

@@ -27,6 +27,7 @@ import { imageScanFeature } from './imagescan/feature'
 import { convertFeature } from './convert/feature'
 import { templatesFeature } from './templates/feature'
 import { gitFeature } from './git/feature'
+import { terminalFeature } from './terminal/feature'
 import { dashboardFeature } from './dashboard/feature'
 import { helpFeature } from './help/feature'
 import { trafficFeature } from './traffic/feature'
@@ -64,6 +65,7 @@ export const features: Feature[] = [
   convertFeature,
   templatesFeature,
   gitFeature,
+  terminalFeature,
   certsFeature,
   uptimeFeature,
   scheduleFeature,

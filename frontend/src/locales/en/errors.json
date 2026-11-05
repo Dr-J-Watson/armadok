@@ -251,5 +251,8 @@
   "git.no_such_login": "No login is stored for this host.",
   "git.no_source": "This project has no Git source.",
   "worker.git_unsafe_tree": "The repository holds symbolic links, submodules or a tracked .env file: it is refused so nothing outside the project can be reached.",
-  "worker.git_address_not_allowed": "This address points to the machine's own network, which is not allowed for Git."
+  "worker.git_address_not_allowed": "This address points to the machine's own network, which is not allowed for Git.",
+  "terminal.disabled": "The terminal is not turned on for this project.",
+  "terminal.too_many": "Too many terminals are open. Close one first.",
+  "terminal.not_with_key": "A terminal can only be opened by a person, not with an API key."
 }

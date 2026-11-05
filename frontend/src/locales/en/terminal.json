@@ -1,0 +1,16 @@
+{
+  "title": "Terminal",
+  "explain": "A shell in a throwaway container that sees only this project's folder (read-only unless allowed, no network unless allowed). It ends when you leave or after 15 idle minutes. What you type is not recorded.",
+  "open": "Open a terminal",
+  "close": "Close",
+  "code": "Code from your authenticator app",
+  "settings": "Terminal settings",
+  "enabled": "Allow a terminal on this project",
+  "writable": "Allow writing to the project's files",
+  "network": "Allow network access (the shell can then reach this machine's internal network and the internet)",
+  "image": "Image of the container",
+  "save": "Save",
+  "state.connecting": "Connecting…",
+  "state.open": "Connected",
+  "state.ended": "Ended"
+}

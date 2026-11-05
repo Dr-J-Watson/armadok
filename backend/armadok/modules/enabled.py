@@ -41,4 +41,5 @@ ENABLED_MODULES: tuple[str, ...] = (
     "convert",
     "templates",
     "git",
+    "terminal",
 )

@@ -19,6 +19,10 @@ services:
       ARMADOK_ENROL_TOKEN: ${ARMADOK_ENROL_TOKEN:-}
       # The only folder whose Compose projects Armadok can read and edit (mounted below).
       ARMADOK_PROJECTS_DIR: /stacks
+      # The same folder as the Docker daemon sees it (the host path). Needed by the project
+      # terminal, which asks the daemon to mount a project folder: leave it out to keep that
+      # feature off on this machine.
+      ARMADOK_PROJECTS_HOST_DIR: ${PROJECTS_DIR:?set it in .env}
       # Traefik's DYNAMIC configuration folder only (never the folder holding traefik.yml, which
       # may contain tokens). Whoever may write there can publish anything Traefik can reach.
       # Uncomment this line and the matching volume below on a machine that runs Traefik.

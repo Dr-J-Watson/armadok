@@ -60,6 +60,7 @@ WORKER_ERROR_STATUS = {
     "worker.git_unsafe_tree": 422,
     "worker.git_address_not_allowed": 422,
     "worker.git_missing": 409,
+    "worker.terminal_not_configured": 409,
     "worker.metrics_not_configured": 409,
     "worker.metrics_unreachable": 502,
     "worker.projects_not_configured": 409,
