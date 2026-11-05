@@ -15,5 +15,5 @@ for _ in $(seq 1 60); do docker logs "$NAME" 2>&1 | grep -q "Install code" && br
 CODE=$(docker logs "$NAME" 2>&1 | grep "Install code" | sed 's/.*): //' | tail -1)
 docker run --rm --network "$NET" -v "$PWD/e2e":/work -w /work \
   -e BASE_URL="http://$NAME:8000" -e INSTALL_CODE="$CODE" \
-  mcr.microsoft.com/playwright:v1.49.0-noble \
+  mcr.microsoft.com/playwright:v1.56.1-noble \
   sh -c "npm install --silent --no-audit --no-fund >/dev/null 2>&1 && npx playwright test"
