@@ -42,7 +42,8 @@ describe('traffic', () => {
   })
 
   it('walks through the set-up when the machine has no metrics yet, and never lists a public port', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    // A fresh response for every call: the page asks for the figures and for the visitors.
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       json({ range: '24h', services: [], status: { last_ok: null, last_error: 'worker.metrics_not_configured', reload_ok: null, servers: {} } }),
     )
     wrap()

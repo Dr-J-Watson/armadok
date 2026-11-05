@@ -255,5 +255,8 @@
   "worker.git_address_not_allowed": "This address points to the machine's own network, which is not allowed for Git.",
   "terminal.disabled": "The terminal is not turned on for this project.",
   "terminal.too_many": "Too many terminals are open. Close one first.",
-  "terminal.not_with_key": "A terminal can only be opened by a person, not with an API key."
+  "terminal.not_with_key": "A terminal can only be opened by a person, not with an API key.",
+  "worker.accesslog_not_configured": "This machine has no access log set up.",
+  "worker.accesslog_unreadable": "The access log could not be read.",
+  "traffic.invalid_address": "That is not an IP address."
 }

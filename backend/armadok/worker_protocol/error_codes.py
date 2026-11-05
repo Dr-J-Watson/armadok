@@ -41,6 +41,8 @@ WORKER_ERROR_CODES = frozenset(
         "worker.git_address_not_allowed",
         "worker.metrics_not_configured",
         "worker.metrics_unreachable",
+        "worker.accesslog_not_configured",
+        "worker.accesslog_unreadable",
         # Volume backups (see `worker/backup_ops.py`).
         "worker.backups_not_configured",
         "worker.backup_failed",

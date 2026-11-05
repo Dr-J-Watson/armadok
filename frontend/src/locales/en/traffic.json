@@ -22,5 +22,18 @@
   "setup.title": "Turn on the statistics",
   "setup.step1": "1. Add this to Traefik's static configuration (the Static config view can edit it). The entry point must NOT be published: do not list port 8082 in the container's ports.",
   "setup.step2": "2. Give the worker the address of that entry point, on the same Docker network (worker environment):",
-  "setup.step3": "3. Restart Traefik and the worker, then use \"Test the connection\"."
+  "setup.step3": "3. Restart Traefik and the worker, then use \"Test the connection\".",
+  "visitors.title": "Visitors",
+  "visitors.privacy": "From Traefik's access log, kept for 7 days. Addresses are personal data: they are shown as networks unless you hold the right to see them whole. Query strings are never kept. Paths are kept as Traefik logged them: they can contain identifiers, so only share this panel with people you trust with them.",
+  "visitors.masked": "Addresses are grouped by network (the last part is hidden).",
+  "visitors.setup1": "To see visitors, make Traefik write a JSON access log (static configuration), and mount the file read-only into the worker:",
+  "visitors.setup2": "Then tell the worker where the file is (worker environment) and restart it:",
+  "visitors.none": "No visit recorded in this period yet.",
+  "visitors.address": "Address",
+  "visitors.network": "Network",
+  "visitors.path": "Path",
+  "visitors.lastSeen": "Last seen",
+  "visitors.kept": "{{count}} entries kept.",
+  "visitors.purge": "Delete the kept entries",
+  "visitors.purgeConfirm": "Delete every kept access-log entry of this machine? This cannot be undone."
 }

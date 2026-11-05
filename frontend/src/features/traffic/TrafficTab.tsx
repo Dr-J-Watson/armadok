@@ -5,6 +5,7 @@ import { api } from '../../core/api'
 import { codeMessage } from '../../core/errors'
 import { Sparkline } from './Sparkline'
 import { Problem } from '../../components/Problem'
+import { VisitorsPanel } from './VisitorsPanel'
 
 const RANGES = ['1h', '24h', '7d', '30d'] as const
 type Range = (typeof RANGES)[number]
@@ -142,6 +143,7 @@ export function TrafficTab({ nodeId }: { nodeId: string }) {
           </tbody>
         </table>
       )}
+      <VisitorsPanel nodeId={nodeId} />
       <button type="button" className="link-button" onClick={() => client.invalidateQueries({ queryKey: ['traffic', nodeId] })}>
         {t('traffic:refresh')}
       </button>

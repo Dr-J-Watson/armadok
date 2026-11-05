@@ -255,5 +255,8 @@
   "worker.git_address_not_allowed": "Cette adresse pointe vers le réseau de la machine elle-même, ce qui n'est pas permis pour Git.",
   "terminal.disabled": "Le terminal n'est pas activé pour ce projet.",
   "terminal.too_many": "Trop de terminaux sont ouverts. Ferme-en un d'abord.",
-  "terminal.not_with_key": "Un terminal ne peut être ouvert que par une personne, pas avec une clé d'API."
+  "terminal.not_with_key": "Un terminal ne peut être ouvert que par une personne, pas avec une clé d'API.",
+  "worker.accesslog_not_configured": "Cette machine n'a pas de journal d'accès configuré.",
+  "worker.accesslog_unreadable": "Le journal d'accès n'a pas pu être lu.",
+  "traffic.invalid_address": "Ce n'est pas une adresse IP."
 }

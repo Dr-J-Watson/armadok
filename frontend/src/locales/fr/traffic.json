@@ -22,5 +22,18 @@
   "setup.title": "Activer les statistiques",
   "setup.step1": "1. Ajoutez ceci à la configuration statique de Traefik (la vue Config statique peut la modifier). Le point d'entrée ne doit PAS être publié : ne listez pas le port 8082 dans les ports du conteneur.",
   "setup.step2": "2. Donnez au worker l'adresse de ce point d'entrée, sur le même réseau Docker (environnement du worker) :",
-  "setup.step3": "3. Redémarrez Traefik et le worker, puis utilisez « Tester la connexion »."
+  "setup.step3": "3. Redémarrez Traefik et le worker, puis utilisez « Tester la connexion ».",
+  "visitors.title": "Visiteurs",
+  "visitors.privacy": "Issu du journal d'accès de Traefik, conservé 7 jours. Les adresses sont des données personnelles : elles sont affichées par réseau, sauf si vous avez le droit de les voir en entier. Les paramètres d'adresse (après le « ? ») ne sont jamais conservés. Les chemins sont conservés tels que Traefik les a notés : ils peuvent contenir des identifiants, ne donnez ce panneau qu'à des personnes à qui vous les confieriez.",
+  "visitors.masked": "Les adresses sont regroupées par réseau (la fin est masquée).",
+  "visitors.setup1": "Pour voir les visiteurs, faites écrire à Traefik un journal d'accès au format JSON (configuration statique), et montez le fichier en lecture seule dans le worker :",
+  "visitors.setup2": "Puis indiquez au worker où se trouve le fichier (environnement du worker) et redémarrez-le :",
+  "visitors.none": "Aucune visite enregistrée sur cette période pour l'instant.",
+  "visitors.address": "Adresse",
+  "visitors.network": "Réseau",
+  "visitors.path": "Chemin",
+  "visitors.lastSeen": "Dernière visite",
+  "visitors.kept": "{{count}} entrées conservées.",
+  "visitors.purge": "Supprimer les entrées conservées",
+  "visitors.purgeConfirm": "Supprimer toutes les entrées du journal d'accès conservées pour cette machine ? Cette action est définitive."
 }
