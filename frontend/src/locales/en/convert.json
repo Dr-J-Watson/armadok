@@ -10,5 +10,17 @@
   "warning.convert.unsupported_flag": "The option {{detail}} is not converted. Check whether you need it.",
   "warning.convert.missing_value": "The option {{detail}} has no value.",
   "warning.convert.rm": "--rm (remove at exit) has no Compose equivalent: the container stays after it stops.",
-  "warning.convert.foreground": "There was no -d: docker run would stay attached. In Compose, use `docker compose up -d` to run it in the background."
+  "warning.convert.foreground": "There was no -d: docker run would stay attached. In Compose, use `docker compose up -d` to run it in the background.",
+  "fromContainers.tab": "To Compose",
+  "fromContainers.explain": "Pick containers that are already running and get the Compose file that recreates them. Their settings, including environment variables, are read once and nothing is changed or saved. Secret-looking values go to a separate .env.",
+  "fromContainers.pick": "Containers to convert",
+  "fromContainers.go_one": "Convert {{count}} container",
+  "fromContainers.go_other": "Convert {{count}} containers",
+  "warning.convert.already_compose": "This container already belongs to the Compose project “{{detail}}”: converting it creates a second copy of its description.",
+  "warning.convert.privileged": "{{detail}} runs privileged: it can do almost anything on the machine. Check that you want to keep it.",
+  "warning.convert.docker_socket": "{{detail}} can control Docker itself (it mounts the Docker socket).",
+  "warning.convert.env_inline": "Some variables of {{detail}} stay readable in the file because they do not look like secrets. Check them before sharing it.",
+  "warning.convert.truncated": "{{detail}} had values or lists too long to be read whole: the file is incomplete.",
+  "warning.convert.host_access": "{{detail}} shares the machine's network or processes, or holds SYS_ADMIN: it is hardly isolated.",
+  "warning.convert.secret_inline": "A variable of {{detail}} looks like a secret but its name is unusual: it stays readable in the file. Move it to .env by hand."
 }

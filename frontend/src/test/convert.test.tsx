@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import '../core/i18n'
 import { setAccessToken } from '../core/api'
 import { ConvertPage } from '../features/convert/ConvertPage'
+import { FromContainers } from '../features/convert/FromContainers'
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
 
@@ -47,5 +48,27 @@ describe('converter', () => {
     await userEvent.type(screen.getByLabelText('Your docker run command'), 'docker ps')
     await userEvent.click(screen.getByRole('button', { name: 'Convert' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Only docker run commands can be converted.')
+  })
+
+  it('converts the ticked containers of a machine', async () => {
+    let sent: Record<string, unknown> = {}
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      if (String(input).endsWith('/docker/containers')) {
+        return json({ containers: [{ id: 'a'.repeat(64), names: ['blog'], image: 'nginx', state: 'running' }] })
+      }
+      sent = JSON.parse(String(init?.body))
+      return json({ compose: 'services:\n  blog:\n    image: nginx\n', env: null, service: 'blog', warnings: [] })
+    })
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <FromContainers nodeId="n1" />
+      </QueryClientProvider>,
+    )
+    const go = await screen.findByRole('button', { name: 'Convert 0 containers' })
+    expect(go).toBeDisabled()
+    await userEvent.click(screen.getByLabelText(/blog/))
+    await userEvent.click(screen.getByRole('button', { name: 'Convert 1 container' }))
+    expect(await screen.findByText(/image: nginx/)).toBeInTheDocument()
+    expect(sent).toEqual({ ids: ['a'.repeat(64)] })
   })
 })

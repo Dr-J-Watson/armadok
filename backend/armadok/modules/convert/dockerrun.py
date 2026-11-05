@@ -83,6 +83,27 @@ _NAME = re.compile(r"[^a-zA-Z0-9_.-]+")
 _BRIDGES = {"host", "none", "bridge"}
 
 
+_PLAIN = re.compile(r"[A-Za-z0-9_.,:/@%+=-]*")
+
+
+def env_line(key: str, value: str) -> str:
+    """Return one `.env` line; a value with anything unusual is double-quoted and escaped.
+
+    A line break in a value would otherwise start a new variable, and a `$` would be read as
+    a reference to another one.
+    """
+    if _PLAIN.fullmatch(value):
+        return f"{key}={value}\n"
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("$", "\\$")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+    )
+    return f'{key}="{escaped}"\n'
+
+
 class Result(dict):
     """The conversion: `compose` (text), `env` (text or None) and `warnings` (code, detail)."""
 
@@ -292,7 +313,7 @@ def convert(command: str) -> Result:
     compose = yaml.safe_dump(
         document, sort_keys=False, default_flow_style=False, allow_unicode=True
     )
-    env_text = "".join(f"{k}={v}\n" for k, v in secrets.items()) or None
+    env_text = "".join(env_line(k, v) for k, v in secrets.items()) or None
     return Result(
         compose=compose,
         env=env_text,

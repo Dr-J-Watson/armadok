@@ -10,5 +10,17 @@
   "warning.convert.unsupported_flag": "L'option {{detail}} n'est pas convertie. Vérifiez si elle vous est utile.",
   "warning.convert.missing_value": "L'option {{detail}} n'a pas de valeur.",
   "warning.convert.rm": "--rm (supprimer à l'arrêt) n'a pas d'équivalent Compose : le conteneur reste après son arrêt.",
-  "warning.convert.foreground": "Il n'y avait pas de -d : docker run resterait attaché. Avec Compose, utilisez `docker compose up -d` pour le lancer en arrière-plan."
+  "warning.convert.foreground": "Il n'y avait pas de -d : docker run resterait attaché. Avec Compose, utilisez `docker compose up -d` pour le lancer en arrière-plan.",
+  "fromContainers.tab": "Vers Compose",
+  "fromContainers.explain": "Coche des conteneurs déjà lancés et récupère le fichier Compose qui les recrée. Leurs réglages, variables d'environnement comprises, sont lus une fois ; rien n'est modifié ni enregistré. Les valeurs qui ressemblent à des secrets vont dans un .env à part.",
+  "fromContainers.pick": "Conteneurs à convertir",
+  "fromContainers.go_one": "Convertir {{count}} conteneur",
+  "fromContainers.go_other": "Convertir {{count}} conteneurs",
+  "warning.convert.already_compose": "Ce conteneur appartient déjà au projet Compose « {{detail}} » : le convertir crée une seconde description du même conteneur.",
+  "warning.convert.privileged": "{{detail}} tourne en mode privilégié : il peut presque tout faire sur la machine. Vérifie que tu veux le garder.",
+  "warning.convert.docker_socket": "{{detail}} peut piloter Docker lui-même (il monte le socket Docker).",
+  "warning.convert.env_inline": "Certaines variables de {{detail}} restent lisibles dans le fichier car elles ne ressemblent pas à des secrets. Vérifie-les avant de le partager.",
+  "warning.convert.truncated": "{{detail}} avait des valeurs ou des listes trop longues pour être lues en entier : le fichier est incomplet.",
+  "warning.convert.host_access": "{{detail}} partage le réseau ou les processus de la machine, ou a SYS_ADMIN : il est peu isolé.",
+  "warning.convert.secret_inline": "Une variable de {{detail}} ressemble à un secret mais son nom est inhabituel : elle reste lisible dans le fichier. Déplace-la dans le .env à la main."
 }
