@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { codeMessage } from '../../core/errors'
 import { Problem } from '../../components/Problem'
+import { RegistryLogins } from './RegistryLogins'
 
 interface Item {
   ref: string
@@ -54,6 +55,7 @@ export function ImageUpdatesTab({ nodeId }: { nodeId: string }) {
           </li>
         ))}
       </ul>
+      <RegistryLogins nodeId={nodeId} />
     </section>
   )
 }

@@ -8,5 +8,12 @@
   "state.update": "Update available",
   "state.unknown": "Not followed",
   "state.error": "Could not check",
-  "checked": "checked {{at}}"
+  "checked": "checked {{at}}",
+  "logins.title": "Private registries",
+  "logins.explain": "For images in a private registry, save a login here (a password or an access token with pull rights). It is stored encrypted, never shown again, and sent only to that registry and its own token service, to ask which version it offers.",
+  "logins.host": "Registry address",
+  "logins.username": "User",
+  "logins.secret": "Password or token",
+  "logins.save": "Save the login",
+  "logins.forget": "Forget"
 }

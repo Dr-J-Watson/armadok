@@ -212,7 +212,7 @@
   "ownership.inbox_full": "Cette personne a déjà trop de legs en attente.",
   "worker.history_failed": "L'ancienne version n'a pas pu être conservée : rien n'a été modifié.",
   "images.not_found": "Ce tag n'existe pas dans le registre.",
-  "images.denied": "Le registre demande des identifiants pour cette image (les images privées ne sont pas encore prises en charge).",
+  "images.denied": "Le registre a refusé l'accès à cette image : ajoute ou corrige la connexion au registre.",
   "images.registry_unreachable": "Le registre n'a pas répondu comme attendu.",
   "images.not_followed": "Cette référence ne peut pas être suivie (épinglée par empreinte ou inhabituelle).",
   "images.no_digest": "Construite ou chargée sur cette machine : pas de version de registre à comparer.",
@@ -231,5 +231,8 @@
   "convert.unparsable": "Cette commande est illisible (un guillemet n'est peut-être pas fermé).",
   "convert.not_run": "Seules les commandes docker run peuvent être converties.",
   "convert.no_image": "Aucun nom d'image trouvé dans cette commande.",
-  "convert.substitution": "Cette commande utilise $(...) ou des apostrophes inversées, qu'un shell exécuterait d'abord. Écrivez la valeur en toutes lettres et réessayez."
+  "convert.substitution": "Cette commande utilise $(...) ou des apostrophes inversées, qu'un shell exécuterait d'abord. Écrivez la valeur en toutes lettres et réessayez.",
+  "imageupdates.invalid_host": "Ce n'est pas une adresse de registre valide.",
+  "imageupdates.too_many_logins": "Cette machine a déjà le maximum de connexions à des registres.",
+  "imageupdates.no_such_login": "Aucune connexion n'est enregistrée pour ce registre."
 }

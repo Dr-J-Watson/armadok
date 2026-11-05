@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from armadok.core import outbound
 from armadok.core.config import Settings
+from armadok.core.crypto import generate_key
 from armadok.main import create_app
 from armadok.modules.imageupdates import refs, registry, routes, service
 from armadok.worker import docker_ops
@@ -160,7 +161,14 @@ def box(tmp_path, caplog, monkeypatch):
     routes._last.clear()
     service._busy.clear()
     with caplog.at_level(logging.WARNING, logger="armadok.setup"):
-        app = create_app(Settings(data_dir=tmp_path, cookie_secure=False, local_node=True))
+        app = create_app(
+            Settings(
+                data_dir=tmp_path,
+                cookie_secure=False,
+                local_node=True,
+                encryption_key=generate_key(),
+            )
+        )
     code = re.search(r"\): (\S+)$", caplog.records[-1].getMessage()).group(1)
     with TestClient(app) as client:
         client.post(
@@ -178,7 +186,7 @@ def machine_has(monkeypatch, images):
 
 
 def remote_is(monkeypatch, table):
-    async def digest(ref, allow_private=False):
+    async def digest(ref, allow_private=False, login=None):
         value = table[ref.repo + ":" + ref.tag]
         if isinstance(value, str) and value.startswith("images."):
             raise registry.RegistryError(value)
@@ -294,7 +302,7 @@ def test_one_odd_registry_does_not_sink_the_check_of_the_others(box, monkeypatch
         ],
     )
 
-    async def digest(ref, allow_private=False):
+    async def digest(ref, allow_private=False, login=None):
         if ref.repo == "library/redis":
             raise ValueError("a registry that misbehaves in an unexpected way")
         return D1
@@ -327,7 +335,7 @@ def test_too_many_registries_and_a_slow_check_are_bounded(box, monkeypatch):
     routes._last.clear()
     monkeypatch.setattr(service, "DEADLINE_SECONDS", 0.05)
 
-    async def slow(ref, allow_private=False):
+    async def slow(ref, allow_private=False, login=None):
         await asyncio.sleep(1)
         return D1
 
@@ -347,3 +355,124 @@ def test_a_name_with_odd_characters_is_cleaned_before_it_is_kept(box, monkeypatc
         for i in client.get(f"/api/v1/nodes/{node}/image-updates", headers=olga).json()["images"]
     ]
     assert refs_shown == ["x/y:1??script?"]
+
+
+# --- private registries --------------------------------------------------------------------
+
+SECRET = "tok" + "en-" + "value-1"
+
+
+def test_a_login_goes_only_to_the_registry_and_its_own_token_service(monkeypatch):
+    seen = []
+
+    def handler(method, url, headers):
+        seen.append((url.split("/")[2], headers.get("Authorization", "")))
+        if url.startswith("https://auth.example.com/token"):
+            return 200, {}, b'{"token": "abc"}'
+        if headers.get("Authorization") != "Bearer abc":
+            challenge = f'Bearer realm="{realm[0]}",service="registry"'
+            return 401, {"www-authenticate": challenge}, b""
+        return 200, {"docker-content-digest": D1}, b""
+
+    fake_fetch(monkeypatch, handler)
+    login = registry.Login("bob", SECRET)
+    ref = refs.parse("reg.example.com/org/app:v2")
+    expected = registry._basic(login)
+    # A token service below the registry's own name may receive the login.
+    realm = ["https://auth.reg.example.com/token"]
+    seen.clear()
+
+    def below(method, url, headers):
+        seen.append((url.split("/")[2], headers.get("Authorization", "")))
+        if "/token" in url:
+            return 200, {}, b'{"token": "abc"}'
+        if headers.get("Authorization") != "Bearer abc":
+            return 401, {"www-authenticate": f'Bearer realm="{realm[0]}"'}, b""
+        return 200, {"docker-content-digest": D1}, b""
+
+    fake_fetch(monkeypatch, below)
+    assert asyncio.run(registry.current_digest(ref, False, login)) == D1
+    assert ("auth.reg.example.com", expected) in seen
+    # A realm somewhere else gets the anonymous request only: the login is never sent there.
+    realm[0] = "https://evil.example.net/token"
+    seen.clear()
+    asyncio.run(registry.current_digest(ref, False, login))
+    assert all(auth != expected for host, auth in seen if host == "evil.example.net")
+    assert not any(SECRET in auth for _, auth in seen)
+
+
+def test_a_basic_registry_gets_the_login_directly(monkeypatch):
+    def handler(method, url, headers):
+        if headers.get("Authorization", "").startswith("Basic "):
+            return 200, {"docker-content-digest": D1}, b""
+        return 401, {"www-authenticate": 'Basic realm="r"'}, b""
+
+    fake_fetch(monkeypatch, handler)
+    ref = refs.parse("reg.example.com/org/app:v2")
+    assert asyncio.run(registry.current_digest(ref, False, registry.Login("bob", SECRET))) == D1
+    with pytest.raises(registry.RegistryError):
+        asyncio.run(registry.current_digest(ref))
+
+
+def test_logins_are_kept_encrypted_never_shown_and_need_the_sensitive_right(box):
+    client, admin, app = box
+    _, olga, node = owner_with_node(client, admin)
+    url = f"/api/v1/nodes/{node}/image-updates/registries"
+    body = {"host": "Registry.Example.com", "username": "bob", "secret": SECRET}
+    assert client.put(url, headers=olga, json=body).status_code == 204
+    listed = client.get(url, headers=olga).json()["registries"]
+    assert [(r["host"], r["username"]) for r in listed] == [("registry.example.com", "bob")]
+    assert SECRET not in client.get(url, headers=olga).text
+    conn = app.state.settings.open_db()
+    stored = conn.execute("SELECT secret FROM registry_logins").fetchone()["secret"]
+    conn.close()
+    assert SECRET not in stored
+    assert SECRET not in client.get("/api/v1/audit", headers=admin).text
+    assert "imageupdates.login_save" in client.get("/api/v1/audit", headers=admin).text
+    # Docker Hub's usual names all mean the same host.
+    hub = {"host": "docker.io", "username": "bob", "secret": SECRET}
+    assert client.put(url, headers=olga, json=hub).status_code == 204
+    assert client.delete(url + "/index.docker.io", headers=olga).status_code == 204
+    assert client.delete(url + "/index.docker.io", headers=olga).status_code == 404
+    assert client.put(url, headers=olga, json={**body, "host": "bad host"}).status_code == 422
+    assert client.put(url, headers=olga, json={**body, "secret": "a b"}).status_code == 422
+    # A viewer cannot even list them, and a key can never hold the right.
+    pat_id, pat = person(client, admin, "pat")
+    client.post(
+        f"/api/v1/nodes/{node}/members",
+        headers=olga,
+        json={"user_id": pat_id, "role_id": "builtin-viewer"},
+    )
+    assert client.get(url, headers=pat).status_code == 403
+    assert client.put(url, headers=pat, json=body).status_code == 403
+
+
+def test_a_check_uses_the_stored_login(box, monkeypatch):
+    client, admin, app = box
+    _, olga, node = owner_with_node(client, admin)
+    base = f"/api/v1/nodes/{node}/image-updates"
+    client.put(
+        base + "/registries",
+        headers=olga,
+        json={"host": "reg.example.com", "username": "bob", "secret": SECRET},
+    )
+    machine_has(
+        monkeypatch,
+        [{"ref": "reg.example.com/org/app:v2", "digests": [D1], "in_use": True}],
+    )
+    got = []
+
+    async def digest(ref, allow_private=False, login=None):
+        got.append(login)
+        return D1
+
+    monkeypatch.setattr(registry, "current_digest", digest)
+    assert client.post(base + "/check", headers=olga).status_code == 200
+    assert got == [registry.Login("bob", SECRET)]
+
+
+def test_a_login_is_not_sent_to_another_port_of_the_registry_host():
+    assert registry._may_receive("reg.example.com", "https://reg.example.com/token")
+    assert not registry._may_receive("reg.example.com", "https://reg.example.com:22/token")
+    assert registry._may_receive("reg.example.com:5000", "https://reg.example.com:5000/t")
+    assert refs.login_host("com") is None

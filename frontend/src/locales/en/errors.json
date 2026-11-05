@@ -212,7 +212,7 @@
   "ownership.inbox_full": "This person already has too many gifts waiting.",
   "worker.history_failed": "The previous version could not be kept, so nothing was changed.",
   "images.not_found": "This tag does not exist in the registry.",
-  "images.denied": "The registry needs credentials for this image (private images are not supported yet).",
+  "images.denied": "The registry refused access to this image: add or fix the registry login.",
   "images.registry_unreachable": "The registry did not answer as expected.",
   "images.not_followed": "This reference cannot be followed (pinned by digest or unusual).",
   "images.no_digest": "Built or loaded on this machine: there is no registry version to compare with.",
@@ -231,5 +231,8 @@
   "convert.unparsable": "This command cannot be read (a quote is not closed, perhaps).",
   "convert.not_run": "Only docker run commands can be converted.",
   "convert.no_image": "No image name was found in this command.",
-  "convert.substitution": "This command uses $(...) or backticks, which a shell would run first. Write the value out and try again."
+  "convert.substitution": "This command uses $(...) or backticks, which a shell would run first. Write the value out and try again.",
+  "imageupdates.invalid_host": "This is not a valid registry address.",
+  "imageupdates.too_many_logins": "This machine already has the most registry logins allowed.",
+  "imageupdates.no_such_login": "No login is stored for this registry."
 }

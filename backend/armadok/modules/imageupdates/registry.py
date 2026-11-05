@@ -1,17 +1,19 @@
 """Asking a registry which digest a tag points to today (a `HEAD`, nothing is downloaded).
 
 Registries use a token scheme: an unauthenticated request is answered 401 with a pointer to a
-token service; the token is fetched there (anonymously: private registries need credentials,
-which are not handled yet) and the request repeated. Both hosts go through the outbound guard
-(public addresses only, unless the operator allowed private ones), and the digest is checked
-against a strict pattern before it is trusted.
+token service; the token is fetched there (with the machine's login for that registry when one
+is stored and the service may receive it, else anonymously) and the request repeated.
+Both hosts go through the outbound guard (public addresses only, unless the operator allowed
+private ones), and the digest is checked against a strict pattern before it is trusted.
 """
 
 from __future__ import annotations
 
+import base64
 import json
 import re
-from urllib.parse import quote, urlencode
+from typing import NamedTuple
+from urllib.parse import quote, urlencode, urlsplit
 
 from armadok.core import outbound
 from armadok.modules.imageupdates.refs import Ref
@@ -27,6 +29,39 @@ ACCEPT = ", ".join(
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 TOKEN = re.compile(r"[\x21-\x7e]{1,8191}")
 _CHALLENGE = re.compile(r'(\w+)="([^"]*)"')
+
+
+class Login(NamedTuple):
+    """A user name and password (or access token) for one registry."""
+
+    username: str
+    secret: str
+
+
+# Registries whose token service lives on another host than the registry itself. A login is
+# only ever sent to the registry, to hosts below it, or to one of these known partners: a
+# registry that pointed elsewhere (a hostile or hijacked one) cannot collect it.
+_TOKEN_PARTNERS = {
+    "registry-1.docker.io": {"auth.docker.io"},
+    "registry.gitlab.com": {"gitlab.com"},
+}
+
+
+def _may_receive(registry_host: str, realm: str) -> bool:
+    """Say whether a login for `registry_host` may be sent to the token service at `realm`."""
+    parts = urlsplit(realm)
+    host = (parts.hostname or "").lower()
+    bare, _, port = registry_host.partition(":")
+    if (parts.port or 443) != int(port or 443):
+        return False  # another service on the same machine must not get the login
+    return (
+        host == bare or host.endswith("." + bare) or host in _TOKEN_PARTNERS.get(registry_host, ())
+    )
+
+
+def _basic(login: Login) -> str:
+    """Return the `Authorization` header value of a login."""
+    return "Basic " + base64.b64encode(f"{login.username}:{login.secret}".encode()).decode()
 
 
 class RegistryError(Exception):
@@ -45,8 +80,10 @@ async def _head(url: str, headers: dict[str, str], allow_private: bool):
         raise RegistryError(error.code) from None
 
 
-async def _token(challenge: str, repo: str, allow_private: bool) -> str:
-    """Fetch an anonymous pull token from the service a 401 pointed to."""
+async def _token(
+    challenge: str, repo: str, allow_private: bool, registry_host: str, login: Login | None
+) -> str:
+    """Fetch a pull token from the service a 401 pointed to (with the login, where it may go)."""
     fields = dict(_CHALLENGE.findall(challenge))
     realm = fields.get("realm", "")
     if not challenge.lower().startswith("bearer") or not realm.startswith("https://"):
@@ -58,7 +95,12 @@ async def _token(challenge: str, repo: str, allow_private: bool) -> str:
         status, _, body = await outbound.fetch(
             "GET",
             f"{realm}?{urlencode(query)}",
-            {"Accept": "application/json"},
+            {"Accept": "application/json"}
+            | (
+                {"Authorization": _basic(login)}
+                if login and _may_receive(registry_host, realm)
+                else {}
+            ),
             allow_private=allow_private,
         )
     except outbound.OutboundError as error:
@@ -76,16 +118,23 @@ async def _token(challenge: str, repo: str, allow_private: bool) -> str:
     return token
 
 
-async def current_digest(ref: Ref, allow_private: bool = False) -> str:
-    """Return the digest the tag points to now. Raises `RegistryError`."""
+async def current_digest(ref: Ref, allow_private: bool = False, login: Login | None = None) -> str:
+    """Return the digest the tag points to now. Raises `RegistryError`.
+
+    Anonymous first. A 401 is answered with a token (fetched with the login when there is one
+    and the token service may receive it) or, for a registry that asks for plain credentials,
+    with the login itself; the login never goes anywhere else.
+    """
     url = f"https://{ref.host}/v2/{quote(ref.repo, safe='/')}/manifests/{quote(ref.tag)}"
     headers = {"Accept": ACCEPT}
     status, answer, _ = await _head(url, headers, allow_private)
     if status == 401:
-        token = await _token(answer.get("www-authenticate", ""), ref.repo, allow_private)
-        status, answer, _ = await _head(
-            url, {**headers, "Authorization": f"Bearer {token}"}, allow_private
-        )
+        challenge = answer.get("www-authenticate", "")
+        if challenge.lower().startswith("basic") and login:
+            auth = _basic(login)
+        else:
+            auth = "Bearer " + await _token(challenge, ref.repo, allow_private, ref.host, login)
+        status, answer, _ = await _head(url, {**headers, "Authorization": auth}, allow_private)
     if status == 404:
         raise RegistryError("images.not_found")
     if status in (401, 403):

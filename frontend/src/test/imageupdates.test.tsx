@@ -40,7 +40,9 @@ describe('image updates', () => {
   })
 
   it('offers no check button to someone who may only read', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ can_check: false, images: [] }))
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+      String(input).endsWith('/registries') ? json({ error: { code: 'rights.missing' } }, 403) : json({ can_check: false, images: [] }),
+    )
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <ImageUpdatesTab nodeId="n1" />
@@ -48,5 +50,6 @@ describe('image updates', () => {
     )
     expect(await screen.findByText(/No image in use to follow yet/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Check now' })).toBeNull()
+    expect(screen.queryByText('Private registries')).toBeNull()
   })
 })

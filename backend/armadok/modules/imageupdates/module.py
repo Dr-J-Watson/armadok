@@ -17,9 +17,17 @@ module = Module(
             node_owner=True,
             level="operate",
         ),
+        # Holds registry passwords: sensitive, so never for API keys.
+        Right(
+            "imageupdates.credentials",
+            depends_on=("imageupdates.check",),
+            node_owner=True,
+            sensitive=True,
+            level="admin",
+        ),
     ),
     hook_actions=(scheduled.ACTION,),
-    audit_events=("imageupdates.check",),
+    audit_events=("imageupdates.check", "imageupdates.login_save", "imageupdates.login_delete"),
     signals=(Signal("image-updates.changed", "imageupdates.read"),),
     notification_events=(
         NotificationEvent(
@@ -36,5 +44,5 @@ module = Module(
         ),
     ),
     worker_ops=(WorkerOp("docker.images.digests", ("docker", "full")),),
-    migrations=(repository.MIGRATION,),
+    migrations=(repository.MIGRATION, repository.LOGINS_MIGRATION),
 )

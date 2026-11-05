@@ -47,3 +47,12 @@ def parse(reference: str) -> Ref | None:
     if not (_HOST.fullmatch(host) and _REPO.fullmatch(repo) and _TAG.fullmatch(tag)):
         return None
     return Ref(host, repo, tag)
+
+
+def login_host(text: str) -> str | None:
+    """Return the registry host a login is kept under (Docker Hub's names map to its API host)."""
+    host = text.strip().lower()
+    if host in (DOCKER_HUB, "index.docker.io", "hub.docker.com", DOCKER_HUB_API):
+        return DOCKER_HUB_API
+    ok = _HOST.fullmatch(host) and ("." in host or host.startswith("localhost"))
+    return host if ok else None

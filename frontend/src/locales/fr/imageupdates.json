@@ -8,5 +8,12 @@
   "state.update": "Mise à jour disponible",
   "state.unknown": "Non suivie",
   "state.error": "Vérification impossible",
-  "checked": "vérifié le {{at}}"
+  "checked": "vérifié le {{at}}",
+  "logins.title": "Registres privés",
+  "logins.explain": "Pour les images d'un registre privé, enregistre ici une connexion (mot de passe ou jeton avec droit de lecture). Elle est chiffrée, jamais réaffichée, et envoyée uniquement à ce registre et à son propre service de jetons, pour savoir quelle version il propose.",
+  "logins.host": "Adresse du registre",
+  "logins.username": "Utilisateur",
+  "logins.secret": "Mot de passe ou jeton",
+  "logins.save": "Enregistrer la connexion",
+  "logins.forget": "Oublier"
 }

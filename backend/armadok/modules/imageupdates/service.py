@@ -9,6 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from armadok.core import crypto
 from armadok.core.errors import ApiError
 from armadok.core.events import emit
 from armadok.modules.imageupdates import refs, registry, repository
@@ -53,7 +54,10 @@ class Busy(Exception):
 
 
 async def _compare(
-    image: LocalImage, allow_private: bool, gate: asyncio.Semaphore
+    image: LocalImage,
+    allow_private: bool,
+    gate: asyncio.Semaphore,
+    logins: dict[str, registry.Login],
 ) -> dict[str, Any]:
     """Return the state of one image: `current`, `update`, `unknown` or `error`."""
     base: dict[str, Any] = {
@@ -71,7 +75,7 @@ async def _compare(
         return {**base, "state": "unknown", "error": "images.no_digest"}
     async with gate:
         try:
-            remote = await registry.current_digest(parsed, allow_private)
+            remote = await registry.current_digest(parsed, allow_private, logins.get(parsed.host))
         except registry.RegistryError as error:
             return {**base, "state": "error", "error": error.code}
         except Exception:  # noqa: BLE001  (one odd registry must not sink the whole check)
@@ -79,6 +83,22 @@ async def _compare(
             return {**base, "state": "error", "error": "images.registry_unreachable"}
     state = "current" if remote in base["local"] else "update"
     return {**base, "state": state, "remote": remote}
+
+
+def _open_logins(app: Any, node_id: str) -> dict[str, registry.Login]:
+    """Decrypt the machine's registry logins; one that cannot be read is simply not used."""
+    conn = app.state.settings.open_db()
+    try:
+        sealed = repository.sealed_logins(conn, node_id)
+    finally:
+        conn.close()
+    logins: dict[str, registry.Login] = {}
+    for host, (username, secret) in sealed.items():
+        try:
+            logins[host] = registry.Login(username, crypto.decrypt(app.state.settings, secret))
+        except ApiError:
+            log.warning("a registry login of %s could not be decrypted", node_id)
+    return logins
 
 
 async def check_node(app: Any, node_id: str) -> dict[str, int]:
@@ -99,6 +119,7 @@ async def check_node(app: Any, node_id: str) -> dict[str, int]:
             if image.in_use and (image.ref not in chosen or not chosen[image.ref].in_use):
                 chosen[image.ref] = image
         gate = asyncio.Semaphore(CONCURRENCY)
+        logins = await asyncio.to_thread(_open_logins, app, node_id)
         allow_private = app.state.settings.allow_private_outbound
         followed, hosts = [], set()
         crowded = []
@@ -113,7 +134,7 @@ async def check_node(app: Any, node_id: str) -> dict[str, int]:
         try:
             async with asyncio.timeout(DEADLINE_SECONDS):
                 results = await asyncio.gather(
-                    *(_compare(i, allow_private, gate) for i in followed)
+                    *(_compare(i, allow_private, gate, logins) for i in followed)
                 )
         except TimeoutError:
             raise ApiError("imageupdates.timeout", 504) from None

@@ -27,6 +27,22 @@ MIGRATION = Migration(
     """,
 )
 
+LOGINS_MIGRATION = Migration(
+    "imageupdates-0002-logins",
+    """
+    CREATE TABLE registry_logins (
+        node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+        host TEXT NOT NULL,
+        username TEXT NOT NULL,
+        secret TEXT NOT NULL,
+        created_by TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (node_id, host)
+    );
+    """,
+)
+
+MAX_LOGINS = 20
 STATES = ("current", "update", "unknown", "error")
 
 
@@ -86,3 +102,50 @@ def forget_others(conn: sqlite3.Connection, node_id: str, present: set[str]) -> 
             conn.execute(
                 "DELETE FROM image_updates WHERE node_id = ? AND ref = ?", (node_id, row["ref"])
             )
+
+
+def list_logins(conn: sqlite3.Connection, node_id: str) -> list[dict[str, Any]]:
+    """Return the registries a machine has a login for (host and user, never the secret)."""
+    rows = conn.execute(
+        "SELECT host, username, created_at FROM registry_logins WHERE node_id = ? ORDER BY host",
+        (node_id,),
+    )
+    return [dict(r) for r in rows]
+
+
+def sealed_logins(conn: sqlite3.Connection, node_id: str) -> dict[str, tuple[str, str]]:
+    """Return `{host: (username, encrypted secret)}` for a machine."""
+    rows = conn.execute(
+        "SELECT host, username, secret FROM registry_logins WHERE node_id = ?", (node_id,)
+    )
+    return {r["host"]: (r["username"], r["secret"]) for r in rows}
+
+
+def save_login(
+    conn: sqlite3.Connection, node_id: str, host: str, username: str, sealed: str, by: str
+) -> bool:
+    """Store or replace a login; False if the machine already holds `MAX_LOGINS` other hosts."""
+    known = {
+        r["host"]
+        for r in conn.execute("SELECT host FROM registry_logins WHERE node_id = ?", (node_id,))
+    }
+    if host not in known and len(known) >= MAX_LOGINS:
+        return False
+    conn.execute(
+        "INSERT INTO registry_logins (node_id, host, username, secret, created_by, created_at)"
+        " VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(node_id, host) DO UPDATE SET"
+        " username = excluded.username, secret = excluded.secret,"
+        " created_by = excluded.created_by, created_at = excluded.created_at",
+        (node_id, host, username, sealed, by, _now()),
+    )
+    conn.commit()
+    return True
+
+
+def delete_login(conn: sqlite3.Connection, node_id: str, host: str) -> bool:
+    """Forget a login; False if there was none."""
+    done = conn.execute(
+        "DELETE FROM registry_logins WHERE node_id = ? AND host = ?", (node_id, host)
+    ).rowcount
+    conn.commit()
+    return bool(done)
