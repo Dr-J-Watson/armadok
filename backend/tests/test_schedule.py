@@ -581,6 +581,30 @@ def test_a_missed_run_waits_for_its_manager_then_is_replaced_by_a_notice(box, da
     assert row(app, tid)["missed_slot"] is None and len(SEEN) == 1
 
 
+def test_the_machine_owner_is_told_too_when_the_manager_cannot_answer(box, daemon, monkeypatch):
+    client, admin, node, app = box
+    sent = []
+
+    async def fake_emit(_app, name, /, **payload):
+        sent.append(payload)
+
+    monkeypatch.setattr(runner, "emit", fake_emit)
+    tid = make(client, admin, node).json()["id"]
+    conn = app.state.settings.open_db()
+    task = conn.execute("SELECT * FROM scheduled_tasks WHERE id = ?", (tid,)).fetchone()
+    now = datetime.now(UTC)
+    # A manager who is also the owner has nobody to be replaced by.
+    assert runner._stand_in(conn, task, now) is None
+    conn.execute("UPDATE nodes SET owner = 'owner-id' WHERE id = ?", (node,))
+    # An active manager who did something today still answers for themselves.
+    assert runner._stand_in(conn, task, now) is None
+    # A month later with no activity, or once disabled, the owner takes over.
+    assert runner._stand_in(conn, task, now + timedelta(days=31)) == "owner-id"
+    conn.execute("UPDATE users SET is_active = 0 WHERE id = ?", (task["created_by"],))
+    assert runner._stand_in(conn, task, now) == "owner-id"
+    conn.close()
+
+
 def test_the_manager_can_run_a_missed_task_or_wait_and_only_the_first_answer_counts(box, daemon):
     client, admin, node, app = box
     tid = make(client, admin, node).json()["id"]

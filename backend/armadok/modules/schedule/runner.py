@@ -121,6 +121,30 @@ async def _run(app: Any, task: Any, requested_by: str | None = None) -> str:
     return result
 
 
+INACTIVE = timedelta(days=30)  # a manager unseen this long is replaced by the machine's owner
+
+
+def _stand_in(conn, task: Any, now: datetime) -> str | None:
+    """Return the machine owner when the task's manager cannot answer, else None.
+
+    The manager cannot answer if their account is disabled or has not done anything (the audit
+    log is the only record of activity) for a month. Nobody is added if the owner is the manager.
+    """
+    owner = conn.execute("SELECT owner FROM nodes WHERE id = ?", (task["node_id"],)).fetchone()
+    if owner is None or owner["owner"] == task["created_by"]:
+        return None
+    user = conn.execute(
+        "SELECT is_active FROM users WHERE id = ?", (task["created_by"],)
+    ).fetchone()
+    last = conn.execute(
+        "SELECT MAX(at) AS at FROM audit_log WHERE actor = ? AND outcome = 'success'",
+        (task["created_by"],),
+    ).fetchone()["at"]
+    gone = user is None or not user["is_active"]
+    idle = last is None or now - datetime.fromisoformat(last) > INACTIVE
+    return owner["owner"] if gone or idle else None
+
+
 async def _node_name(conn, node_id: str) -> str:
     row = conn.execute("SELECT name FROM nodes WHERE id = ?", (node_id,)).fetchone()
     return row["name"] if row else "-"
@@ -159,6 +183,9 @@ async def run_due(app: Any) -> int:
                 )
                 late.append(task["id"])
                 notices.append(("schedule.missed", task, task["next_run"], ""))
+        stand_ins = {
+            t["id"]: _stand_in(conn, t, now) for e, t, _, _ in notices if e == "schedule.missed"
+        }
         names = {t["node_id"]: await _node_name(conn, t["node_id"]) for _, t, _, _ in notices}
     finally:
         conn.close()
@@ -168,7 +195,7 @@ async def run_due(app: Any) -> int:
             "notify",
             event=event,
             node_id=task["node_id"],
-            user_ids=[task["created_by"]],
+            user_ids=[u for u in (task["created_by"], stand_ins.get(task["id"])) if u],
             params={"node": names[task["node_id"]], "name": task["name"], "slot": slot[:16]},
         )
     await asyncio.gather(*(run_task(app, t) for t in taken if t["id"] not in late))
