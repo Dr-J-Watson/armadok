@@ -28,6 +28,16 @@ WORKER_ERROR_CODES = frozenset(
         "worker.conflict",
         "worker.not_text",
         "worker.history_failed",
+        # Git (see `worker/git_ops.py`).
+        "worker.git_missing",
+        "worker.git_auth",
+        "worker.git_branch",
+        "worker.git_not_found",
+        "worker.git_failed",
+        "worker.git_dirty",
+        "worker.git_not_repo",
+        "worker.git_unsafe_tree",
+        "worker.git_address_not_allowed",
         "worker.metrics_not_configured",
         "worker.metrics_unreachable",
         # Volume backups (see `worker/backup_ops.py`).

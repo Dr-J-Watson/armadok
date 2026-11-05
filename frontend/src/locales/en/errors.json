@@ -239,5 +239,17 @@
   "templates.too_many": "You already keep the most templates allowed.",
   "templates.not_with_key": "Templates are reached with your own session, not with an API key.",
   "templates.unreadable": "This template cannot be read (the encryption key changed).",
-  "templates.not_your_group": "You can only share with groups you belong to."
+  "templates.not_your_group": "You can only share with groups you belong to.",
+  "worker.git_auth": "The repository refused the login: save a valid access token for this host.",
+  "worker.git_branch": "This branch does not exist in the repository.",
+  "worker.git_not_found": "Repository not found (or not visible with this login).",
+  "worker.git_failed": "Git could not do it. Check the address, the branch and the login.",
+  "worker.git_dirty": "Files of this project were edited by hand: update is refused so nothing is lost.",
+  "worker.git_not_repo": "This project folder is not a Git repository any more.",
+  "worker.git_missing": "Git is not installed on this machine's worker.",
+  "git.too_many_logins": "This machine already has the most Git logins allowed.",
+  "git.no_such_login": "No login is stored for this host.",
+  "git.no_source": "This project has no Git source.",
+  "worker.git_unsafe_tree": "The repository holds symbolic links, submodules or a tracked .env file: it is refused so nothing outside the project can be reached.",
+  "worker.git_address_not_allowed": "This address points to the machine's own network, which is not allowed for Git."
 }

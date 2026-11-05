@@ -70,7 +70,7 @@ export function NewProject({ nodeId, onCreated, onCancel }: { nodeId: string; on
           ))}
         </div>
       </fieldset>
-      {current && <div>{current.render({ nodeId, onDraft: take })}</div>}
+      {current && <div>{current.render({ nodeId, onDraft: take, onCreated })}</div>}
       {ready && (
         <form onSubmit={submit}>
           {draft?.notes}

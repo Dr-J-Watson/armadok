@@ -7,6 +7,7 @@ import { FileEditor } from '../../shell/FileEditor'
 import { NewProject } from './NewProject'
 import { ProjectRun } from './ProjectRun'
 import { Problem } from '../../components/Problem'
+import { useFeatures } from '../../core/useFeatures'
 
 interface Project {
   name: string
@@ -17,6 +18,7 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['projects', 'errors'])
   const [params, setParams] = useSearchParams()
   const [creating, setCreating] = useState(false)
+  const panels = useFeatures().flatMap((f) => f.projectPanels ?? [])
   const projects = useQuery({
     queryKey: ['projects', nodeId],
     queryFn: () => api.get<{ projects: Project[] }>(`/nodes/${nodeId}/projects`),
@@ -90,6 +92,7 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
       </nav>
       <div>
         {project && <ProjectRun key={project} nodeId={nodeId} project={project} />}
+        {project && panels.map((p) => <div key={p.id}>{p.render({ nodeId, project })}</div>)}
         {project && file ? (
           // Changing file starts a fresh editor: no draft leaks from one file to another.
           <FileEditor

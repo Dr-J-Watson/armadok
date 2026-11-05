@@ -65,7 +65,16 @@ export interface ProjectDraft {
 
 export interface ProjectSourceProps {
   nodeId: string
+  // Hand a Compose text to the creation form...
   onDraft: (draft: ProjectDraft) => void
+  // ...or, for a source that creates the project itself (a Git clone), say it is done.
+  onCreated: (name: string) => void
+}
+
+// A panel shown on a project's page (the Git source, for one), contributed by a feature.
+export interface ProjectPanel {
+  id: string
+  render: (props: { nodeId: string; project: string }) => ReactNode
 }
 
 export interface ProjectSource {
@@ -92,6 +101,7 @@ export interface Feature {
   objectSections?: ObjectSection[]
   headerWidgets?: HeaderWidget[]
   projectSources?: ProjectSource[]
+  projectPanels?: ProjectPanel[]
   projectDraftActions?: ProjectDraftAction[]
   // Live updates: for a change signal (`docker.changed`), the query keys to reload. Signals
   // about one machine already reload every query that mentions that machine.

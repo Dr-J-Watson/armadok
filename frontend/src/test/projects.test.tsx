@@ -87,7 +87,7 @@ describe('projects tab', () => {
   })
 
   it('explains an unconfigured machine instead of showing a bare error', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       json({ error: { code: 'worker.projects_not_configured' } }, 409),
     )
     renderTab()

@@ -39,6 +39,10 @@ ENV PATH=/opt/venv/bin:$PATH \
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin armadok \
  && mkdir /data && chown 10001:10001 /data && chmod 700 /data
 
+# Git (the client only, https): projects can come from a repository and be updated from it.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 COPY --from=build /opt/venv /opt/venv
 # No package installer in the running image: nothing needs one, and the base image's pip is one
 # more component whose flaws would have to be tracked.

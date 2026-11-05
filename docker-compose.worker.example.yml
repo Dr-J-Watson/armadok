@@ -30,6 +30,9 @@ services:
       # point of Traefik (never published) reachable on a Docker network the worker also joins.
       # No visitor address is in these metrics. Optional.
       # ARMADOK_TRAEFIK_METRICS_URL: http://traefik:8082/metrics
+      # Git repositories on this machine's own network (a self-hosted Git server) are refused by
+      # default, so a repository address cannot be used to probe the network. Set to true to allow.
+      # ARMADOK_GIT_ALLOW_PRIVATE: "false"
       # Traefik's acme.json, to show its certificates. The file holds the PRIVATE KEYS: Armadok
       # reads it and sends only public facts (names, issuer, dates), never a key. Mount it
       # read-only, preferably on its own (a folder that holds nothing else).
