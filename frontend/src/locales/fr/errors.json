@@ -234,5 +234,9 @@
   "convert.substitution": "Cette commande utilise $(...) ou des apostrophes inversées, qu'un shell exécuterait d'abord. Écrivez la valeur en toutes lettres et réessayez.",
   "imageupdates.invalid_host": "Ce n'est pas une adresse de registre valide.",
   "imageupdates.too_many_logins": "Cette machine a déjà le maximum de connexions à des registres.",
-  "imageupdates.no_such_login": "Aucune connexion n'est enregistrée pour ce registre."
+  "imageupdates.no_such_login": "Aucune connexion n'est enregistrée pour ce registre.",
+  "templates.not_found": "Ce modèle n'existe pas.",
+  "templates.too_many": "Tu gardes déjà le maximum de modèles.",
+  "templates.not_with_key": "Les modèles s'ouvrent avec ta propre session, pas avec une clé d'API.",
+  "templates.unreadable": "Ce modèle est illisible (la clé de chiffrement a changé)."
 }

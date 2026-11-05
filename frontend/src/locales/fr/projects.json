@@ -18,5 +18,13 @@
   "run.noServices": "Aucun conteneur pour ce projet.",
   "run.showLogs": "Afficher les journaux",
   "run.hideLogs": "Masquer les journaux",
-  "run.logs": "Journaux (200 dernières lignes)"
+  "run.logs": "Journaux (200 dernières lignes)",
+  "new.button": "Nouveau projet",
+  "new.title": "Nouveau projet",
+  "new.from": "Partir de",
+  "new.empty": "Rien (un exemple à modifier)",
+  "new.name": "Nom du projet",
+  "new.envHint": "Le .env reste sur la machine (fichier privé, jamais réaffiché ici). Laisse vide si le projet n'en a pas besoin. Rien n'est démarré : déploie depuis la page du projet.",
+  "new.create": "Créer le projet",
+  "new.cancel": "Annuler"
 }

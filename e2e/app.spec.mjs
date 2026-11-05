@@ -84,21 +84,6 @@ test('the search opens with Ctrl+K, finds a machine and goes to it', async ({ pa
   await expect(page.getByRole('heading', { name: /Garage server/ })).toBeVisible()
 })
 
-test('the converter turns a docker run command into a Compose file and keeps secrets apart', async ({ page }) => {
-  await signIn(page)
-  await page.getByRole('link', { name: 'Converter' }).click()
-  await page.getByLabel('Your docker run command').fill('docker run -d --name blog -p 8080:80 -e DB_PASSWORD=hunter2 nginx:1.27')
-  await page.getByRole('button', { name: 'Convert' }).click()
-  const compose = page.locator('pre').first()
-  await expect(compose).toContainText('image: nginx:1.27')
-  await expect(compose).toContainText('${DB_PASSWORD}')
-  await expect(compose).not.toContainText('hunter2')
-  await expect(page.locator('pre').nth(1)).toContainText('DB_PASSWORD=hunter2')
-  await page.getByLabel('Your docker run command').fill('docker run -d -e X=$(id) img')
-  await page.getByRole('button', { name: 'Convert' }).click()
-  await expect(page.getByRole('alert')).toContainText('$(...)')
-})
-
 test('an unknown address says so kindly and links back', async ({ page }) => {
   await signIn(page)
   await page.goto('/nothing-here')

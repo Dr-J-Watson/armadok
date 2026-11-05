@@ -18,5 +18,13 @@
   "run.noServices": "No container for this project.",
   "run.showLogs": "Show logs",
   "run.hideLogs": "Hide logs",
-  "run.logs": "Logs (last 200 lines)"
+  "run.logs": "Logs (last 200 lines)",
+  "new.button": "New project",
+  "new.title": "New project",
+  "new.from": "Start from",
+  "new.empty": "Nothing (an example to edit)",
+  "new.name": "Project name",
+  "new.envHint": "The .env stays on the machine (private file, never shown again here). Leave it empty if the project needs none. Nothing is started: deploy from the project page.",
+  "new.create": "Create the project",
+  "new.cancel": "Cancel"
 }

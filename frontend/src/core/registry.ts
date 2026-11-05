@@ -52,6 +52,34 @@ export interface HeaderWidget {
   render: () => ReactNode
 }
 
+// What a new project starts from. A feature that can produce a Compose text (a template, a
+// converted `docker run`, running containers...) contributes a source; the project creation
+// screen lists them and never names them.
+export interface ProjectDraft {
+  name?: string
+  compose: string
+  env?: string | null
+  // Anything the source wants the person to check, shown above the draft.
+  notes?: ReactNode
+}
+
+export interface ProjectSourceProps {
+  nodeId: string
+  onDraft: (draft: ProjectDraft) => void
+}
+
+export interface ProjectSource {
+  id: string
+  labelKey: string // in the feature's own namespace
+  render: (props: ProjectSourceProps) => ReactNode
+}
+
+// A button next to the draft that does something with it (keep it as a template...).
+export interface ProjectDraftAction {
+  id: string
+  render: (props: { draft: ProjectDraft }) => ReactNode
+}
+
 export interface Feature {
   name: string
   // Backend module that must be enabled for this feature to appear.
@@ -63,6 +91,8 @@ export interface Feature {
   nodeTabs?: NodeTab[]
   objectSections?: ObjectSection[]
   headerWidgets?: HeaderWidget[]
+  projectSources?: ProjectSource[]
+  projectDraftActions?: ProjectDraftAction[]
   // Live updates: for a change signal (`docker.changed`), the query keys to reload. Signals
   // about one machine already reload every query that mentions that machine.
   signals?: Record<string, string[]>

@@ -145,3 +145,33 @@ class ActionIn(BaseModel):
         ):
             raise ValueError("invalid compose file name")
         return self
+
+
+class CreateIn(BaseModel):
+    """Body of a project creation: a name, the Compose text, and an optional `.env` text."""
+
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(pattern=PROJECT_PATTERN)
+    compose: str = Field(min_length=1, max_length=MAX_FILE_BYTES)
+    env: str | None = Field(default=None, max_length=64 * 1024)
+
+    @model_validator(mode="after")
+    def measured_in_bytes(self) -> CreateIn:
+        """Check the sizes the worker enforces (bytes, not characters) and drop an empty `.env`."""
+        if self.env is not None and not self.env.strip():
+            self.env = None
+        if (
+            len(self.compose.encode()) > MAX_FILE_BYTES
+            or len((self.env or "").encode()) > 64 * 1024
+        ):
+            raise ValueError("too large")
+        return self
+
+
+class Created(BaseModel):
+    """Answer of `projects.create`."""
+
+    model_config = _STRICT
+    project: str = Field(pattern=PROJECT_PATTERN)
+    file: str = Field(pattern=FILE_PATTERN)
+    env: bool

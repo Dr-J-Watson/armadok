@@ -100,15 +100,17 @@ def regular_names(dir_fd: int, pattern: re.Pattern[str]) -> Iterator[str]:
                 yield entry.name
 
 
-def remove_stale_temps(dir_fd: int, temp_pattern: re.Pattern[str]) -> None:
-    """Delete temporary files left behind by a crashed write (older than a few minutes)."""
+def remove_stale_temps(
+    dir_fd: int, temp_pattern: re.Pattern[str], max_age: float = STALE_TEMP_SECONDS
+) -> None:
+    """Delete temporary files left behind by a crashed write (older than `max_age` seconds)."""
     now = time.time()
     with os.scandir(dir_fd) as entries:
         for entry in entries:
             if not temp_pattern.fullmatch(entry.name):
                 continue
             try:
-                if now - entry.stat(follow_symlinks=False).st_mtime > STALE_TEMP_SECONDS:
+                if now - entry.stat(follow_symlinks=False).st_mtime >= max_age:
                     os.unlink(entry.name, dir_fd=dir_fd)
             except OSError:
                 pass
@@ -121,11 +123,13 @@ def write_regular(
     expected_sha256: str | None,
     max_bytes: int,
     temp_pattern: re.Pattern[str],
+    new_mode: int = 0o640,
 ) -> dict[str, object]:
     """Replace a file (or create it), refusing if it changed since it was read.
 
     `expected_sha256` is the hash of the version being replaced, or None to create a file
-    that must not exist yet. `temp_pattern` must match the temporary names made here.
+    that must not exist yet (made with `new_mode`). `temp_pattern` must match the temporary
+    names made here.
     """
     if len(data) > max_bytes:
         raise OperationError("worker.too_large")
@@ -143,7 +147,7 @@ def write_regular(
         if expected_sha256 is None or hashlib.sha256(current).hexdigest() != expected_sha256:
             raise OperationError("worker.conflict")
 
-    mode = stat.S_IMODE(before.st_mode) & 0o777 if before else 0o640
+    mode = stat.S_IMODE(before.st_mode) & 0o777 if before else new_mode
     temp = f".{name}.armadok-{secrets.token_hex(8)}.tmp"
     tfd = os.open(
         temp,

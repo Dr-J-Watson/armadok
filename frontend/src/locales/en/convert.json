@@ -1,17 +1,12 @@
 {
-  "title": "Converter",
-  "subtitle": "Turn a docker run command into a docker-compose.yml. The command is only read: nothing is run and nothing is saved.",
   "input": "Your docker run command",
   "go": "Convert",
-  "copy": "Copy",
-  "copied": "Copied",
   "warnings": "To check by hand",
   "envHint": "These values look like secrets, so they are kept out of the Compose file. Save this as a .env file next to it (and keep it private).",
   "warning.convert.unsupported_flag": "The option {{detail}} is not converted. Check whether you need it.",
   "warning.convert.missing_value": "The option {{detail}} has no value.",
   "warning.convert.rm": "--rm (remove at exit) has no Compose equivalent: the container stays after it stops.",
   "warning.convert.foreground": "There was no -d: docker run would stay attached. In Compose, use `docker compose up -d` to run it in the background.",
-  "fromContainers.tab": "To Compose",
   "fromContainers.explain": "Pick containers that are already running and get the Compose file that recreates them. Their settings, including environment variables, are read once and nothing is changed or saved. Secret-looking values go to a separate .env.",
   "fromContainers.pick": "Containers to convert",
   "fromContainers.go_one": "Convert {{count}} container",
@@ -22,5 +17,7 @@
   "warning.convert.env_inline": "Some variables of {{detail}} stay readable in the file because they do not look like secrets. Check them before sharing it.",
   "warning.convert.truncated": "{{detail}} had values or lists too long to be read whole: the file is incomplete.",
   "warning.convert.host_access": "{{detail}} shares the machine's network or processes, or holds SYS_ADMIN: it is hardly isolated.",
-  "warning.convert.secret_inline": "A variable of {{detail}} looks like a secret but its name is unusual: it stays readable in the file. Move it to .env by hand."
+  "warning.convert.secret_inline": "A variable of {{detail}} looks like a secret but its name is unusual: it stays readable in the file. Move it to .env by hand.",
+  "source.dockerRun": "A docker run command",
+  "source.containers": "Containers already running here"
 }

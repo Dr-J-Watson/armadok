@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -20,9 +21,10 @@ from typing import Any
 from armadok.worker import safefs
 from armadok.worker.operation import Operation, OperationError
 
+log = logging.getLogger("armadok.worker.projects")
 PROJECT_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
 COMPOSE_FILE = re.compile(r"(?:docker-)?compose(?:\.[A-Za-z0-9_-]{1,30})?\.ya?ml")
-TEMP_FILE = re.compile(r"\.(?:docker-)?compose.*\.armadok-[0-9a-f]{16}\.tmp")
+TEMP_FILE = re.compile(r"\.+(?:(?:docker-)?compose.*|env)\.armadok-[0-9a-f]{16}\.tmp")
 # JSON may spell one byte as up to six ("\u0000"), and a message is capped at 1 MiB: 128 KiB of
 # content always fits, with room for the rest of the message.
 MAX_FILE_BYTES = 128 * 1024
@@ -134,7 +136,81 @@ def file_write(args: dict[str, Any]) -> dict[str, Any]:
         )
 
 
+MAX_ENV_BYTES = 64 * 1024
+ENV_FILE = ".env"
+DEFAULT_COMPOSE = "compose.yaml"
+
+
+def _text(value: Any, limit: int) -> bytes:
+    """Return `value` as bytes if it is plain text within `limit` (no NUL), else refuse."""
+    if not isinstance(value, str) or "\x00" in value:
+        raise OperationError("worker.invalid_path")
+    data = value.encode("utf-8")
+    if len(data) > limit:
+        raise OperationError("worker.too_large")
+    return data
+
+
+def _discard(root_fd: int, name: str, folder: int) -> None:
+    """Remove a project folder that could not be finished (best effort, by name, no links)."""
+    if folder >= 0:
+        for entry in (ENV_FILE, DEFAULT_COMPOSE):
+            try:
+                os.unlink(entry, dir_fd=folder)
+            except OSError:
+                pass
+        try:
+            safefs.remove_stale_temps(folder, TEMP_FILE, max_age=0)
+        except OSError:
+            pass
+        os.close(folder)
+    try:
+        os.rmdir(name, dir_fd=root_fd)
+    except OSError:
+        log.warning("could not remove the unfinished project folder")
+
+
+def project_create(args: dict[str, Any]) -> dict[str, Any]:
+    """Create a new project folder holding `compose.yaml` and, if given, a private `.env`.
+
+    The folder must not exist yet and is made directly under the allowed folder. If anything
+    fails halfway the new folder and its files are removed again, so a failure leaves nothing.
+    """
+    name = args.get("project")
+    if not isinstance(name, str) or not PROJECT_NAME.fullmatch(name):
+        raise OperationError("worker.invalid_path")
+    compose = _text(args.get("compose"), MAX_FILE_BYTES)
+    env = _text(args["env"], MAX_ENV_BYTES) if args.get("env") else None
+    root_fd = safefs.open_dir(str(_root_path()))
+    try:
+        try:
+            os.mkdir(name, 0o750, dir_fd=root_fd)
+        except FileExistsError:
+            raise OperationError("worker.conflict") from None
+        except OSError:
+            raise OperationError("worker.forbidden") from None
+        folder = -1
+        try:
+            folder = safefs.open_dir(name, root_fd)
+            # The `.env` goes first and the Compose file last: a folder only counts as a project
+            # (and can only be deployed) once its Compose file exists, so nobody ever sees
+            # a project that is waiting for its variables.
+            if env is not None:
+                safefs.write_regular(
+                    folder, ENV_FILE, env, None, MAX_ENV_BYTES, TEMP_FILE, new_mode=0o600
+                )
+            safefs.write_regular(folder, DEFAULT_COMPOSE, compose, None, MAX_FILE_BYTES, TEMP_FILE)
+        except BaseException:
+            _discard(root_fd, name, folder)
+            raise
+        os.close(folder)
+    finally:
+        os.close(root_fd)
+    return {"project": name, "file": DEFAULT_COMPOSE, "env": env is not None}
+
+
 OPERATIONS: dict[str, Operation] = {
+    "projects.create": project_create,
     "projects.list": projects_list,
     "projects.file.read": file_read,
     "projects.file.write": file_write,

@@ -25,6 +25,7 @@ import { scheduleFeature } from './schedule/feature'
 import { uptimeFeature } from './uptime/feature'
 import { imageScanFeature } from './imagescan/feature'
 import { convertFeature } from './convert/feature'
+import { templatesFeature } from './templates/feature'
 import { dashboardFeature } from './dashboard/feature'
 import { helpFeature } from './help/feature'
 import { trafficFeature } from './traffic/feature'
@@ -60,6 +61,7 @@ export const features: Feature[] = [
   notificationsFeature,
   dnsFeature,
   convertFeature,
+  templatesFeature,
   certsFeature,
   uptimeFeature,
   scheduleFeature,

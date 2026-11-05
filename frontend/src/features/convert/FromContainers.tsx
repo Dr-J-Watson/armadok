@@ -3,8 +3,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Problem } from '../../components/Problem'
 import { api } from '../../core/api'
-import { ConvertResult } from './ConvertResult'
-import type { Result } from './ConvertResult'
+import type { ProjectSourceProps } from '../../core/registry'
+import { draftOf } from './Notes'
+import type { Result } from './Notes'
 
 interface Container {
   id: string
@@ -15,7 +16,7 @@ interface Container {
 
 // Tick containers that already run on a machine and get the Compose file that recreates them.
 // Their settings (and environment variables) are read, never changed; nothing is saved.
-export function FromContainers({ nodeId }: { nodeId: string }) {
+export function FromContainers({ nodeId, onDraft }: ProjectSourceProps) {
   const { t } = useTranslation(['convert', 'errors'])
   const [picked, setPicked] = useState<string[]>([])
   const list = useQuery({
@@ -24,6 +25,7 @@ export function FromContainers({ nodeId }: { nodeId: string }) {
   })
   const convert = useMutation({
     mutationFn: () => api.post<Result>(`/nodes/${nodeId}/convert/containers`, { ids: picked }),
+    onSuccess: (r) => onDraft(draftOf(r)),
   })
   const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   if (list.isPending) return <p>{t('loading')}</p>
@@ -46,12 +48,11 @@ export function FromContainers({ nodeId }: { nodeId: string }) {
         ))}
       </fieldset>
       <div className="actions">
-        <button type="button" className="primary" disabled={picked.length === 0 || convert.isPending} onClick={() => convert.mutate()}>
+        <button type="button" disabled={picked.length === 0 || convert.isPending} onClick={() => convert.mutate()}>
           {t('convert:fromContainers.go', { count: picked.length })}
         </button>
       </div>
       {convert.isError && <Problem error={convert.error} />}
-      {convert.data && <ConvertResult result={convert.data} />}
     </>
   )
 }

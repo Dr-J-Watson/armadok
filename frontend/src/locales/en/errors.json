@@ -234,5 +234,9 @@
   "convert.substitution": "This command uses $(...) or backticks, which a shell would run first. Write the value out and try again.",
   "imageupdates.invalid_host": "This is not a valid registry address.",
   "imageupdates.too_many_logins": "This machine already has the most registry logins allowed.",
-  "imageupdates.no_such_login": "No login is stored for this registry."
+  "imageupdates.no_such_login": "No login is stored for this registry.",
+  "templates.not_found": "This template does not exist.",
+  "templates.too_many": "You already keep the most templates allowed.",
+  "templates.not_with_key": "Templates are reached with your own session, not with an API key.",
+  "templates.unreadable": "This template cannot be read (the encryption key changed)."
 }

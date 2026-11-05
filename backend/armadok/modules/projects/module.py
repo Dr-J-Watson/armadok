@@ -25,6 +25,14 @@ module = Module(
             node_owner=True,
             level="develop",
         ),
+        # Makes a new folder with a Compose file (and a private .env) in the projects folder.
+        # Not sensitive, like `projects.files.write`: it plants text, deploying it is `deploy`.
+        Right(
+            "projects.create",
+            depends_on=("projects.files.write",),
+            node_owner=True,
+            level="develop",
+        ),
         # Running `docker compose` is as powerful as being root on the machine: sensitive, so
         # it is never carried by an API key unless explicitly confirmed, and flagged everywhere.
         Right(
@@ -59,6 +67,7 @@ module = Module(
     audit_events=(
         "project.file_read",
         "project.file_write",
+        "project.create",
         "project.action",
         "project.action_done",
         "project.logs_read",
@@ -89,6 +98,7 @@ module = Module(
         WorkerOp("projects.list", _DOCKER),
         WorkerOp("projects.file.read", _DOCKER),
         WorkerOp("projects.file.write", _DOCKER),
+        WorkerOp("projects.create", _DOCKER),
         WorkerOp("compose.start", _DOCKER),
         WorkerOp("compose.task", _DOCKER),
         WorkerOp("compose.ps", _DOCKER),

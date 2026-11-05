@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
 import { FileEditor } from '../../shell/FileEditor'
+import { NewProject } from './NewProject'
 import { ProjectRun } from './ProjectRun'
 import { Problem } from '../../components/Problem'
 
@@ -14,6 +16,7 @@ interface Project {
 export function ProjectsTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['projects', 'errors'])
   const [params, setParams] = useSearchParams()
+  const [creating, setCreating] = useState(false)
   const projects = useQuery({
     queryKey: ['projects', nodeId],
     queryFn: () => api.get<{ projects: Project[] }>(`/nodes/${nodeId}/projects`),
@@ -34,9 +37,33 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
     return (
       <Problem error={projects.error} />
     )
-  if (projects.data.projects.length === 0) return <p className="empty">{t('projects:empty')}</p>
+  const create = creating ? (
+    <NewProject
+      nodeId={nodeId}
+      onCancel={() => setCreating(false)}
+      onCreated={(name) => {
+        setCreating(false)
+        open(name, 'compose.yaml')
+      }}
+    />
+  ) : (
+    <div className="actions">
+      <button type="button" className="primary" onClick={() => setCreating(true)}>
+        {t('projects:new.button')}
+      </button>
+    </div>
+  )
+  if (projects.data.projects.length === 0)
+    return (
+      <>
+        <p className="empty">{t('projects:empty')}</p>
+        {create}
+      </>
+    )
 
   return (
+    <>
+    {create}
     <div className="projects-layout">
       <nav aria-label={t('projects:list')}>
         <ul className="links">
@@ -77,5 +104,6 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
         )}
       </div>
     </div>
+    </>
   )
 }

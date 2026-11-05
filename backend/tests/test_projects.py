@@ -360,3 +360,95 @@ def test_the_hub_refuses_oversized_bodies_and_files_measured_in_bytes(live, root
     )
     assert heavy.status_code == 422
     stop.set()
+
+
+# --- creating a project --------------------------------------------------------------------
+
+
+def test_a_project_is_created_with_a_private_env_and_never_over_an_existing_one(root):
+    done = ops.project_create({"project": "shop", "compose": COMPOSE, "env": "KEY=value\n"})
+    assert done == {"project": "shop", "file": "compose.yaml", "env": True}
+    folder = root / "shop"
+    assert (folder / "compose.yaml").read_text() == COMPOSE
+    assert stat.S_IMODE((folder / ".env").stat().st_mode) == 0o600
+    assert code_of(ops.project_create, {"project": "shop", "compose": "x"}) == "worker.conflict"
+    assert code_of(ops.project_create, {"project": "blog", "compose": "x"}) == "worker.conflict"
+    assert (root / "blog" / ".env").read_text() == "SECRET=hunter2\n"
+    ops.project_create({"project": "bare", "compose": COMPOSE})
+    assert not (root / "bare" / ".env").exists()
+
+
+@pytest.mark.parametrize("name", ["../x", "a/b", "", ".hidden", "x" * 65, 3, None])
+def test_a_project_name_cannot_escape_the_folder(root, name):
+    assert code_of(ops.project_create, {"project": name, "compose": "x"}) == "worker.invalid_path"
+    assert sorted(p.name for p in root.parent.iterdir()) == ["stacks"]
+
+
+def test_bad_or_oversized_content_leaves_nothing_behind(root):
+    for bad in ({"compose": "a\x00b"}, {"compose": 5}, {"compose": "x", "env": "a\x00"}):
+        assert code_of(ops.project_create, {"project": "new", **bad}) == "worker.invalid_path"
+    big = "x" * (ops.MAX_FILE_BYTES + 1)
+    assert code_of(ops.project_create, {"project": "new", "compose": big}) == "worker.too_large"
+    huge_env = {"project": "new", "compose": "x", "env": "k" * (ops.MAX_ENV_BYTES + 1)}
+    assert code_of(ops.project_create, huge_env) == "worker.too_large"
+    assert not (root / "new").exists()
+
+
+def test_hub_creates_a_project_with_the_right_and_audits_without_content(live, root):  # noqa: F811
+    client, headers, port, tmp_path = live
+    node, stop = connect_worker(client, headers, port, tmp_path, "docker")
+    base = f"/api/v1/nodes/{node}/projects"
+    made = client.post(
+        base, headers=headers, json={"name": "shop", "compose": COMPOSE, "env": "TOKEN=zz\n"}
+    )
+    assert made.status_code == 201 and made.json()["env"] is True
+    assert any(p["name"] == "shop" for p in client.get(base, headers=headers).json()["projects"])
+    again = client.post(base, headers=headers, json={"name": "shop", "compose": COMPOSE})
+    assert again.status_code == 409
+    assert (
+        client.post(base, headers=headers, json={"name": "../x", "compose": "a"}).status_code == 422
+    )
+    import sqlite3
+
+    rows = (
+        sqlite3.connect(tmp_path / "armadok.db")
+        .execute("SELECT details FROM audit_log WHERE event = 'project.create'")
+        .fetchall()
+    )
+    assert len(rows) == 2 and "TOKEN" not in str(rows) and "nginx" not in str(rows)
+    uid = client.post(
+        "/api/v1/users", headers=headers, json={"username": "bob", "password": PASSWORD}
+    ).json()["id"]
+    token = client.post(
+        "/api/v1/auth/login", json={"username": "bob", "password": PASSWORD}
+    ).json()["access_token"]
+    bob = {"Authorization": f"Bearer {token}"}
+    for right in ("nodes.read",):
+        client.post(
+            f"/api/v1/users/{uid}/grants",
+            headers=headers,
+            json={"right": right, "scope": f"node:{node}"},
+        )
+    assert client.post(base, headers=bob, json={"name": "x2", "compose": "a"}).status_code == 403
+    stop.set()
+
+
+def test_a_failed_creation_leaves_no_folder_and_env_temps_are_swept(root, monkeypatch):
+    real = ops.safefs.write_regular
+    calls = []
+
+    def failing(folder, name, *args, **kwargs):
+        calls.append(name)
+        if name == "compose.yaml":
+            raise OperationError("worker.forbidden")
+        return real(folder, name, *args, **kwargs)
+
+    monkeypatch.setattr(ops.safefs, "write_regular", failing)
+    assert (
+        code_of(ops.project_create, {"project": "half", "compose": "x", "env": "A=1"})
+        == "worker.forbidden"
+    )
+    assert calls == [".env", "compose.yaml"]  # variables first, the Compose file last
+    assert not (root / "half").exists()
+    assert ops.TEMP_FILE.fullmatch("..env.armadok-0123456789abcdef.tmp")
+    assert ops.TEMP_FILE.fullmatch(".compose.yaml.armadok-0123456789abcdef.tmp")

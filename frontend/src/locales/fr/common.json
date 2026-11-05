@@ -43,7 +43,6 @@
   "nav.dashboard": "Vue d'ensemble",
   "confirm.yes": "Oui, continuer",
   "confirm.no": "Annuler",
-  "nav.convert": "Convertisseur",
   "nav.skip": "Aller au contenu",
   "notFoundHint": "L'adresse est peut-être mal saisie, ou la page a changé de place.",
   "crash.title": "Un problème est survenu sur cet écran",

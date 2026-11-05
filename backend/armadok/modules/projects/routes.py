@@ -143,3 +143,50 @@ async def write_file(
         details={"project": project, "file": file, "bytes": len(sent)},
     )
     return answer.model_dump()
+
+
+@router.post("", status_code=201, summary="Create a project")
+async def create_project(
+    node_id: str,
+    body: schemas.CreateIn,
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Make a new project folder with a Compose file and, if given, a private `.env`.
+
+    Needs `projects.create`. The folder must not exist. Nothing is run: deploying is a separate
+    action with its own right. The `.env` text goes to the machine and nowhere else (it is
+    never stored here, returned or audited); the audit entry only says whether one was given.
+    """
+    authorise(conn, registry, who, node_id, "projects.create")
+    details = {"project": body.name, "env": body.env is not None}
+    try:
+        answer = await ask(
+            request,
+            registry,
+            node_id,
+            "projects.create",
+            {"project": body.name, "compose": body.compose, "env": body.env},
+            schemas.Created,
+        )
+        if (answer.project, answer.file, answer.env) != (
+            body.name,
+            "compose.yaml",
+            body.env is not None,
+        ):
+            raise ApiError("worker.invalid_answer", 502)
+    except ApiError as error:
+        audit_failure(conn, registry, who, "project.create", node_id, details, error)
+        raise
+    audit.record(
+        conn,
+        registry.audit_events(),
+        who.actor,
+        "project.create",
+        object_type="node",
+        object_id=node_id,
+        details=details,
+    )
+    return answer.model_dump()

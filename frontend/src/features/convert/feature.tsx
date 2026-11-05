@@ -1,18 +1,13 @@
 import type { Feature } from '../../core/registry'
-import { ConvertPage } from './ConvertPage'
+import { DockerRunSource } from './DockerRunSource'
 import { FromContainers } from './FromContainers'
 
+// The converters are ways to start a project, not a place of their own.
 export const convertFeature: Feature = {
   name: 'convert',
   requiresModule: 'convert',
-  nav: [{ id: 'convert', icon: 'wand', section: 'main', labelKey: 'nav.convert', to: '/convert' }],
-  routes: [{ path: '/convert', element: <ConvertPage /> }],
-  nodeTabs: [
-    {
-      id: 'convert-containers',
-      labelKey: 'convert:fromContainers.tab',
-      nodeTypes: ['docker', 'full'],
-      render: ({ nodeId }) => <FromContainers nodeId={nodeId} />,
-    },
+  projectSources: [
+    { id: 'docker-run', labelKey: 'convert:source.dockerRun', render: (p) => <DockerRunSource {...p} /> },
+    { id: 'containers', labelKey: 'convert:source.containers', render: (p) => <FromContainers {...p} /> },
   ],
 }
