@@ -226,5 +226,10 @@
   "traffic.too_soon": "Wait a few seconds between two tests.",
   "traffic.busy": "The test could not run: a reading is already in progress.",
   "traffic.not_stored": "The figures could not be stored.",
-  "notifications.push_gone": "This browser unsubscribed or its subscription expired. Turn notifications on again from this browser."
+  "notifications.push_gone": "This browser unsubscribed or its subscription expired. Turn notifications on again from this browser.",
+  "convert.too_long": "This command is too long.",
+  "convert.unparsable": "This command cannot be read (a quote is not closed, perhaps).",
+  "convert.not_run": "Only docker run commands can be converted.",
+  "convert.no_image": "No image name was found in this command.",
+  "convert.substitution": "This command uses $(...) or backticks, which a shell would run first. Write the value out and try again."
 }

@@ -42,5 +42,6 @@
   "prefs.title": "Language and appearance",
   "nav.dashboard": "Overview",
   "confirm.yes": "Yes, continue",
-  "confirm.no": "Cancel"
+  "confirm.no": "Cancel",
+  "nav.convert": "Converter"
 }

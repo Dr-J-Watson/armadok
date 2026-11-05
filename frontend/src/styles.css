@@ -552,3 +552,7 @@ kbd { font-family: var(--mono); font-size: .72rem; color: var(--faint); backgrou
 .modal .actions { margin: 0; justify-content: flex-end; flex-direction: row-reverse; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } }
+
+ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
+.actions.between { justify-content: space-between; margin: 1.5rem 0 .5rem; }
+.actions.between h2 { margin: 0; }

@@ -42,5 +42,6 @@
   "prefs.title": "Langue et apparence",
   "nav.dashboard": "Vue d'ensemble",
   "confirm.yes": "Oui, continuer",
-  "confirm.no": "Annuler"
+  "confirm.no": "Annuler",
+  "nav.convert": "Convertisseur"
 }

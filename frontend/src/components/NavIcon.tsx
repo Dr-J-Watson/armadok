@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   User,
   Users,
+  Wand2,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -24,6 +25,7 @@ import type { LucideIcon } from 'lucide-react'
 // one for each feature. An unknown name gets a plain dot, never a broken menu.
 const ICONS: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
+  wand: Wand2,
   rocket: Rocket,
   server: Server,
   globe: Globe,

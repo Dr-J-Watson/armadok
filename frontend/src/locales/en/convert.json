@@ -1,0 +1,14 @@
+{
+  "title": "Converter",
+  "subtitle": "Turn a docker run command into a docker-compose.yml. The command is only read: nothing is run and nothing is saved.",
+  "input": "Your docker run command",
+  "go": "Convert",
+  "copy": "Copy",
+  "copied": "Copied",
+  "warnings": "To check by hand",
+  "envHint": "These values look like secrets, so they are kept out of the Compose file. Save this as a .env file next to it (and keep it private).",
+  "warning.convert.unsupported_flag": "The option {{detail}} is not converted. Check whether you need it.",
+  "warning.convert.missing_value": "The option {{detail}} has no value.",
+  "warning.convert.rm": "--rm (remove at exit) has no Compose equivalent: the container stays after it stops.",
+  "warning.convert.foreground": "There was no -d: docker run would stay attached. In Compose, use `docker compose up -d` to run it in the background."
+}

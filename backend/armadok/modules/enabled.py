@@ -38,4 +38,5 @@ ENABLED_MODULES: tuple[str, ...] = (
     "status",
     "imageupdates",
     "traffic",
+    "convert",
 )

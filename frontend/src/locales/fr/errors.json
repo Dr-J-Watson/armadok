@@ -226,5 +226,10 @@
   "traffic.too_soon": "Attendez quelques secondes entre deux tests.",
   "traffic.busy": "Le test n'a pas pu se faire : une lecture est déjà en cours.",
   "traffic.not_stored": "Les chiffres n'ont pas pu être enregistrés.",
-  "notifications.push_gone": "Ce navigateur s'est désabonné ou son abonnement a expiré. Réactivez les notifications depuis ce navigateur."
+  "notifications.push_gone": "Ce navigateur s'est désabonné ou son abonnement a expiré. Réactivez les notifications depuis ce navigateur.",
+  "convert.too_long": "Cette commande est trop longue.",
+  "convert.unparsable": "Cette commande est illisible (un guillemet n'est peut-être pas fermé).",
+  "convert.not_run": "Seules les commandes docker run peuvent être converties.",
+  "convert.no_image": "Aucun nom d'image trouvé dans cette commande.",
+  "convert.substitution": "Cette commande utilise $(...) ou des apostrophes inversées, qu'un shell exécuterait d'abord. Écrivez la valeur en toutes lettres et réessayez."
 }
