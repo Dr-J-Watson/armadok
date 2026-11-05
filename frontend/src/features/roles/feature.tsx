@@ -10,7 +10,7 @@ export const rolesFeature: Feature = {
     'groups.changed': ['groups', 'effective', 'node-access'],
     'assignments.changed': ['assignments', 'effective', 'node-access'],
   },
-  nav: [{ id: 'access', section: 'access', labelKey: 'nav.access', to: '/access', requiresRight: 'users.read' }],
+  nav: [{ id: 'access', icon: 'key', section: 'access', labelKey: 'nav.access', to: '/access', requiresRight: 'users.read' }],
   routes: [{ path: '/access', element: <AccessPage /> }],
   nodeTabs: [
     {

@@ -10,6 +10,8 @@ export interface NavItem {
   to: string
   // Which group of the side menu it sits in (`nav.section.<id>` in `common`); omitted = main.
   section?: 'main' | 'access' | 'admin' | 'personal'
+  // A name from `components/NavIcon` (omitted = a plain dot).
+  icon?: string
   // Hidden when the account does not hold this right everywhere (the server still decides).
   requiresRight?: string
 }

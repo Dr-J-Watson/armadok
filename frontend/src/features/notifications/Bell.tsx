@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { Bell as BellIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
 
@@ -14,7 +15,7 @@ export function Bell() {
   const unread = count.data?.unread ?? 0
   return (
     <Link to="/notifications" className="bell" aria-label={t('bell', { count: unread })}>
-      <span aria-hidden="true">🔔</span>
+      <BellIcon size={18} aria-hidden="true" />
       {unread > 0 && <span className="bell-count">{unread > 99 ? '99+' : unread}</span>}
     </Link>
   )

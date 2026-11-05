@@ -3,7 +3,7 @@
   "loading": "Loading…",
   "notFound": "Page not found.",
   "nav.main": "Main navigation",
-  "nav.nodes": "Nodes",
+  "nav.nodes": "Machines",
   "prefs.language": "Language",
   "prefs.theme": "Theme",
   "prefs.languages.en": "English",
@@ -37,5 +37,7 @@
   "nav.section.main": "Infrastructure",
   "nav.section.access": "Access",
   "nav.section.admin": "Administration",
-  "nav.section.personal": "Personal"
+  "nav.section.personal": "Personal",
+  "app.tagline": "Deploy, publish and see what is connected to what.",
+  "prefs.title": "Language and appearance"
 }

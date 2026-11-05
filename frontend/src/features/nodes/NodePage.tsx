@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
@@ -9,6 +10,7 @@ import { useModules } from '../../core/modules'
 import type { NodeTab } from '../../core/registry'
 import { features } from '../enabled'
 import { useFeatures } from '../../core/useFeatures'
+import { NodeIcon } from '../../components/NodeIcon'
 import type { Node } from './types'
 
 export function NodePage() {
@@ -67,14 +69,24 @@ export function NodePage() {
 
   return (
     <>
-      <p>
-        <Link to="/nodes">{t('nodes:back')}</Link>
-      </p>
-      <h1>
-        {node.data.name} <span className="badge">{t(`nodes:types.${node.data.type}`)}</span>
-        {node.data.local && <span className="badge ok">{t('nodes:local')}</span>}
-      </h1>
-      {node.data.description && <p>{node.data.description}</p>}
+      <nav className="crumbs" aria-label={t('nodes:back')}>
+        <Link to="/nodes">
+          <ChevronLeft size={16} aria-hidden="true" /> {t('nodes:back')}
+        </Link>
+      </nav>
+      <header className="page-head">
+        <span className="node-icon" aria-hidden="true">
+          <NodeIcon type={node.data.type} size={22} />
+        </span>
+        <div>
+          <h1>
+            {node.data.name}
+            <span className="badge">{t(`nodes:types.${node.data.type}`)}</span>
+            {node.data.local && <span className="badge ok">{t('nodes:local')}</span>}
+          </h1>
+          {node.data.description && <p className="hint">{node.data.description}</p>}
+        </div>
+      </header>
 
       <div role="tablist" className="tabs">
         <button
@@ -102,59 +114,65 @@ export function NodePage() {
         {current ? (
           current.render({ nodeId, nodeType: node.data.type })
         ) : (
-          <dl className="details">
-            <dt>{t('nodes:details.created')}</dt>
-            <dd>{new Date(node.data.created_at).toLocaleString()}</dd>
-            <dt>{t('nodes:details.id')}</dt>
-            <dd>
-              <code>{node.data.id}</code>
-            </dd>
-          </dl>
-        )}
-        {!current &&
-          sections.map((section) => (
-            <div key={section.id}>
-              {section.render({ nodeId, objectType: 'node', objectId: nodeId, objectLabel: node.data.name })}
+          <div className="overview">
+            <div className="panel">
+              <h2>{t('nodes:details.title')}</h2>
+              <dl className="details">
+                <dt>{t('nodes:details.type')}</dt>
+                <dd>{t(`nodes:types.${node.data.type}`)}</dd>
+                <dt>{t('nodes:details.created')}</dt>
+                <dd>{new Date(node.data.created_at).toLocaleString()}</dd>
+                <dt>{t('nodes:details.id')}</dt>
+                <dd>
+                  <code>{node.data.id}</code>
+                </dd>
+              </dl>
             </div>
-          ))}
-      </section>
-
-      {!node.data.local && (
-      <section className="danger">
-        <h2>{t('nodes:delete.title')}</h2>
-        <p>{t('nodes:delete.explain')}</p>
-        {remove.isError && (
-          <p role="alert" className="error">
-            {errorMessage(t, remove.error)}
-          </p>
+            {sections.map((section) => (
+              <div key={section.id} className="panel">
+                {section.render({ nodeId, objectType: 'node', objectId: nodeId, objectLabel: node.data.name })}
+              </div>
+            ))}
+            {!node.data.local && (
+              <details className="danger-zone">
+                <summary>{t('nodes:delete.zone')}</summary>
+                <h3>{t('nodes:delete.title')}</h3>
+                <p>{t('nodes:delete.explain')}</p>
+                {remove.isError && (
+                  <p role="alert" className="error">
+                    {errorMessage(t, remove.error)}
+                  </p>
+                )}
+                {confirmDelete ? (
+                  <>
+                    {needsCode && (
+                      <label>
+                        {t('nodes:delete.code')}
+                        <input
+                          value={code}
+                          onChange={(e) => setCode(e.target.value)}
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                        />
+                      </label>
+                    )}{' '}
+                    <button type="button" className="danger-button" onClick={() => remove.mutate()}>
+                      {t('nodes:delete.confirm')}
+                    </button>{' '}
+                    <button type="button" onClick={() => setConfirmDelete(false)}>
+                      {t('nodes:delete.cancel')}
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" onClick={() => setConfirmDelete(true)}>
+                    {t('nodes:delete.button')}
+                  </button>
+                )}
+              </details>
+            )}
+          </div>
         )}
-        {confirmDelete ? (
-          <>
-            {needsCode && (
-              <label>
-                {t('nodes:delete.code')}
-                <input
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                />
-              </label>
-            )}{' '}
-            <button type="button" className="danger-button" onClick={() => remove.mutate()}>
-              {t('nodes:delete.confirm')}
-            </button>{' '}
-            <button type="button" onClick={() => setConfirmDelete(false)}>
-              {t('nodes:delete.cancel')}
-            </button>
-          </>
-        ) : (
-          <button type="button" onClick={() => setConfirmDelete(true)}>
-            {t('nodes:delete.button')}
-          </button>
-        )}
       </section>
-      )}
     </>
   )
 }

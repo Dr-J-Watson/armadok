@@ -6,7 +6,7 @@ export const notesFeature: Feature = {
   name: 'notes',
   signals: { 'notes.changed': ['notes'] },
   requiresModule: 'notes',
-  nav: [{ id: 'notes', section: 'personal', labelKey: 'nav.notes', to: '/notes' }],
+  nav: [{ id: 'notes', icon: 'notes', section: 'personal', labelKey: 'nav.notes', to: '/notes' }],
   routes: [{ path: '/notes', element: <NotesPage /> }],
   // Shown under every object that has a panel: notes can be attached to anything.
   objectSections: [

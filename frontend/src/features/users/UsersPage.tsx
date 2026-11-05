@@ -47,7 +47,8 @@ export function UsersPage() {
       <ul className="cards">
         {users.data?.map((account) => (
           <li key={account.id}>
-            <Link to={`/users/${account.id}`}>
+            <Link to={`/users/${account.id}`} className="person-card">
+              <span className="avatar" aria-hidden="true">{account.username.slice(0, 1).toUpperCase()}</span>
               <strong>{account.username}</strong>
               {account.kind === 'service' && (
                 <span className="badge" title={t('users:serviceHint')}>

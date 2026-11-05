@@ -1,48 +1,84 @@
-import { useState } from 'react'
+import { Menu, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuth, useCan } from '../core/auth'
+import { Logo } from '../components/Logo'
+import { NavIcon } from '../components/NavIcon'
+import { useCan } from '../core/auth'
 import { useFeatures } from '../core/useFeatures'
 import type { NavItem } from '../core/registry'
 import { useRealtimeStatus } from '../core/RealtimeProvider'
-import { Preferences } from './Preferences'
+import { AccountMenu } from './AccountMenu'
 
 // The groups of the side menu, in the order they appear. A feature picks one with `section`.
 const SECTIONS = ['main', 'access', 'admin', 'personal'] as const
 
-function NavEntry({ item }: { item: NavItem }) {
+function NavEntry({ item, onGo }: { item: NavItem; onGo: () => void }) {
   const { t } = useTranslation()
   const allowed = useCan(item.requiresRight ?? '')
   if (item.requiresRight && !allowed) return null
-  return <NavLink to={item.to}>{t(item.labelKey)}</NavLink>
+  return (
+    <NavLink to={item.to} onClick={onGo} className="nav-link">
+      <NavIcon name={item.icon} />
+      <span>{t(item.labelKey)}</span>
+    </NavLink>
+  )
 }
 
-// The frame around every page: a side menu grouped by section (from the registry), and at its
-// foot the preferences, the account and the state of the live connection. On a narrow screen
-// the menu folds behind a button.
+// The frame around every page: a side menu grouped by section (from the registry) with the
+// person's own menu pinned at its foot. On a narrow screen the menu is a drawer behind a button.
 export function Layout({ nav }: { nav: NavItem[] }) {
   const { t } = useTranslation()
-  const { state, logout } = useAuth()
   const live = useRealtimeStatus()
-  const widgets = useFeatures().flatMap((f) => f.headerWidgets ?? [])
+  const all = useFeatures().flatMap((f) => f.headerWidgets ?? [])
+  // The search is a bar of its own; the other widgets (the bell) sit beside the name.
+  const search = all.find((w) => w.id === 'command-palette')
+  const widgets = all.filter((w) => w.id !== 'command-palette')
   const [open, setOpen] = useState(false)
-  // Going to another page closes the folded menu.
   const location = useLocation()
+  // Going to another page closes the drawer (adjusted while rendering, not in an effect).
   const [seen, setSeen] = useState(location.pathname)
   if (seen !== location.pathname) {
     setSeen(location.pathname)
     setOpen(false)
   }
+  useEffect(() => {
+    if (!open) return
+    const escape = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('keydown', escape)
+    return () => document.removeEventListener('keydown', escape)
+  }, [open])
   return (
     <div className="shell">
       <header className="mobilebar">
-        <strong className="brand">{t('app.name')}</strong>
-        <button type="button" aria-expanded={open} aria-controls="sidebar" onClick={() => setOpen(!open)}>
-          {t('nav.menu')}
-        </button>
+        <span className="brand">
+          <Logo size={26} />
+          <strong>{t('app.name')}</strong>
+        </span>
+        <span className="mobilebar-end">
+          {search?.render()}
+          {widgets.map((widget) => (
+            <span key={widget.id}>{widget.render()}</span>
+          ))}
+          <button type="button" className="icon-button" aria-expanded={open} aria-controls="sidebar" aria-label={t('nav.menu')} onClick={() => setOpen(!open)}>
+            {open ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+          </button>
+        </span>
       </header>
+      {open && <div className="scrim" onClick={() => setOpen(false)} aria-hidden="true" />}
       <aside id="sidebar" className={`sidebar${open ? ' open' : ''}`}>
-        <strong className="brand">{t('app.name')}</strong>
+        <div className="sidebar-head">
+          <span className="brand">
+            <Logo />
+            <strong>{t('app.name')}</strong>
+          </span>
+          <span className="sidebar-widgets">
+            {widgets.map((widget) => (
+              <span key={widget.id}>{widget.render()}</span>
+            ))}
+          </span>
+        </div>
+        {search && <div className="sidebar-search">{search.render()}</div>}
         <nav aria-label={t('nav.main')}>
           {SECTIONS.map((section) => {
             const items = nav.filter((n) => (n.section ?? 'main') === section)
@@ -51,28 +87,18 @@ export function Layout({ nav }: { nav: NavItem[] }) {
               <div key={section} className="nav-group" role="group" aria-label={t(`nav.section.${section}`)}>
                 <h2 className="nav-title">{t(`nav.section.${section}`)}</h2>
                 {items.map((item) => (
-                  <NavEntry key={item.id} item={item} />
+                  <NavEntry key={item.id} item={item} onGo={() => setOpen(false)} />
                 ))}
               </div>
             )
           })}
         </nav>
         <div className="sidebar-foot">
-          {widgets.map((widget) => (
-            <span key={widget.id}>{widget.render()}</span>
-          ))}
-          <span className={`badge ${live === 'live' ? 'ok' : 'off'}`} title={t(`live.${live}.hint`)}>
+          <span className={`live live-${live}`} title={t(`live.${live}.hint`)}>
+            <span className="live-dot" aria-hidden="true" />
             {t(`live.${live}.label`)}
           </span>
-          <Preferences />
-          {state.status === 'authenticated' && (
-            <div className="account-line">
-              <span className="user">{state.user.username}</span>
-              <button type="button" onClick={() => void logout()}>
-                {t('auth:logout')}
-              </button>
-            </div>
-          )}
+          <AccountMenu />
         </div>
       </aside>
       <main className="content">

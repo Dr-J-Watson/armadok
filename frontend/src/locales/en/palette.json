@@ -16,5 +16,6 @@
   "type.volume": "Volume",
   "type.router": "Site (router)",
   "type.service": "Service",
-  "type.middleware": "Middleware"
+  "type.middleware": "Middleware",
+  "label": "Search…"
 }

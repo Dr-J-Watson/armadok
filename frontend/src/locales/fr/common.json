@@ -3,7 +3,7 @@
   "loading": "Chargement…",
   "notFound": "Page introuvable.",
   "nav.main": "Navigation principale",
-  "nav.nodes": "Nœuds",
+  "nav.nodes": "Machines",
   "prefs.language": "Langue",
   "prefs.theme": "Thème",
   "prefs.languages.en": "English",
@@ -37,5 +37,7 @@
   "nav.section.main": "Infrastructure",
   "nav.section.access": "Accès",
   "nav.section.admin": "Administration",
-  "nav.section.personal": "Personnel"
+  "nav.section.personal": "Personnel",
+  "app.tagline": "Déployez, publiez et voyez ce qui est relié à quoi.",
+  "prefs.title": "Langue et apparence"
 }

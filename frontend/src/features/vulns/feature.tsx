@@ -5,6 +5,6 @@ export const vulnsFeature: Feature = {
   name: 'vulns',
   requiresModule: 'vulns',
   signals: { 'vulns.changed': ['vulns'] },
-  nav: [{ id: 'vulns', section: 'admin', labelKey: 'nav.vulns', to: '/vulns', requiresRight: 'vulns.read' }],
+  nav: [{ id: 'vulns', icon: 'bug', section: 'admin', labelKey: 'nav.vulns', to: '/vulns', requiresRight: 'vulns.read' }],
   routes: [{ path: '/vulns', element: <VulnsPage /> }],
 }

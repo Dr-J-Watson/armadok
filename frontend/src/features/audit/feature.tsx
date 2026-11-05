@@ -6,7 +6,7 @@ export const auditFeature: Feature = {
   name: 'audit',
   signals: { 'audit.changed': ['audit'] },
   requiresModule: 'audit',
-  nav: [{ id: 'audit', section: 'admin', labelKey: 'nav.audit', to: '/audit', requiresRight: 'audit.read' }],
+  nav: [{ id: 'audit', icon: 'audit', section: 'admin', labelKey: 'nav.audit', to: '/audit', requiresRight: 'audit.read' }],
   routes: [{ path: '/audit', element: <AuditPage /> }],
   nodeTabs: [
     {

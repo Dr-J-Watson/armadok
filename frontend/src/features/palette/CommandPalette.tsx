@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { useCanFn } from '../../core/auth'
@@ -93,8 +94,10 @@ export function CommandPalette() {
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-label={t('palette:open')} title={t('palette:open')}>
-        {t('palette:button')}
+      <button type="button" className="search-trigger" onClick={() => setOpen(true)} aria-label={t('palette:open')} title={t('palette:open')}>
+        <Search size={16} aria-hidden="true" />
+        <span className="search-label">{t('palette:label')}</span>
+        <kbd>Ctrl K</kbd>
       </button>
       {open && (
         <div className="palette-backdrop" onClick={close}>

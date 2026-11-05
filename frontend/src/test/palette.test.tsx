@@ -82,8 +82,8 @@ describe('pages', () => {
   it('lists the pages the account may open and filters them as you type', async () => {
     renderPalette()
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
-    expect(await screen.findByRole('option', { name: /Nodes/ })).toBeInTheDocument()
+    expect(await screen.findByRole('option', { name: /Machines/ })).toBeInTheDocument()
     await userEvent.type(screen.getByRole('combobox'), 'zz')
-    expect(screen.queryByRole('option', { name: /Nodes/ })).toBeNull()
+    expect(screen.queryByRole('option', { name: /Machines/ })).toBeNull()
   })
 })
