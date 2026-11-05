@@ -10,9 +10,10 @@ import time
 import uuid
 from typing import Any, Literal
 
+from cryptography.hazmat.primitives.asymmetric import ec
 from pydantic import BaseModel, Field, model_validator
 
-from armadok.core import outbound
+from armadok.core import outbound, webpush
 from armadok.core.module import NotificationEvent
 
 _PLACEHOLDER = re.compile(r"\{(\w{1,40})\}")
@@ -113,12 +114,93 @@ class EmailConfig(BaseModel):
         return self
 
 
+class PushConfig(BaseModel):
+    """One browser, as its push subscription describes it (the keys let only that browser read)."""
+
+    kind: Literal["webpush"] = "webpush"
+    endpoint: str = Field(max_length=2000, pattern=r"^https://[^\s]+$")
+    p256dh: str = Field(pattern=r"^[A-Za-z0-9_-]{86,88}$")
+    auth: str = Field(pattern=r"^[A-Za-z0-9_-]{22,24}$")
+
+    @model_validator(mode="after")
+    def _keys_are_what_they_claim(self) -> PushConfig:
+        """Refuse a key that is not a P-256 point or a secret that is not 16 bytes."""
+        point, secret = webpush.unb64u(self.p256dh), webpush.unb64u(self.auth)
+        if len(point) != 65 or point[0] != 4 or len(secret) != 16:
+            raise ValueError("bad subscription keys")
+        # A key that is not a point of the curve is refused now, not at the first message.
+        ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), point)
+        return self
+
+
 CONFIGS: dict[str, type[BaseModel]] = {
+    "webpush": PushConfig,
     "email": EmailConfig,
     "webhook": WebhookConfig,
     "ntfy": NtfyConfig,
     "discord": DiscordConfig,
 }
+
+
+PUSH_PAD_BYTES = 1024  # every message is this long on the wire (the length would tell a lot)
+
+
+def _push_message(title: str, body: str, event: str) -> bytes:
+    """Return the JSON to push, cut so that it always fits in one encrypted record.
+
+    Emoji and other characters outside the basic plane take 4 bytes each, so the limit is on
+    bytes, not characters: the body is shortened first, then the title.
+    """
+    title, body = title[:120], body[:300]
+    while True:
+        data = json.dumps(
+            {"title": title, "body": body, "event": event[:60]}, ensure_ascii=False
+        ).encode()
+        if len(data) <= webpush.MAX_PLAINTEXT:
+            return data
+        if body:
+            body = body[: len(body) // 2]
+        else:
+            title = title[: max(1, len(title) // 2)]
+
+
+async def _send_push(
+    config: dict[str, Any],
+    severity: str,
+    title: str,
+    body: str,
+    event: str,
+    key: Any,
+    contact: str,
+    allow_private: bool,
+) -> None:
+    """Encrypt a message for one browser and hand it to the push service named by its address.
+
+    The text is plain: the service worker shows it as text, never as markup. A 404 or 410 means
+    the browser unsubscribed (or the subscription expired): that is told apart so the person is
+    shown "enable it again" rather than a vague failure.
+    """
+    message = _push_message(title, body, event)
+    sealed = webpush.encrypt(
+        message,
+        webpush.unb64u(config["p256dh"]),
+        webpush.unb64u(config["auth"]),
+        pad_to=PUSH_PAD_BYTES,
+    )
+    headers = {
+        "Content-Type": "application/octet-stream",
+        "Content-Encoding": "aes128gcm",
+        "TTL": "3600",
+        "Urgency": "high" if severity == "critical" else "normal",
+        "Authorization": webpush.vapid_header(key, config["endpoint"], contact),
+    }
+    status = await outbound.post(config["endpoint"], sealed, headers, allow_private)
+    # With private addresses allowed, telling "gone" from "refused" would let an account probe
+    # internal services one request at a time: only then is it kept vague.
+    if status in (404, 410) and not allow_private:
+        raise outbound.OutboundError("notifications.push_gone")
+    if status >= 400:
+        raise outbound.OutboundError("outbound.rejected")
 
 
 def sign(secret: str, timestamp: str, body: bytes) -> str:
@@ -135,9 +217,16 @@ async def send(
     body: str,
     node_id: str | None,
     allow_private: bool,
+    push_key: Any = None,
+    push_contact: str = "",
 ) -> None:
     """Deliver one message through a channel. Raises `outbound.OutboundError` on failure."""
     kind = config["kind"]
+    if kind == "webpush":
+        await _send_push(
+            config, severity, title, body, event, push_key, push_contact, allow_private
+        )
+        return
     if kind == "webhook":
         payload = json.dumps(
             {"event": event, "severity": severity, "title": title, "body": body, "node_id": node_id}

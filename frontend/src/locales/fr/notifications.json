@@ -65,5 +65,14 @@
   "channels.confirm": "Confirmer",
   "platform.email": "Canal e-mail activé pour tout le monde",
   "platform.explain": "Désactivé : aucun e-mail ne part de ce serveur et personne ne peut ajouter de boîte. Les boîtes déjà configurées sont conservées et refonctionnent à la réactivation. Les boîtes de réception et les autres canaux ne changent pas.",
-  "platform.off": "Le canal e-mail est désactivé par un administrateur."
+  "platform.off": "Le canal e-mail est désactivé par un administrateur.",
+  "kinds.webpush": "Navigateur",
+  "push.title": "Notifications dans ce navigateur",
+  "push.explain": "Votre navigateur reçoit la notification même quand Armadok est fermé. Principe : le message est chiffré pour que seul ce navigateur puisse le lire, puis confié au service de notifications que le fabricant du navigateur exploite (Google, Mozilla ou Apple). Ce service sait qu'un message existe, jamais ce qu'il dit. Vous pouvez retirer ce navigateur à tout moment depuis la liste ci-dessus. Sur un ordinateur partagé, la déconnexion coupe aussi les notifications de ce navigateur.",
+  "push.name": "Nom de ce navigateur",
+  "push.defaultName": "Ce navigateur",
+  "push.enable": "Activer dans ce navigateur",
+  "push.unsupported": "Ce navigateur ne peut pas recevoir de notifications push (il faut l'application web installée ou une connexion sécurisée).",
+  "push.denied": "Le navigateur a refusé l'autorisation. Autorisez les notifications pour ce site dans ses réglages, puis réessayez.",
+  "push.noWorker": "L'interface n'est pas encore installée comme application web (sa partie en arrière-plan ne tourne pas). Ouvrez-la en https et rechargez."
 }

@@ -65,5 +65,14 @@
   "channels.confirm": "Confirm",
   "platform.email": "E-mail channel enabled for everybody",
   "platform.explain": "When off, no e-mail leaves this server and nobody can add a mailbox. Mailboxes already set up are kept and work again when you turn it back on. Inboxes and the other channels are not affected.",
-  "platform.off": "The e-mail channel is turned off by an administrator."
+  "platform.off": "The e-mail channel is turned off by an administrator.",
+  "kinds.webpush": "Browser",
+  "push.title": "Notifications in this browser",
+  "push.explain": "Your browser receives the notification even when Armadok is closed. How it works: the message is encrypted so that only this browser can read it, then handed to the push service your browser's maker runs (Google, Mozilla or Apple). That service sees that a message exists, never what it says. You can remove this browser at any time from the list above. On a shared computer, signing out also turns notifications off in this browser.",
+  "push.name": "Name of this browser",
+  "push.defaultName": "This browser",
+  "push.enable": "Turn on in this browser",
+  "push.unsupported": "This browser cannot receive push notifications (it needs the installed or secure web app).",
+  "push.denied": "The browser refused the permission. Allow notifications for this site in its settings, then try again.",
+  "push.noWorker": "The interface is not installed as a web app yet (its background part is not running). Open it over https and reload."
 }

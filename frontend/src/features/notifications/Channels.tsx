@@ -4,10 +4,12 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { codeMessage, errorMessage } from '../../core/errors'
+import { leaveThisBrowser } from '../../core/push'
+import { BrowserPush } from './BrowserPush'
 
 export interface Channel {
   id: string
-  kind: 'webhook' | 'ntfy' | 'discord' | 'email'
+  kind: 'webhook' | 'ntfy' | 'discord' | 'email' | 'webpush'
   name: string
   last_status: string | null
   confirmed: boolean
@@ -62,7 +64,14 @@ export function Channels() {
       return refresh()
     },
   })
-  const remove = useMutation({ mutationFn: (id: string) => api.del(`/notifications/channels/${id}`), onSuccess: refresh })
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      await api.del(`/notifications/channels/${id}`)
+      // If it was this browser's own subscription, end it too.
+      await leaveThisBrowser(false, id)
+    },
+    onSuccess: refresh,
+  })
   const test = useMutation({
     mutationFn: (id: string) => api.post(`/notifications/channels/${id}/test`),
     onSuccess: (_, id) => {
@@ -156,6 +165,8 @@ export function Channels() {
         </div>
       )}
       {!emailOn && <p>{t('notifications:platform.off')}</p>}
+
+      <BrowserPush onDone={refresh} />
 
       <h3>{t('notifications:channels.add')}</h3>
       <form className="form" onSubmit={submit}>

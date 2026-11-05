@@ -31,6 +31,9 @@ class Settings:
     # LAN, say). Off by default: it lets whoever can add a channel make the hub call internal
     # services.
     allow_private_outbound: bool = False
+    # Who a browser push says it comes from (an https address or `mailto:`), as the standard
+    # asks. The default is the project's public page; set your own if you prefer.
+    push_contact: str = "https://github.com/Dr-J-Watson/armadok"
     # Manage the hub's own machine as a node, with no worker: the hub runs the operations itself.
     # Off by default, because it needs the hub to reach Docker and the configuration folders.
     local_node: bool = False
@@ -83,6 +86,8 @@ def load_settings() -> Settings:
         local_node=os.environ.get("ARMADOK_LOCAL_NODE", "").lower() == "true",
         allow_private_outbound=os.environ.get("ARMADOK_ALLOW_PRIVATE_OUTBOUND", "").lower()
         == "true",
+        push_contact=os.environ.get("ARMADOK_PUSH_CONTACT")
+        or "https://github.com/Dr-J-Watson/armadok",
         vuln_check=os.environ.get("ARMADOK_VULN_CHECK", "").lower() == "true",
         state_backup_dir=(
             Path(os.environ["ARMADOK_STATE_BACKUP_DIR"])

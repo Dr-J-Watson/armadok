@@ -6,23 +6,25 @@ rules.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import secrets
 import sqlite3
 import time
 from typing import Any
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
-from armadok.core import audit, crypto
+from armadok.core import audit, crypto, webpush
 from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError, NotFound
 from armadok.core.outbound import OutboundError, check_mail_port, check_url
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.nodes import repository as nodes_repo
-from armadok.modules.notifications import delivery, platform, quiet, repository
+from armadok.modules.notifications import delivery, platform, push_keys, quiet, repository
 from armadok.modules.users import repository as users_repo
 from armadok.modules.users.security import token_hash
 
@@ -41,10 +43,32 @@ def _audit(conn, registry, who, event, **details) -> None:
     )
 
 
+MAX_PER_DESTINATION = 5  # channels of one account aimed at the same host
+
+
+def _host_of(url: str) -> str:
+    return (urlsplit(url).hostname or "").lower()
+
+
+def _check_destination_cap(conn, settings, owner_id: str, url: str) -> None:
+    """Refuse a sixth channel aimed at one host: an account could otherwise multiply its sends."""
+    host, same = _host_of(url), 0
+    for channel in repository.list_channels(conn, owner_id):
+        row = repository.get_channel(conn, owner_id, channel["id"])
+        try:
+            config = json.loads(crypto.decrypt(settings, row["config"]))
+        except (ApiError, ValueError):
+            continue
+        other = config.get("url") or config.get("server") or config.get("endpoint") or ""
+        same += _host_of(other) == host
+    if same >= MAX_PER_DESTINATION:
+        raise ApiError("notifications.too_many_channels", 409)
+
+
 class ChannelIn(BaseModel):
     """A channel to add: its kind and the settings that kind needs."""
 
-    kind: str = Field(pattern="^(webhook|ntfy|discord|email)$")
+    kind: str = Field(pattern="^(webhook|ntfy|discord|email|webpush)$")
     name: str = Field(min_length=1, max_length=60)
     settings: dict[str, Any] = Field(default_factory=dict, max_length=10)
 
@@ -138,6 +162,13 @@ def events(
 # --- channels -----------------------------------------------------------------------------
 
 
+@router.get("/push-key", summary="The key a browser needs to receive notifications")
+async def push_key(request: Request, who: Principal = Depends(get_principal)) -> dict:
+    """Return the server's public push key (made the first time it is asked for)."""
+    key = await asyncio.to_thread(push_keys.load, request.app.state.settings)
+    return {"public_key": webpush.vapid_public(key)}
+
+
 @router.get("/channels", summary="Your channels")
 def channels(conn: sqlite3.Connection = Depends(get_db), who: Principal = Depends(get_principal)):
     """Return the caller's channels. Their settings (URLs, tokens) are never sent back."""
@@ -167,7 +198,7 @@ async def add_channel(
     except ValueError:
         raise ApiError("notifications.invalid_channel", 422) from None
     data = config.model_dump()
-    url = data.get("url") or data.get("server")
+    url = data.get("url") or data.get("server") or data.get("endpoint")
     settings = request.app.state.settings
     try:
         if url:
@@ -176,6 +207,8 @@ async def add_channel(
             check_mail_port(data["port"], settings.allow_private_outbound)
     except OutboundError as error:
         raise ApiError(error.code, 422) from None
+    if url:
+        _check_destination_cap(conn, settings, who.id, url)
     shown_secret = None
     if body.kind == "webhook":
         shown_secret = data["secret"] = secrets.token_urlsafe(32)
@@ -280,6 +313,8 @@ async def test_channel(
     now = time.monotonic()
     if now - recent.get(who.id, -1e9) < _TEST_COOLDOWN_SECONDS:
         raise ApiError("notifications.too_fast", 429)
+    for stale in [k for k, t in recent.items() if now - t > _TEST_COOLDOWN_SECONDS]:
+        del recent[stale]
     recent[who.id] = now
     settings = request.app.state.settings
     language = _language(conn, who)
@@ -288,17 +323,28 @@ async def test_channel(
         if language == "en"
         else ("Test Armadok", "Ceci est une notification de test.")
     )
+    config = json.loads(crypto.decrypt(settings, row["config"]))
     try:
+        key = (
+            await asyncio.to_thread(push_keys.load, settings)
+            if config["kind"] == "webpush"
+            else None
+        )
         await delivery.send(
-            json.loads(crypto.decrypt(settings, row["config"])),
+            config,
             event="test",
             severity="info",
             title=title,
             body=body,
             node_id=None,
             allow_private=settings.allow_private_outbound,
+            push_key=key,
+            push_contact=settings.push_contact,
         )
-    except OutboundError:
+    except OutboundError as error:
+        if error.code == "notifications.push_gone":
+            repository.set_status(conn, channel_id, "notifications.push_gone")
+            raise ApiError("notifications.push_gone", 410) from None
         repository.set_status(conn, channel_id, "outbound.failed")
         # Only a generic code goes back: the receiver's exact answer would let a user probe
         # internal services when private addresses are allowed.

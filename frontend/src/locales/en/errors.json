@@ -225,5 +225,6 @@
   "worker.metrics_unreachable": "Traefik's metrics did not answer.",
   "traffic.too_soon": "Wait a few seconds between two tests.",
   "traffic.busy": "The test could not run: a reading is already in progress.",
-  "traffic.not_stored": "The figures could not be stored."
+  "traffic.not_stored": "The figures could not be stored.",
+  "notifications.push_gone": "This browser unsubscribed or its subscription expired. Turn notifications on again from this browser."
 }

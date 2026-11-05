@@ -32,3 +32,33 @@ self.addEventListener('fetch', (event) => {
   }
   // Everything else (pages, the API, metrics) goes straight to the network, untouched.
 })
+
+// Notifications pushed by the server. The message was encrypted for this browser alone, so the
+// push service that carried it could not read it. It is shown as plain text, never as markup,
+// and clicking it opens (or focuses) the interface: nothing is fetched or stored here.
+self.addEventListener('push', (event) => {
+  let data = {}
+  try {
+    data = event.data ? event.data.json() : {}
+  } catch {
+    data = {}
+  }
+  const title = typeof data.title === 'string' && data.title ? data.title.slice(0, 120) : 'Armadok'
+  const body = typeof data.body === 'string' ? data.body.slice(0, 300) : ''
+  // One tag per kind of event, and a fresh alert each time: a minor message must never replace
+  // a critical one that has not been read yet.
+  const kind = typeof data.event === 'string' ? data.event.slice(0, 60) : ''
+  event.waitUntil(
+    self.registration.showNotification(title, { body, icon: '/icon.svg', tag: `armadok-${kind}`, renotify: true }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((all) => {
+      const open = all.find((c) => new URL(c.url).origin === self.location.origin)
+      return open ? open.focus() : self.clients.openWindow('/')
+    }),
+  )
+})

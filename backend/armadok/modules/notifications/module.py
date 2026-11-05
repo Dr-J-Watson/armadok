@@ -1,7 +1,7 @@
 """Declaration of the `notifications` module."""
 
 from armadok.core.module import Module, Right, Signal
-from armadok.modules.notifications import platform, quiet, repository
+from armadok.modules.notifications import platform, push_keys, quiet, repository
 from armadok.modules.notifications.routes import router
 from armadok.modules.notifications.service import handle_notify
 
@@ -23,6 +23,7 @@ module = Module(
         quiet.MIGRATION,
         repository.CONFIRM_MIGRATION,
         platform.MIGRATION,
+        push_keys.MIGRATION,
     ),
     audit_events=(
         "notification.channel_create",

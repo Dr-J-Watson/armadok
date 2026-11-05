@@ -25,7 +25,7 @@ from typing import Any
 from armadok.core import crypto
 from armadok.core.errors import ApiError
 from armadok.core.outbound import OutboundError
-from armadok.modules.notifications import delivery, platform, quiet, repository
+from armadok.modules.notifications import delivery, platform, push_keys, quiet, repository
 from armadok.modules.users import repository as users_repo
 
 log = logging.getLogger("armadok.notifications")
@@ -134,6 +134,16 @@ def _plan(
 def _record_status(app: Any, channel_id: str, status: str) -> None:
     conn = app.state.settings.open_db()
     try:
+        # A browser that is gone twice in a row is not coming back: its channel is removed so
+        # that no further message is aimed at a dead address.
+        if status == "notifications.push_gone":
+            row = conn.execute(
+                "SELECT owner_id, last_status FROM notification_channels WHERE id = ?",
+                (channel_id,),
+            ).fetchone()
+            if row is not None and row["last_status"] == status:
+                repository.delete_channel(conn, row["owner_id"], channel_id)
+                return
         repository.set_status(conn, channel_id, status)
     finally:
         conn.close()
@@ -147,7 +157,10 @@ _DEFAULT_HOURLY_LIMIT = 120
 def _within_rate(state: dict, channel_id: str, kind: str) -> bool:
     """Count a delivery against the channel's hourly budget; False when it is spent."""
     now = time.monotonic()
-    sent = state.setdefault("sent", {}).setdefault(channel_id, collections.deque())
+    table = state.setdefault("sent", {})
+    for stale in [k for k, v in table.items() if k != channel_id and (not v or now - v[-1] > 3600)]:
+        del table[stale]  # a channel quiet for an hour needs no memory
+    sent = table.setdefault(channel_id, collections.deque())
     while sent and now - sent[0] > 3600:
         sent.popleft()
     if len(sent) >= _HOURLY_LIMIT.get(kind, _DEFAULT_HOURLY_LIMIT):
@@ -173,6 +186,11 @@ async def _deliver(
         return
     async with state["slots"]:
         try:
+            key = (
+                await asyncio.to_thread(push_keys.load, app.state.settings)
+                if config.get("kind") == "webpush"
+                else None
+            )
             await delivery.send(
                 config,
                 event=event,
@@ -181,12 +199,22 @@ async def _deliver(
                 body=body,
                 node_id=node_id,
                 allow_private=app.state.settings.allow_private_outbound,
+                push_key=key,
+                push_contact=app.state.settings.push_contact,
             )
             status = "ok"
         except (OutboundError, ApiError) as error:
             # Only a generic status is kept: the exact reason would let an account learn what is
-            # behind an address it cannot reach itself (an internal name, an open port).
-            status = "outbound.failed" if isinstance(error, OutboundError) else error.code
+            # behind an address it cannot reach itself (an internal name, an open port). The one
+            # exception is a browser that unsubscribed: that is the person's own business.
+            if isinstance(error, OutboundError):
+                status = (
+                    "notifications.push_gone"
+                    if error.code == "notifications.push_gone"
+                    else "outbound.failed"
+                )
+            else:
+                status = error.code
             log.warning("notification channel %s failed: %s", channel_id, error.code)
         except Exception:  # noqa: BLE001
             status = "notifications.delivery_failed"

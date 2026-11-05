@@ -225,5 +225,6 @@
   "worker.metrics_unreachable": "Les métriques de Traefik n'ont pas répondu.",
   "traffic.too_soon": "Attendez quelques secondes entre deux tests.",
   "traffic.busy": "Le test n'a pas pu se faire : une lecture est déjà en cours.",
-  "traffic.not_stored": "Les chiffres n'ont pas pu être enregistrés."
+  "traffic.not_stored": "Les chiffres n'ont pas pu être enregistrés.",
+  "notifications.push_gone": "Ce navigateur s'est désabonné ou son abonnement a expiré. Réactivez les notifications depuis ce navigateur."
 }
