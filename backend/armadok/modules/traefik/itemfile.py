@@ -25,6 +25,16 @@ SECTIONS = (("http", "routers"), ("http", "services"), ("http", "middlewares"))
 _MARKED = re.compile(r"^(\s*)#~ ?(.*)$")
 
 
+# Line breaks YAML honours but plain `split("\n")` does not: with one of these in a file the line
+# numbers of the YAML marks and of the text would drift apart, and the wrong lines would be edited.
+_ODD_BREAK = re.compile(r"[\x85\u2028\u2029]|\r(?!\n)")
+
+
+def _guard(text: str, code: str = "unsupported_layout") -> None:
+    if _ODD_BREAK.search(text):
+        raise ItemError(code)
+
+
 class ItemError(ValueError):
     """Raised with a short code when an item cannot be found or an edit is not possible."""
 
@@ -79,6 +89,7 @@ def _last_line(lines: list[str], start: int, end_mark_line: int, end_mark_column
 
 def scan(text: str) -> list[Span]:
     """Find every item of the known sections, switched off or not."""
+    _guard(text)
     lines = text.split("\n")
     active = unmark(text).split("\n")  # switched-off lines count as content, not as comments
     root = _compose("\n".join(active))
@@ -134,7 +145,9 @@ def references(text: str, name: str) -> tuple[list[int], list[str]]:
     Looks at `middlewares:` lists of routers and chains. A one-line list (`[a, b]`) cannot be
     edited line by line: it is reported, so that nobody believes the reference is gone.
     """
+    _guard(text)
     root = _compose(unmark(text))
+    off = [(s.start, s.end) for s in scan(text) if s.disabled]
     wanted = {name, f"{name}@file"}
     lines: list[int] = []
     flow: list[str] = []
@@ -147,10 +160,13 @@ def references(text: str, name: str) -> tuple[list[int], list[str]]:
         elif isinstance(node, yaml.SequenceNode) and parent_key == "middlewares":
             for item in node.value:
                 if isinstance(item, yaml.ScalarNode) and item.value in wanted:
+                    line = item.start_mark.line
+                    if any(a <= line < b for a, b in off):
+                        continue  # inside a router or chain that is itself switched off
                     if node.flow_style:
                         flow.append(item.value)
                     else:
-                        lines.append(item.start_mark.line)
+                        lines.append(line)
 
     if http is not None:
         for kind in ("routers", "middlewares"):
@@ -176,12 +192,13 @@ def item_yaml(text: str, span: Span) -> str:
 
 
 def _block(name: str, value: str, indent: str) -> list[str]:
-    inner = value.rstrip("\n").split("\n")
+    inner = value.replace("\r\n", "\n").rstrip("\n").split("\n")
     return [f"{indent}{name}:"] + [f"{indent}  {line}" if line.strip() else "" for line in inner]
 
 
 def check_value(value_text: str) -> dict[str, Any]:
     """Return the item as a mapping, or raise `ItemError("invalid_item")`."""
+    _guard(value_text, "invalid_item")
     try:
         value = parse.load(value_text)
     except parse.YamlError as error:
@@ -191,19 +208,52 @@ def check_value(value_text: str) -> dict[str, Any]:
     return value
 
 
+def _shape(text: str) -> tuple[list[str], set[tuple[str, str, str]]]:
+    """Return the top-level keys of a file and its items: what an edit must not disturb."""
+    root = _compose(unmark(text)) if text.strip() else None
+    keys = (
+        [k.value for k, _ in root.value if isinstance(k, yaml.ScalarNode)]
+        if isinstance(root, yaml.MappingNode)
+        else []
+    )
+    return keys, {(s.proto, s.kind, s.name) for s in scan(text)}
+
+
+def _check_shape(
+    before: str,
+    after: str,
+    *,
+    added: tuple[str, str, str] | None = None,
+    removed: tuple[str, str, str] | None = None,
+) -> None:  # noqa: E501
+    """Refuse an edit that touched more than the one item it was meant for."""
+    old_keys, old_items = _shape(before)
+    new_keys, new_items = _shape(after)
+    expected = (old_items - ({removed} if removed else set())) | ({added} if added else set())
+    top_ok = new_keys == old_keys or (
+        added is not None and set(new_keys) >= set(old_keys) and len(new_keys) == len(set(new_keys))
+    )
+    if new_items != expected or not top_ok:
+        raise ItemError("invalid_item")
+
+
 def replace(text: str, span: Span, value_text: str) -> str:
     """Write a new value for an item, in place."""
     check_value(value_text)
     lines = text.split("\n")
     lines[span.start : span.end] = _block(span.name, value_text, span.indent)
-    return "\n".join(lines)
+    new = "\n".join(lines)
+    _check_shape(text, new)
+    return new
 
 
 def remove(text: str, span: Span) -> str:
     """Delete an item (and nothing else)."""
     lines = text.split("\n")
     del lines[span.start : span.end]
-    return "\n".join(lines)
+    new = "\n".join(lines)
+    _check_shape(text, new, removed=(span.proto, span.kind, span.name))
+    return new
 
 
 def add(text: str, proto: str, kind: str, name: str, value_text: str) -> str:
@@ -235,7 +285,9 @@ def add(text: str, proto: str, kind: str, name: str, value_text: str) -> str:
         lines += (
             ([""] if lines else []) + [f"{proto}:", f"  {kind}:"] + _block(name, value_text, "    ")
         )
-    return "\n".join(lines) + "\n"
+    result = "\n".join(lines) + "\n"
+    _check_shape(text, result, added=(proto, kind, name))
+    return result
 
 
 _OVERVIEW_CACHE: dict[tuple[str, str], dict[str, Any]] = {}

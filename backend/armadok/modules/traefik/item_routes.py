@@ -28,6 +28,7 @@ from armadok.modules.workers.access import ask, audit_failure, authorise
 router = APIRouter(prefix="/nodes/{node_id}/traefik/items", tags=["traefik"])
 
 ITEM_NAME = r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$"
+_HASHING = asyncio.Semaphore(2)
 Kind = Literal["routers", "middlewares"]
 
 
@@ -58,6 +59,8 @@ class _Valued(BaseModel):
                 self.yaml = itemfile.dump(self.value)
             except (itemfile.ItemError, yaml_module.YAMLError, RecursionError):
                 raise ValueError("value cannot be written as YAML") from None
+        if len(self.yaml or "") > 64 * 1024:
+            raise ValueError("value too large")
         return self
 
 
@@ -80,9 +83,15 @@ class NewItemIn(_Valued):
 
 
 async def _snapshot(
-    request: Request, registry: Registry, node_id: str
+    request: Request, registry: Registry, node_id: str, *, complete: bool = False
 ) -> dict[str, tuple[str, str]]:
+    """Return `{path: (text, sha256)}` of every file; with `complete`, refuse a cut-off listing.
+
+    Anything that must see every reference (switching off, removing) cannot work from a part.
+    """
     snapshot = await ask(request, registry, node_id, "traefik.snapshot", {}, schemas.Snapshot)
+    if complete and snapshot.truncated:
+        raise ApiError("traefik.snapshot_incomplete", 409)
     return {f.path: (f.content, f.sha256) for f in snapshot.files}
 
 
@@ -159,37 +168,41 @@ async def toggle_item(
     """Comment an item out (or put it back).
 
     A switched-off middleware is also taken out of the routers and chains that list it, and put
-    back with it. The item's file is written first, so a failure halfway leaves routers without
-    the middleware (they stop) rather than unprotected.
+    back with it. The order of the writes is chosen so that a failure halfway leaves routers
+    stopped, never served without the middleware.
     """
     authorise(conn, registry, who, node_id, "traefik.files.write")
     who.require("traefik.sites.write", registry.rights(), f"node:{node_id}")
     _checked_path(body.path)
     details = {"path": body.path, "kind": body.kind, "name": body.name, "enabled": body.enabled}
     try:
-        files = await _snapshot(request, registry, node_id)
+        files = await _snapshot(request, registry, node_id, complete=True)
         if body.path not in files:
             raise NotFound()
         new = {path: text for path, (text, _) in files.items()}
         try:
             span = itemfile.find(new[body.path], "http", body.kind, body.name)
+            if span.disabled == body.enabled:
+                new[body.path] = itemfile.set_enabled(new[body.path], span, body.enabled)
+            if body.kind == "middlewares":
+                for path, text in list(new.items()):
+                    lines, flow = itemfile.references(text, body.name)
+                    if flow and not body.enabled:
+                        raise ApiError("traefik.flow_reference", 409)
+                    if lines:
+                        new[path] = itemfile.set_references(text, lines, body.enabled)
+            changed = [p for p in new if new[p] != files[p][0]]
+            for path in changed:
+                await asyncio.to_thread(parse.load, new[path])
         except itemfile.ItemError as error:
             raise _error(error) from error
-        if span.disabled != body.enabled:
-            return {"changed": []}  # already as asked
-        new[body.path] = itemfile.set_enabled(new[body.path], span, body.enabled)
-        if body.kind == "middlewares":
-            for path, text in list(new.items()):
-                lines, flow = itemfile.references(text, body.name)
-                if flow and not body.enabled:
-                    raise ApiError("traefik.flow_reference", 409)
-                if lines:
-                    new[path] = itemfile.set_references(text, lines, body.enabled)
-        changed = [p for p in new if new[p] != files[p][0]]
-        # The file holding the item first, then the files that list it.
-        changed.sort(key=lambda p: p != body.path)
+        except parse.YamlError:
+            raise ApiError("traefik.invalid_yaml", 422) from None
+        # Never leave a site served without its protection: switching off, the item goes first
+        # (routers that still name it stop); switching on, the routers' references come back
+        # first and the item last, so the item exists before anything depends on it again.
+        changed.sort(key=lambda p: (p != body.path) if not body.enabled else (p == body.path))
         for path in changed:
-            await asyncio.to_thread(parse.load, new[path])
             await _save(request, registry, node_id, path, new[path], files[path][1])
     except ApiError as error:
         audit_failure(conn, registry, who, "traefik.item_toggle", node_id, details, error)
@@ -286,6 +299,12 @@ async def add_item(
                 or "_" in body.name
             ):
                 raise ApiError("traefik.invalid_name", 422)
+            files = await _snapshot(request, registry, node_id, complete=True)
+            for text, _ in files.values():
+                if any((sp.kind, sp.name) == (body.kind, body.name) for sp in itemfile.scan(text)):
+                    raise ApiError("traefik.item_exists", 409)
+            if f"middlewares/{body.name}.yml" in files:
+                raise ApiError("traefik.item_exists", 409)
             try:
                 new = itemfile.add("", "http", body.kind, body.name, body.yaml or "")
                 await asyncio.to_thread(parse.load, new)
@@ -338,7 +357,7 @@ async def delete_item(
     _checked_path(path)
     details = {"path": path, "kind": kind, "name": name}
     try:
-        files = await _snapshot(request, registry, node_id)
+        files = await _snapshot(request, registry, node_id, complete=True)
         if path not in files:
             raise NotFound()
         text, sha = files[path]
@@ -350,8 +369,13 @@ async def delete_item(
             for content, _ in files.values():
                 if itemfile.references(content, name)[0] or itemfile.references(content, name)[1]:
                     raise ApiError("traefik.in_use", 409)
-        new = itemfile.remove(text, span)
-        await asyncio.to_thread(parse.load, new or "{}")
+        try:
+            new = itemfile.remove(text, span)
+            await asyncio.to_thread(parse.load, new or "{}")
+        except itemfile.ItemError as error:
+            raise _error(error) from error
+        except parse.YamlError:
+            raise ApiError("traefik.invalid_yaml", 422) from None
         await _save(request, registry, node_id, path, new, sha)
     except ApiError as error:
         audit_failure(conn, registry, who, "traefik.item_delete", node_id, details, error)
@@ -392,6 +416,13 @@ class HashIn(BaseModel):
     username: str = Field(pattern=r"^[A-Za-z0-9_.@-]{1,64}$")
     password: str = Field(min_length=8, max_length=72)
 
+    @model_validator(mode="after")
+    def fits_bcrypt(self) -> HashIn:
+        """Bcrypt reads 72 bytes (not characters) and stops at a NUL: refuse what it cannot hold."""
+        if len(self.password.encode()) > 72 or "\x00" in self.password:
+            raise ValueError("password cannot be hashed")
+        return self
+
 
 @router.post("/htpasswd", summary="Make an htpasswd entry (bcrypt) from a user and a password")
 async def make_htpasswd(
@@ -406,9 +437,10 @@ async def make_htpasswd(
     who.require("traefik.sites.write", registry.rights(), f"node:{node_id}")
     import bcrypt
 
-    digest = await asyncio.to_thread(
-        bcrypt.hashpw, body.password.encode(), bcrypt.gensalt(rounds=12, prefix=b"2a")
-    )
+    async with _HASHING:  # a hash costs real CPU: only a couple at a time
+        digest = await asyncio.to_thread(
+            bcrypt.hashpw, body.password.encode(), bcrypt.gensalt(rounds=12, prefix=b"2a")
+        )
     return {"entry": f"{body.username}:{digest.decode()}"}
 
 

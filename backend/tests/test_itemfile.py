@@ -124,3 +124,33 @@ def test_a_value_that_is_not_a_mapping_is_refused():
     for bad in ("", "- a\n", "just text\n", "a: [\n"):
         with pytest.raises(items.ItemError):
             items.check_value(bad)
+
+
+def test_a_line_break_the_yaml_counts_but_split_does_not_is_refused_everywhere():
+    sneaky = FILE.replace("# my proxy", "# note # x")
+    for call in (
+        lambda: items.scan(sneaky),
+        lambda: items.references(sneaky, "lan"),
+        lambda: items.add(sneaky, "http", "middlewares", "gzip", "compress: {}\n"),
+    ):
+        with pytest.raises(items.ItemError, match="unsupported_layout"):
+            call()
+    for bad in ("x: 1\rtcp:\r  routers: {}\n", "a: 1 b: 2\n", "a: 1\x85b: 2\n"):
+        with pytest.raises(items.ItemError):
+            items.check_value(bad)
+
+
+def test_an_edit_that_changes_the_set_of_items_or_top_level_keys_is_refused():
+    renamed = FILE.replace("    lan:\n", "    lan2:\n")
+    with pytest.raises(items.ItemError):
+        items._check_shape(FILE, renamed)  # noqa: SLF001
+    moved = FILE + "tcp:\n  routers: {}\n"
+    with pytest.raises(items.ItemError):
+        items._check_shape(FILE, moved)  # noqa: SLF001
+    items._check_shape(FILE, FILE)  # noqa: SLF001  (nothing changed: fine)
+
+
+def test_references_inside_a_router_that_is_switched_off_are_left_alone():
+    off = items.set_enabled(FILE, span(FILE, "blog", "routers"), False)
+    lines, _ = items.references(off, "lan")
+    assert len(lines) == 1  # only the chain's entry: the router is off, its entry stays as it is

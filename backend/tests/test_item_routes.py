@@ -202,3 +202,55 @@ def test_a_mapping_is_written_as_yaml_text(hub):
     )
     assert got.json() == {"yaml": "compress:\n  minResponseBodyBytes: 5\n"}
     assert client.post(f"{base(node)}/dump", headers=admin, json={"value": {}}).status_code == 422
+
+
+def test_adding_a_middleware_never_replaces_one_that_exists(hub):
+    client, admin, node, folder = hub
+    put_file(folder, FILE)
+    (folder / "middlewares").mkdir()
+    (folder / "middlewares" / "gzip.yml").write_text(
+        "http:\n  middlewares:\n    gzip:\n      compress: {}\n"
+    )
+    again = client.post(
+        base(node),
+        headers=admin,
+        json={
+            "kind": "middlewares",
+            "name": "gzip",
+            "value": {"stripPrefix": {"prefixes": ["/x"]}},
+        },
+    )
+    assert again.status_code == 409 and again.json()["error"]["code"] == "traefik.item_exists"
+    assert "compress" in (folder / "middlewares" / "gzip.yml").read_text()
+    in_apps = client.post(
+        base(node),
+        headers=admin,
+        json={"kind": "middlewares", "name": "lan", "value": {"compress": {}}},
+    )
+    assert in_apps.status_code == 409  # the name is taken in another file
+
+
+def test_a_password_bcrypt_cannot_hold_is_refused_not_a_server_error(hub):
+    client, admin, node, folder = hub
+    long = "é" * 40  # 40 characters but 80 bytes
+    refused = client.post(
+        f"{base(node)}/htpasswd", headers=admin, json={"username": "a", "password": long}
+    )
+    assert refused.status_code == 422
+    nul = client.post(
+        f"{base(node)}/htpasswd",
+        headers=admin,
+        json={"username": "a", "password": "abcdefgh\x00ij"},
+    )
+    assert nul.status_code == 422
+
+
+def test_a_line_break_trick_in_a_value_cannot_add_a_top_level_key(hub):
+    client, admin, node, folder = hub
+    put_file(folder, FILE)
+    params = {"path": "apps.yml", "kind": "middlewares", "name": "lan"}
+    sneaky = client.put(
+        base(node), headers=admin, json={**params, "yaml": "x: 1\rtcp:\r  routers: {}\n"}
+    )
+    assert sneaky.status_code == 422
+    assert "tcp" not in (folder / "apps.yml").read_text()

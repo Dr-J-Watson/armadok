@@ -164,7 +164,7 @@ function Hasher({ onHash, onEntry }: { onHash: (u: string, p: string) => Promise
       <input aria-label={t('traefik:schema.password')} placeholder={t('traefik:schema.password')} type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       <button
         type="button"
-        disabled={busy || user.trim() === '' || password.length < 8}
+        disabled={busy || user.trim() === '' || password.length < 8 || new TextEncoder().encode(password).length > 72}
         onClick={async () => {
           setBusy(true)
           setError(false)

@@ -41,6 +41,8 @@ RULE_VALUE = re.compile(r"[^`\x00-\x1f\x7f]{1,200}")
 SiteName = Annotated[str, StringConstraints(pattern=SITE_NAME_PATTERN)]
 TraefikName = Annotated[str, StringConstraints(pattern=rf"^{NAME}$")]
 MiddlewareRef = Annotated[str, StringConstraints(pattern=rf"^{NAME}(@[a-z]{{1,20}})?$")]
+# A site may only send to a service of the files (never `api@internal`, which is Traefik's own).
+ServiceRef = Annotated[str, StringConstraints(pattern=rf"^{NAME}(@file)?$")]
 
 
 class Condition(BaseModel):
@@ -102,7 +104,7 @@ class SiteSpec(BaseModel):
         default_factory=list, max_length=10
     )
     # An existing service to send to, instead of making one.
-    service: MiddlewareRef | None = None
+    service: ServiceRef | None = None
     conditions: list[Condition] = Field(default_factory=list, max_length=10)
 
     @field_validator("hosts")

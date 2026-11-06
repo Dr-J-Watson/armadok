@@ -735,3 +735,10 @@ def test_a_condition_cannot_end_its_value_or_add_a_rule():
             _spec(conditions=[bad])
     with pytest.raises(ValueError):
         _spec(servers=["http://user:pw@192.0.2.1"])
+
+
+def test_a_site_cannot_send_to_a_service_of_traefik_itself():
+    for bad in ("api@internal", "dashboard@internal", "x@docker"):
+        with pytest.raises(ValueError):
+            _spec(container=None, port=None, service=bad)
+    assert _spec(container=None, port=None, service="shared@file").service == "shared@file"
