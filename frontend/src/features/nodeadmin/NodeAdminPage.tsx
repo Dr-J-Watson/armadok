@@ -66,12 +66,25 @@ export function NodeAdminPage() {
 
   return (
     <>
-      <h1>{t('nodeadmin:title')}</h1>
-      <p>{t('nodeadmin:explain')}</p>
+      <header className="page-head">
+        <div>
+          <h1>{t('nodeadmin:title')}</h1>
+          <p className="hint">{t('nodeadmin:explain')}</p>
+        </div>
+      </header>
+      {nodes.isPending && <p className="loading">{t('loading')}</p>}
       {failed != null && (
         <Problem error={failed} />
       )}
       <table className="table">
+        <thead>
+          <tr>
+            <th>{t('nodeadmin:col.node')}</th>
+            <th>{t('nodeadmin:col.owner')}</th>
+            <th>{t('nodeadmin:col.state')}</th>
+            <th>{t('nodeadmin:col.actions')}</th>
+          </tr>
+        </thead>
         <tbody>
           {nodes.data?.map((n) => (
             <tr key={n.id}>
@@ -84,9 +97,9 @@ export function NodeAdminPage() {
                 {n.suspended_reason && <small> — {n.suspended_reason}</small>}
                 {n.restorable_until && <small> — {t('nodeadmin:until', { date: new Date(n.restorable_until).toLocaleDateString() })}</small>}
               </td>
-              <td>
+              <td className="actions-cell">
                 {n.state !== 'deleted' && (
-                  <button type="button" onClick={() => setOpen({ id: n.id, action: 'emergency' })}>
+                  <button type="button" title={t('nodeadmin:tip.emergency')} onClick={() => setOpen({ id: n.id, action: 'emergency' })}>
                     {t('nodeadmin:emergency')}
                   </button>
                 )}
@@ -98,7 +111,7 @@ export function NodeAdminPage() {
                 {n.state !== 'deleted' && !n.local && (
                   <>
                     {(['disconnect', 'delete', 'take-over', 'ban-owner', 'strip-creation'] as const).map((a) => (
-                      <button key={a} type="button" onClick={() => setOpen({ id: n.id, action: a })}>
+                      <button key={a} type="button" className={a === 'delete' || a === 'ban-owner' ? 'danger-button' : undefined} onClick={() => setOpen({ id: n.id, action: a })}>
                         {t(`nodeadmin:${a}`)}
                       </button>
                     ))}
@@ -114,7 +127,7 @@ export function NodeAdminPage() {
                     <button type="button" onClick={() => setOpen({ id: n.id, action: 'restore' })}>
                       {t('nodeadmin:restore')}
                     </button>
-                    <button type="button" onClick={() => setOpen({ id: n.id, action: 'purge' })}>
+                    <button type="button" className="danger-button" onClick={() => setOpen({ id: n.id, action: 'purge' })}>
                       {t('nodeadmin:purge')}
                     </button>
                   </>
@@ -127,6 +140,7 @@ export function NodeAdminPage() {
       {open && (
         <form
           aria-label={t(`nodeadmin:${open.action}`)}
+          className="panel"
           onSubmit={(e) => {
             e.preventDefault()
             run.mutate()

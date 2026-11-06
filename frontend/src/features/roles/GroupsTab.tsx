@@ -6,6 +6,7 @@ import { api } from '../../core/api'
 import { useCan } from '../../core/auth'
 import type { Group } from './types'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface User {
   id: string
@@ -16,6 +17,7 @@ interface User {
 export function GroupsTab() {
   const { t } = useTranslation(['roles', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const canManage = useCan('grants.manage')
   const groups = useQuery({ queryKey: ['groups'], queryFn: () => api.get<Group[]>('/groups') })
   const users = useQuery({ queryKey: ['users'], queryFn: () => api.get<User[]>('/users') })
@@ -40,7 +42,7 @@ export function GroupsTab() {
   })
 
   const nameOf = (id: string) => users.data?.find((u) => u.id === id)?.username ?? id
-  if (groups.isPending) return <p>{t('loading')}</p>
+  if (groups.isPending) return <p className="loading">{t('loading')}</p>
   if (groups.isError)
     return (
       <Problem error={groups.error} />
@@ -108,7 +110,13 @@ export function GroupsTab() {
                 >
                   {t('roles:groups.add')}
                 </button>
-                <button type="button" onClick={() => remove.mutate(g.id)}>
+                <button
+                  type="button"
+                  className="danger-button"
+                  onClick={async () => {
+                    if (await ask(t('roles:groups.deleteConfirm', { name: g.name }))) remove.mutate(g.id)
+                  }}
+                >
                   {t('roles:groups.delete')}
                 </button>
               </div>

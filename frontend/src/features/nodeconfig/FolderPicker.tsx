@@ -57,7 +57,7 @@ export function FolderPicker({
           ))}
         </nav>
       )}
-      {listing.isPending && <p>{t('loading')}</p>}
+      {listing.isPending && <p className="loading">{t('loading')}</p>}
       {data && data.entries.length === 0 && <p className="empty">{t('nodeconfig:emptyFolder')}</p>}
       <ul className="picker-list">
         {data?.entries.map((entry) =>

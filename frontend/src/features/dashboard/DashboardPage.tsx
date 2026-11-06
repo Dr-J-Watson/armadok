@@ -1,9 +1,10 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowUpCircle, CheckCircle2, Server } from 'lucide-react'
+import { AlertTriangle, ArrowUpCircle, CheckCircle2, ClipboardList, Network, Server } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { NodeIcon } from '../../components/NodeIcon'
+import { Tip } from '../../components/Tip'
 import { api } from '../../core/api'
 import { useAuth, useCanFn } from '../../core/auth'
 import type { Node } from '../nodes/types'
@@ -35,7 +36,7 @@ const MAX_MACHINES = 12 // the overview looks at a dozen machines at most: it mu
 // read through the same API as the rest of the interface, so a person only sees what they may.
 // A figure that cannot be read (no right, a machine that is off) is simply left out.
 export function DashboardPage() {
-  const { t } = useTranslation(['dashboard', 'audit', 'errors'])
+  const { t } = useTranslation(['dashboard', 'audit', 'errors', 'nodes'])
   const { state } = useAuth()
   const can = useCanFn()
   const name = state.status === 'authenticated' ? state.user.username : ''
@@ -124,30 +125,47 @@ export function DashboardPage() {
         </div>
       </header>
 
+      <nav className="quick" aria-label={t('dashboard:quick.title')}>
+        <Link to="/nodes">
+          <Server size={15} aria-hidden="true" /> {t('dashboard:quick.nodes')}
+        </Link>
+        <Link to="/dns">
+          <Network size={15} aria-hidden="true" /> {t('dashboard:quick.dns')}
+        </Link>
+        {can('audit.read') && (
+          <Link to="/audit">
+            <ClipboardList size={15} aria-hidden="true" /> {t('dashboard:quick.audit')}
+          </Link>
+        )}
+      </nav>
+
       <div className="stat-grid">
-        <Link to="/nodes" className="stat stat-link">
+        <Link to="/nodes" className="stat stat-link" title={t('dashboard:stat.machinesTip')}>
           <span className="stat-label">{t('dashboard:stat.machines')}</span>
           <strong className="stat-value">{nodes.data?.length ?? '—'}</strong>
           <span className="hint">{t('dashboard:stat.connected', { count: connected })}</span>
         </Link>
-        <div className={`stat${down > 0 ? ' stat-bad' : ''}`}>
+        <div className={`stat${down > 0 ? ' stat-bad' : ''}`} title={t('dashboard:stat.sitesTip')}>
           <span className="stat-label">{t('dashboard:stat.sites')}</span>
           <strong className="stat-value">{down}</strong>
           <span className="hint">{t('dashboard:stat.sitesHint')}</span>
         </div>
-        <div className={`stat${outdated > 0 ? ' stat-warn' : ''}`}>
+        <div className={`stat${outdated > 0 ? ' stat-warn' : ''}`} title={t('dashboard:stat.updatesTip')}>
           <span className="stat-label">{t('dashboard:stat.updates')}</span>
           <strong className="stat-value">{outdated}</strong>
           <span className="hint">{t('dashboard:stat.updatesHint')}</span>
         </div>
-        <Link to="/notifications" className="stat stat-link">
+        <Link to="/notifications" className="stat stat-link" title={t('dashboard:stat.unreadTip')}>
           <span className="stat-label">{t('dashboard:stat.unread')}</span>
           <strong className="stat-value">{unread.data?.unread ?? 0}</strong>
           <span className="hint">{t('dashboard:stat.unreadHint')}</span>
         </Link>
       </div>
 
-      <h2>{t('dashboard:attention.title')}</h2>
+      <h2>
+        {t('dashboard:attention.title')}
+        <Tip text={t('dashboard:attention.tip')} />
+      </h2>
       {attention.length === 0 ? (
         <p className="all-good">
           <CheckCircle2 size={18} aria-hidden="true" /> {t('dashboard:attention.none')}
@@ -163,7 +181,11 @@ export function DashboardPage() {
         </ul>
       )}
 
-      <h2>{t('dashboard:machines')}</h2>
+      <div className="section-head">
+        <h2>{t('dashboard:machines')}</h2>
+        {(nodes.data?.length ?? 0) > 0 && <Link to="/nodes">{t('dashboard:allNodes')}</Link>}
+      </div>
+      {nodes.isPending && <p className="loading">{t('loading')}</p>}
       {nodes.data?.length === 0 && (
         <div className="empty">
           <p>{t('dashboard:noMachines')}</p>
@@ -184,6 +206,7 @@ export function DashboardPage() {
                 <span className="node-card-body">
                   <strong>{n.name}</strong>
                   <span className="node-meta">
+                    <span className="badge">{t(`nodes:types.${n.type}`)}</span>
                     <span className={`status-dot ${w?.connected ? 'on' : w ? 'off' : ''}`} aria-hidden="true" />
                     <span className="hint">
                       {w === undefined ? '…' : w.connected ? t('dashboard:online') : t('dashboard:offline')}
@@ -198,7 +221,10 @@ export function DashboardPage() {
 
       {can('audit.read') && (
         <>
-          <h2>{t('dashboard:activity')}</h2>
+          <div className="section-head">
+            <h2>{t('dashboard:activity')}</h2>
+            <Link to="/audit">{t('dashboard:allActivity')}</Link>
+          </div>
           {activity.data?.entries.length === 0 && <p className="empty">{t('dashboard:noActivity')}</p>}
           <ul className="activity">
             {activity.data?.entries.map((e) => (
@@ -211,9 +237,6 @@ export function DashboardPage() {
               </li>
             ))}
           </ul>
-          <p>
-            <Link to="/audit">{t('dashboard:allActivity')}</Link>
-          </p>
         </>
       )}
     </>

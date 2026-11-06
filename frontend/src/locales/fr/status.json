@@ -13,5 +13,7 @@
   "state.unknown": "Inconnu",
   "recent": "Derniers résultats",
   "availability": "Disponible sur {{value}} % des vérifications.",
-  "checked": "Dernière vérification : {{at}}"
+  "checked": "Dernière vérification : {{at}}",
+  "closeConfirm": "Arrêter de publier cette page d'état ? L'adresse publique cessera de fonctionner.",
+  "copy": "Copier l'adresse"
 }

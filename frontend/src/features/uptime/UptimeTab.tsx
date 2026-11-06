@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { PublishControl } from '../status/PublishControl'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface Result {
   at: string
@@ -43,6 +44,7 @@ const EMPTY = { name: '', kind: 'http', url: '', host: '', port: '', interval: '
 export function UptimeTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['uptime', 'errors'])
   const client = useQueryClient()
+  const ask = useConfirm()
   const [form, setForm] = useState(EMPTY)
   const list = useQuery({
     queryKey: ['uptime', nodeId],
@@ -82,11 +84,11 @@ export function UptimeTab({ nodeId }: { nodeId: string }) {
 
   return (
     <>
-      <p>{t('uptime:explain')}</p>
+      <p className="hint">{t('uptime:explain')}</p>
       {failed != null && (
         <Problem error={failed} />
       )}
-      {list.isPending && <p>{t('loading')}</p>}
+      {list.isPending && <p className="loading">{t('loading')}</p>}
       {list.data && list.data.probes.length === 0 && <p className="empty">{t('uptime:none')}</p>}
       <ul className="links">
         {(list.data?.probes ?? []).map((p) => (
@@ -110,13 +112,19 @@ export function UptimeTab({ nodeId }: { nodeId: string }) {
             {manage && (
               <span>
                 {' '}
-                <button type="button" onClick={() => check.mutate(p)}>
+                <button type="button" disabled={check.isPending} title={t('uptime:checkNowTip')} onClick={() => check.mutate(p)}>
                   {t('uptime:checkNow')}
                 </button>{' '}
                 <button type="button" onClick={() => pause.mutate(p)}>
                   {t(p.enabled ? 'uptime:pause' : 'uptime:resume')}
                 </button>{' '}
-                <button type="button" onClick={() => remove.mutate(p)}>
+                <button
+                  type="button"
+                  className="danger-button"
+                  onClick={async () => {
+                    if (await ask(t('uptime:confirmDelete', { name: p.name }))) remove.mutate(p)
+                  }}
+                >
                   {t('uptime:delete')}
                 </button>
               </span>
@@ -125,11 +133,11 @@ export function UptimeTab({ nodeId }: { nodeId: string }) {
         ))}
       </ul>
       {manage && (
-        <form onSubmit={submit} aria-label={t('uptime:new')}>
+        <form onSubmit={submit} aria-label={t('uptime:new')} className="panel">
           <h2>{t('uptime:new')}</h2>
           <label>
             {t('uptime:name')}
-            <input value={form.name} required maxLength={60} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <input value={form.name} required placeholder={t('uptime:namePlaceholder')} maxLength={60} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </label>
           <label>
             {t('uptime:kind')}
@@ -166,7 +174,7 @@ export function UptimeTab({ nodeId }: { nodeId: string }) {
             />
           </label>
           <p className="hint">{t('uptime:warn')}</p>
-          <button type="submit" disabled={create.isPending}>
+          <button type="submit" className="primary" disabled={create.isPending}>
             {t('uptime:create')}
           </button>
         </form>

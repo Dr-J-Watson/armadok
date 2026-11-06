@@ -39,11 +39,13 @@ export function ImageUpdatesTab({ nodeId }: { nodeId: string }) {
       )}
       {list.data?.can_check && (
         <div className="actions">
-          <button type="button" className="primary" disabled={check.isPending} onClick={() => check.mutate()}>
+          <button type="button" className="primary" disabled={check.isPending} title={t('imageupdates:checkTip')} onClick={() => check.mutate()}>
             {t('imageupdates:check')}
           </button>
+          {list.data && <span className="hint">{t('imageupdates:summary', { count: list.data.images.filter((i) => i.state === 'update').length, total: list.data.images.length })}</span>}
         </div>
       )}
+      {list.isPending && <p className="loading">{t('loading')}</p>}
       {list.data && list.data.images.length === 0 && <p className="empty">{t('imageupdates:none')}</p>}
       <ul className="links">
         {(list.data?.images ?? []).map((i) => (

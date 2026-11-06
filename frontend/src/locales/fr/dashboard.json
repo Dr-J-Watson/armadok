@@ -21,5 +21,15 @@
   "offline": "Non connectée",
   "activity": "Activité récente",
   "noActivity": "Rien pour l'instant.",
-  "allActivity": "Voir tout le journal d'audit"
+  "allActivity": "Voir tout le journal d'audit",
+  "quick.title": "Raccourcis",
+  "quick.nodes": "Gérer les nœuds",
+  "quick.dns": "Enregistrements DNS",
+  "quick.audit": "Journal d'audit",
+  "stat.machinesTip": "Combien de nœuds vous gérez, et combien ont leur worker connecté.",
+  "stat.sitesTip": "Sites dont la vérification de disponibilité échoue en ce moment.",
+  "stat.updatesTip": "Images dont une version plus récente existe. Ouvrez la page Mises à jour d'images du nœud pour agir.",
+  "stat.unreadTip": "Notifications que vous n'avez pas encore lues.",
+  "attention.tip": "Problèmes détectés sur vos nœuds : cliquez sur l'un d'eux pour aller directement à la page qui le règle.",
+  "allNodes": "Tous les nœuds"
 }

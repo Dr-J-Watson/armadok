@@ -55,10 +55,13 @@ export function Rules() {
       )
       return api.put('/notifications/rules', { rules: [...managed, ...kept] })
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notif-rules'] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['notif-rules'] })
+      setEdits({})
+    },
   })
 
-  if (!choices || !events.data) return <p>{t('loading')}</p>
+  if (!choices || !events.data) return <p className="loading">{t('loading')}</p>
   const places = [{ id: 'in_app', name: t('notifications:rules.inApp') }, ...(channels.data ?? []).map((c) => ({ id: c.id, name: c.name }))]
 
   function toggle(event: string, place: string) {
@@ -71,7 +74,7 @@ export function Rules() {
 
   return (
     <>
-      <p>{t('notifications:rules.explain')}</p>
+      <p className="hint">{t('notifications:rules.explain')}</p>
       {(save.error ?? rules.error) != null && <Problem error={save.error ?? rules.error} />}
       <table className="table">
         <thead>
@@ -106,9 +109,12 @@ export function Rules() {
           ))}
         </tbody>
       </table>
-      <button type="button" className="primary" disabled={save.isPending} onClick={() => save.mutate()}>
-        {t('notifications:rules.save')}
-      </button>
+      <div className="actions">
+        <button type="button" className="primary" disabled={save.isPending || Object.keys(edits).length === 0} onClick={() => save.mutate()}>
+          {t('notifications:rules.save')}
+        </button>
+        {Object.keys(edits).length > 0 && <span className="hint">{t('notifications:rules.unsaved')}</span>}
+      </div>
       {save.isSuccess && <p role="status" className="ok-text">{t('notifications:rules.saved')}</p>}
     </>
   )

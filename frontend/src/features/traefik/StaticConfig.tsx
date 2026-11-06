@@ -65,7 +65,7 @@ export function StaticConfig({ nodeId }: { nodeId: string }) {
   })
   const failed = loaded.error ?? save.error ?? open.error
 
-  if (loaded.isPending) return <p>{t('loading')}</p>
+  if (loaded.isPending) return <p className="loading">{t('loading')}</p>
   if (failed) {
     return (
       <Problem error={failed} />

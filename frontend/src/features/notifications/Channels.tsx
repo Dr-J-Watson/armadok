@@ -7,6 +7,8 @@ import { codeMessage } from '../../core/errors'
 import { leaveThisBrowser } from '../../core/push'
 import { BrowserPush } from './BrowserPush'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
+import { Tip } from '../../components/Tip'
 
 export interface Channel {
   id: string
@@ -21,6 +23,7 @@ const KINDS = ['ntfy', 'webhook', 'discord', 'email'] as const
 export function Channels() {
   const { t } = useTranslation(['notifications', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const channels = useQuery({ queryKey: ['channels'], queryFn: () => api.get<Channel[]>('/notifications/channels') })
   const platform = useQuery({
     queryKey: ['notification-platform'],
@@ -94,7 +97,7 @@ export function Channels() {
 
   return (
     <>
-      <p>{t('notifications:channels.explain')}</p>
+      <p className="hint">{t('notifications:channels.explain')}</p>
       {failed != null && <Problem error={failed} />}
       {secret && (
         <div className="notice">
@@ -118,7 +121,7 @@ export function Channels() {
             {tested === c.id && !test.isError && <p className="ok-text" role="status">{t('notifications:channels.tested')}</p>}
             {c.confirmed ? (
               <>
-                <button type="button" onClick={() => test.mutate(c.id)}>{t('notifications:channels.test')}</button>{' '}
+                <button type="button" disabled={test.isPending} title={t('notifications:channels.testTip')} onClick={() => test.mutate(c.id)}>{t('notifications:channels.test')}</button>{' '}
               </>
             ) : (
               <form
@@ -143,7 +146,15 @@ export function Channels() {
                 <button type="submit" disabled={confirm.isPending}>{t('notifications:channels.confirm')}</button>
               </form>
             )}
-            <button type="button" onClick={() => remove.mutate(c.id)}>{t('notifications:channels.remove')}</button>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={async () => {
+                if (await ask(t('notifications:channels.removeConfirm', { name: c.name }))) remove.mutate(c.id)
+              }}
+            >
+              {t('notifications:channels.remove')}
+            </button>
           </li>
         ))}
       </ul>
@@ -176,10 +187,13 @@ export function Channels() {
           {kinds.map((k) => <option key={k} value={k}>{t(`notifications:kinds.${k}`)}</option>)}
         </select>
         <label htmlFor="ch-name">{t('notifications:channels.name')}</label>
-        <input id="ch-name" required maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
+        <input id="ch-name" required placeholder={t('notifications:channels.namePlaceholder')} maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
         {kind === 'ntfy' ? (
           <>
-            <label htmlFor="ch-topic">{t('notifications:channels.topic')}</label>
+            <label htmlFor="ch-topic">
+              {t('notifications:channels.topic')}
+              <Tip text={t('notifications:channels.topicTip')} />
+            </label>
             <input id="ch-topic" required pattern="[A-Za-z0-9_\-]{1,64}" value={topic} onChange={(e) => setTopic(e.target.value)} />
             <label htmlFor="ch-server">{t('notifications:channels.server')}</label>
             <input id="ch-server" type="url" placeholder="https://ntfy.sh" value={url} onChange={(e) => setUrl(e.target.value)} />
@@ -189,7 +203,7 @@ export function Channels() {
         ) : kind === 'email' ? (
           <>
             <label htmlFor="ch-host">{t('notifications:channels.mailHost')}</label>
-            <input id="ch-host" required value={mail.host} onChange={(e) => setMail({ ...mail, host: e.target.value })} />
+            <input id="ch-host" required placeholder="smtp.example.com" value={mail.host} onChange={(e) => setMail({ ...mail, host: e.target.value })} />
             <label htmlFor="ch-port">{t('notifications:channels.mailPort')}</label>
             <input id="ch-port" type="number" min={1} max={65535} required value={mail.port} onChange={(e) => setMail({ ...mail, port: e.target.value })} />
             <label htmlFor="ch-security">{t('notifications:channels.mailSecurity')}</label>
@@ -209,7 +223,7 @@ export function Channels() {
         ) : (
           <>
             <label htmlFor="ch-url">{t('notifications:channels.url')}</label>
-            <input id="ch-url" type="url" required value={url} onChange={(e) => setUrl(e.target.value)} />
+            <input id="ch-url" type="url" required placeholder="https://example.com/hook" value={url} onChange={(e) => setUrl(e.target.value)} />
           </>
         )}
         <p className="hint">{t('notifications:channels.private')}</p>

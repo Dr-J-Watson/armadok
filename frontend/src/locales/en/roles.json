@@ -52,5 +52,12 @@
   "effective.viaRole": "role {{role}}",
   "effective.viaGroup": "role {{role}} through group {{group}}",
   "effective.everywhere": "everywhere",
-  "access.explain": "The rights that work on this node for each account, whether they come from a role, a group or a direct grant."
+  "access.explain": "The rights that work on this node for each account, whether they come from a role, a group or a direct grant.",
+  "subtitle": "Who may do what: roles bundle rights, groups gather people.",
+  "tabHints.roles": "Named sets of rights",
+  "tabHints.groups": "Sets of people",
+  "tabHints.assignments": "Who holds which role, and where",
+  "deleteConfirm": "Delete the role {{name}}? People who hold it lose its rights.",
+  "groups.deleteConfirm": "Delete the group {{name}}? Its members keep their own rights.",
+  "assign.takeConfirm": "Take this role away from {{who}}?"
 }

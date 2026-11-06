@@ -20,5 +20,6 @@
   "status.unsupported": "Ce système d'exploitation n'est pas couvert par la base.",
   "status.empty": "Aucune liste de paquets trouvée dans cette image (elle est peut-être très minimale).",
   "status.ok": "Analysée",
-  "status.partial": "Seuls les 5000 premiers paquets ont été vérifiés : le résultat est incomplet."
+  "status.partial": "Seuls les 5000 premiers paquets ont été vérifiés : le résultat est incomplet.",
+  "scanTip": "Lit la liste des paquets de chaque image (rien n'est démarré) et compare les versions à une base publique."
 }

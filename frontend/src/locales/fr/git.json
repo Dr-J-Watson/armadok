@@ -20,5 +20,11 @@
   "logins.username": "Utilisateur",
   "logins.secret": "Jeton d'accès",
   "logins.save": "Enregistrer la connexion",
-  "logins.forget": "Oublier"
+  "logins.forget": "Oublier",
+  "panel.checkTip": "Demande au dépôt distant si la branche a de nouveaux commits",
+  "panel.updateTip": "Remplace les fichiers du projet par le dernier commit. Rien n'est redéployé.",
+  "panel.updateDeployTip": "Met à jour les fichiers, puis lance docker compose up -d",
+  "panel.forgetTip": "Arrête de suivre le dépôt. Les fichiers restent tels quels.",
+  "panel.forgetConfirm": "Arrêter de suivre le dépôt Git ? Les fichiers du projet restent, mais Armadok ne les mettra plus à jour.",
+  "logins.forgetConfirm": "Oublier l'identifiant enregistré pour {{host}} ? Les dépôts privés de cet hôte ne pourront plus être mis à jour."
 }

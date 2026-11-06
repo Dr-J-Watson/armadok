@@ -20,5 +20,9 @@
   "stopAccepting": "Ne plus accepter",
   "acceptTitle": "Accepter cette faille pour l'instant",
   "reason": "Pourquoi (gardé dans le journal d'audit)",
-  "cancel": "Annuler"
+  "cancel": "Annuler",
+  "scanTip": "Interroge à nouveau la base publique pour les composants, dès maintenant",
+  "count": "{{count}} à examiner, {{accepted}} acceptée(s)",
+  "acceptTip": "Continuer à l'utiliser en connaissance de cause : notez pourquoi, pour que la personne suivante comprenne.",
+  "reasonPlaceholder": "ex. Non joignable depuis l'extérieur"
 }

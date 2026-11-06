@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Problem } from '../../components/Problem'
 import { api } from '../../core/api'
 import { codeMessage } from '../../core/errors'
+import { useConfirm } from '../../components/Confirm'
 
 interface Info {
   source: { url: string; branch: string } | null
@@ -16,6 +17,7 @@ interface Info {
 export function GitPanel({ nodeId, project }: { nodeId: string; project: string }) {
   const { t } = useTranslation(['git', 'errors'])
   const client = useQueryClient()
+  const ask = useConfirm()
   const base = `/nodes/${nodeId}/git/projects/${encodeURIComponent(project)}`
   const key = ['git-source', nodeId, project]
   const info = useQuery({ queryKey: key, queryFn: () => api.get<Info>(base) })
@@ -56,16 +58,24 @@ export function GitPanel({ nodeId, project }: { nodeId: string; project: string 
         </p>
       )}
       <div className="actions">
-        <button type="button" onClick={() => info.refetch()} disabled={info.isFetching}>
+        <button type="button" title={t('git:panel.checkTip')} onClick={() => info.refetch()} disabled={info.isFetching}>
           {t('git:panel.check')}
         </button>
-        <button type="button" onClick={() => update.mutate(false)} disabled={update.isPending || !status}>
+        <button type="button" title={t('git:panel.updateTip')} onClick={() => update.mutate(false)} disabled={update.isPending || !status}>
           {t('git:panel.update')}
         </button>
-        <button type="button" className="primary" onClick={() => update.mutate(true)} disabled={update.isPending || !status}>
+        <button type="button" className="primary" title={t('git:panel.updateDeployTip')} onClick={() => update.mutate(true)} disabled={update.isPending || !status}>
           {t('git:panel.updateDeploy')}
         </button>
-        <button type="button" onClick={() => forget.mutate()} disabled={forget.isPending}>
+        <button
+          type="button"
+          className="danger-button"
+          title={t('git:panel.forgetTip')}
+          onClick={async () => {
+            if (await ask(t('git:panel.forgetConfirm'))) forget.mutate()
+          }}
+          disabled={forget.isPending}
+        >
           {t('git:panel.forget')}
         </button>
       </div>

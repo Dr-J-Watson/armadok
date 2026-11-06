@@ -74,5 +74,16 @@
   "push.enable": "Turn on in this browser",
   "push.unsupported": "This browser cannot receive push notifications (it needs the installed or secure web app).",
   "push.denied": "The browser refused the permission. Allow notifications for this site in its settings, then try again.",
-  "push.noWorker": "The interface is not installed as a web app yet (its background part is not running). Open it over https and reload."
+  "push.noWorker": "The interface is not installed as a web app yet (its background part is not running). Open it over https and reload.",
+  "subtitle": "What happened, and where you want to be told about it.",
+  "tabHints.inbox": "Messages received in Armadok",
+  "tabHints.channels": "E-mail, chat or push destinations",
+  "tabHints.rules": "Which event goes where, and from which severity",
+  "inbox.readAllTip": "Marks every unread message as read",
+  "inbox.openNode": "Open the node",
+  "rules.unsaved": "Unsaved changes",
+  "channels.removeConfirm": "Remove the channel {{name}}? Rules that sent messages there will no longer reach it.",
+  "channels.testTip": "Sends a test message to this channel now",
+  "channels.namePlaceholder": "e.g. My phone",
+  "channels.topicTip": "The name of the ntfy topic you subscribed to. Anyone who knows it can read it: pick something hard to guess."
 }

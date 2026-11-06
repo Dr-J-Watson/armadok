@@ -15,5 +15,8 @@
   "logins.username": "Utilisateur",
   "logins.secret": "Mot de passe ou jeton",
   "logins.save": "Enregistrer la connexion",
-  "logins.forget": "Oublier"
+  "logins.forget": "Oublier",
+  "checkTip": "Compare le tag de chaque image avec celui du registre. Rien n'est téléchargé.",
+  "summary": "{{count}} mise(s) à jour disponible(s) sur {{total}} image(s)",
+  "logins.forgetConfirm": "Oublier l'identifiant enregistré pour {{host}} ? Les images privées de ce registre ne pourront plus être vérifiées."
 }

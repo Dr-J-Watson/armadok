@@ -11,7 +11,7 @@ export function NodeAccessTab({ nodeId }: { nodeId: string }) {
     queryKey: ['node-access', nodeId],
     queryFn: () => api.get<{ user_id: string; username: string; rights: string[] }[]>(`/nodes/${nodeId}/access`),
   })
-  if (access.isPending) return <p>{t('loading')}</p>
+  if (access.isPending) return <p className="loading">{t('loading')}</p>
   if (access.isError)
     return (
       <Problem error={access.error} />

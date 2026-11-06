@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Copy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
@@ -44,7 +44,7 @@ export function NodePage() {
   const tabs = useNodeTabs(node.data)
   const settingsTabs = tabs.filter((tab) => tab.area === undefined)
 
-  if (node.isPending) return <p>{t('loading')}</p>
+  if (node.isPending) return <p className="loading">{t('loading')}</p>
   if (node.isError) {
     return (
       <>
@@ -89,7 +89,7 @@ export function NodePage() {
               {t('nodes:tabs.overview')}
             </button>
             {settingsTabs.map((tab) => (
-              <button key={tab.id} type="button" role="tab" aria-selected={current?.id === tab.id} onClick={() => setSearch({ tab: tab.id }, { replace: true })}>
+              <button key={tab.id} type="button" role="tab" title={tab.hintKey ? t(tab.hintKey) : undefined} aria-selected={current?.id === tab.id} onClick={() => setSearch({ tab: tab.id }, { replace: true })}>
                 {t(tab.labelKey)}
               </button>
             ))}
@@ -113,7 +113,16 @@ export function NodePage() {
                 <dd>{new Date(node.data.created_at).toLocaleString()}</dd>
                 <dt>{t('nodes:details.id')}</dt>
                 <dd>
-                  <code>{node.data.id}</code>
+                  <code>{node.data.id}</code>{' '}
+                  <button
+                    type="button"
+                    className="icon-button"
+                    title={t('nodes:details.copy')}
+                    aria-label={t('nodes:details.copy')}
+                    onClick={() => void navigator.clipboard?.writeText(node.data.id)}
+                  >
+                    <Copy size={14} aria-hidden="true" />
+                  </button>
                 </dd>
               </dl>
             </div>

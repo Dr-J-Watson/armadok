@@ -26,5 +26,18 @@
   "new.name": "Nom du projet",
   "new.envHint": "Le .env reste sur le nœud (fichier privé, jamais réaffiché ici). Laisse vide si le projet n'en a pas besoin. Rien n'est démarré : déploie depuis la page du projet.",
   "new.create": "Créer le projet",
-  "new.cancel": "Annuler"
+  "new.cancel": "Annuler",
+  "count": "{{count}} projet(s)",
+  "search": "Chercher un projet",
+  "new.tip": "Crée un dossier de projet avec son fichier compose. Rien ne démarre avant le déploiement.",
+  "new.nameTip": "Devient le nom du dossier sur le nœud et celui du projet Compose. Lettres, chiffres, points, tirets et underscores.",
+  "new.envTip": "Valeurs privées facultatives (mots de passe, clés). Jamais reprises dans le journal d'audit, seulement les noms des variables.",
+  "run.tip.up": "Crée et démarre les services (docker compose up -d)",
+  "run.tip.down": "Arrête et supprime les conteneurs. Les volumes sont conservés.",
+  "run.tip.stop": "Arrête les services sans les supprimer",
+  "run.tip.start": "Démarre des services arrêtés",
+  "run.tip.restart": "Redémarre les services",
+  "run.tip.pull": "Télécharge des images plus récentes ; ne redémarre rien",
+  "run.tip.build": "Construit les images depuis les Dockerfile du projet",
+  "run.downConfirm": "Arrêter et retirer {{project}} ? Ses conteneurs sont supprimés (volumes conservés) et ses sites passent hors ligne."
 }

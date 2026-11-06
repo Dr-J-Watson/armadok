@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface WorkerStatus {
   enrolled: boolean
@@ -26,6 +27,7 @@ function hubUrl(): string {
 export function WorkerTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['workers', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const base = `/nodes/${nodeId}/worker`
   const status = useQuery({
     queryKey: ['worker', nodeId],
@@ -72,7 +74,7 @@ export function WorkerTab({ nodeId }: { nodeId: string }) {
         <p>
           <span className="badge ok">{t('workers:state.local')}</span>
         </p>
-        <p>{t('workers:localExplain')}</p>
+        <p className="hint">{t('workers:localExplain')}</p>
         <div className="actions">
           <button type="button" onClick={() => ping.mutate()}>
             {t('workers:ping')}
@@ -107,16 +109,23 @@ export function WorkerTab({ nodeId }: { nodeId: string }) {
       )}
 
       <div className="actions">
-        <button type="button" className="primary" onClick={() => enrol.mutate()}>
+        <button type="button" className="primary" title={t('workers:enrolTip')} onClick={() => enrol.mutate()}>
           {status.data?.enrolled ? t('workers:enrolAgain') : t('workers:enrol')}
         </button>
         {status.data?.connected && (
-          <button type="button" onClick={() => ping.mutate()}>
+          <button type="button" title={t('workers:pingTip')} onClick={() => ping.mutate()}>
             {t('workers:ping')}
           </button>
         )}
         {status.data?.enrolled && (
-          <button type="button" onClick={() => revoke.mutate()}>
+          <button
+            type="button"
+            className="danger-button"
+            title={t('workers:revokeTip')}
+            onClick={async () => {
+              if (await ask(t('workers:revokeConfirm'))) revoke.mutate()
+            }}
+          >
             {t('workers:revoke')}
           </button>
         )}
@@ -128,7 +137,7 @@ export function WorkerTab({ nodeId }: { nodeId: string }) {
           <h2>{t('workers:enrolment.title')}</h2>
           <p>{t('workers:enrolment.explain', { time: new Date(enrolment.expires_at).toLocaleTimeString() })}</p>
           <pre>{snippet}</pre>
-          <button type="button" onClick={() => void copy()}>
+          <button type="button" className="primary" onClick={() => void copy()}>
             {copied ? t('workers:enrolment.copied') : t('workers:enrolment.copy')}
           </button>
           <p className="hint">{t('workers:enrolment.once')}</p>

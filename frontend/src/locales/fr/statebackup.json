@@ -17,5 +17,6 @@
   "sharedKey": "Ces sauvegardes utilisent la même clé que vos secrets stockés. Si cette clé est perdue, les sauvegardes ne peuvent pas non plus être ouvertes. Une clé à part évite cela.",
   "makeKey": "Générer une clé à part",
   "keyShown": "Notez cette clé dans un endroit sûr, hors de ce serveur, puis ajoutez-la à la configuration du serveur et redémarrez. Elle n'est affichée qu'ici et n'est conservée nulle part.",
-  "keySaved": "Je l'ai notée"
+  "keySaved": "Je l'ai notée",
+  "nowTip": "Crée dès maintenant une copie chiffrée des données d'Armadok"
 }

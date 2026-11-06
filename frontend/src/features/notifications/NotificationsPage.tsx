@@ -12,10 +12,15 @@ export function NotificationsPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>('inbox')
   return (
     <>
-      <h1>{t('title')}</h1>
+      <header className="page-head">
+        <div>
+          <h1>{t('title')}</h1>
+          <p className="hint">{t('subtitle')}</p>
+        </div>
+      </header>
       <div role="tablist" className="tabs">
         {TABS.map((name) => (
-          <button key={name} type="button" role="tab" aria-selected={tab === name} onClick={() => setTab(name)}>
+          <button key={name} type="button" role="tab" aria-selected={tab === name} title={t(`tabHints.${name}`)} onClick={() => setTab(name)}>
             {t(`tabs.${name}`)}
           </button>
         ))}

@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 export interface Provider {
   name: string
@@ -23,6 +24,7 @@ const isSecret = (field: string) => /key|secret|token|password/i.test(field)
 export function AccountsSection({ providers }: { providers: Provider[] }) {
   const { t } = useTranslation(['dns', 'errors'])
   const queryClient = useQueryClient()
+  const confirm = useConfirm()
   const accounts = useQuery({ queryKey: ['dns-accounts'], queryFn: () => api.get<Account[]>('/dns/accounts') })
   // Local DNS has no account; the other providers do.
   const withAccount = providers.filter((p) => p.fields.length > 0)
@@ -59,7 +61,15 @@ export function AccountsSection({ providers }: { providers: Provider[] }) {
           <li key={a.id}>
             <strong>{a.name}</strong> <span className="badge">{t(`dns:providers.${a.provider}`, { defaultValue: a.provider })}</span>
             <p>
-              <button type="button" onClick={() => remove.mutate(a.id)}>{t('dns:accounts.remove')}</button>
+              <button
+                type="button"
+                className="danger-button"
+                onClick={async () => {
+                  if (await confirm(t('dns:accounts.removeConfirm', { name: a.name }))) remove.mutate(a.id)
+                }}
+              >
+                {t('dns:accounts.remove')}
+              </button>
             </p>
           </li>
         ))}

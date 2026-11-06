@@ -15,5 +15,9 @@
   "enrolment.copied": "Copié",
   "enrolment.once": "Ce jeton n'est affiché que maintenant. Si vous le perdez, enrôlez à nouveau.",
   "state.local": "Ce nœud (pas de worker nécessaire)",
-  "localExplain": "C'est le nœud sur lequel tourne Armadok. Le hub agit directement dessus : il n'y a pas de worker à installer."
+  "localExplain": "C'est le nœud sur lequel tourne Armadok. Le hub agit directement dessus : il n'y a pas de worker à installer.",
+  "enrolTip": "Crée un jeton de courte durée qui relie un worker de cette machine à ce hub.",
+  "pingTip": "Envoie un message sans effet au worker et attend sa réponse",
+  "revokeTip": "Coupe le lien : le worker ne peut plus recevoir d'ordres.",
+  "revokeConfirm": "Révoquer ce worker ? Le nœud sera injoignable tant que vous n'aurez pas relié un worker."
 }

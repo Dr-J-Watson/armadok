@@ -8,6 +8,8 @@ import { stillValid } from '../../core/time'
 import { withDependencies, withoutDependents } from './rights'
 import type { RightInfo } from './rights'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
+import { Tip } from '../../components/Tip'
 
 interface ApiKey {
   id: string
@@ -23,6 +25,7 @@ interface ApiKey {
 export function ApiKeys({ me }: { me: User }) {
   const { t } = useTranslation(['account', 'errors'])
   const queryClient = useQueryClient()
+  const confirm = useConfirm()
   const keys = useQuery({ queryKey: ['apikeys'], queryFn: () => api.get<ApiKey[]>('/apikeys') })
   const catalogue = useQuery({ queryKey: ['rights'], queryFn: () => api.get<RightInfo[]>('/rights') })
 
@@ -74,7 +77,7 @@ export function ApiKeys({ me }: { me: User }) {
   return (
     <section>
       <h2>{t('account:keys.title')}</h2>
-      <p>{t('account:keys.explain')}</p>
+      <p className="hint">{t('account:keys.explain')}</p>
       {failed != null && (
         <Problem error={failed} />
       )}
@@ -84,7 +87,7 @@ export function ApiKeys({ me }: { me: User }) {
           <h3>{t('account:keys.createdTitle')}</h3>
           <p>{t('account:keys.createdExplain')}</p>
           <pre>{created}</pre>
-          <button type="button" onClick={() => void navigator.clipboard?.writeText(created)}>
+          <button type="button" className="primary" onClick={() => void navigator.clipboard?.writeText(created)}>
             {t('account:keys.copy')}
           </button>{' '}
           <button type="button" onClick={() => setCreated(null)}>
@@ -108,7 +111,14 @@ export function ApiKeys({ me }: { me: User }) {
               {key.expires_at && <> · {t('account:keys.expires', { date: new Date(key.expires_at).toLocaleDateString() })}</>}
             </p>
             {!key.revoked && (
-              <button type="button" onClick={() => revoke.mutate(key.id)}>
+              <button
+                type="button"
+                className="danger-button"
+                title={t('account:keys.revokeTip')}
+                onClick={async () => {
+                  if (await confirm(t('account:keys.revokeConfirm', { name: key.name }))) revoke.mutate(key.id)
+                }}
+              >
                 {t('account:keys.revoke')}
               </button>
             )}
@@ -119,7 +129,7 @@ export function ApiKeys({ me }: { me: User }) {
       <h3>{t('account:keys.newTitle')}</h3>
       <form className="form" onSubmit={submit}>
         <label htmlFor="key-name">{t('account:keys.name')}</label>
-        <input id="key-name" required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
+        <input id="key-name" required placeholder={t('account:keys.namePlaceholder')} maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
         <fieldset className="legend">
           <legend>{t('account:keys.rights')}</legend>
           {offered.length === 0 && <p className="hint">{t('account:keys.noRights')}</p>}
@@ -134,8 +144,12 @@ export function ApiKeys({ me }: { me: User }) {
         <label className="legend-item">
           <input type="checkbox" checked={readOnly} onChange={(e) => setReadOnly(e.target.checked)} />
           {t('account:keys.readOnlyOption')}
+          <Tip text={t('account:keys.readOnlyTip')} />
         </label>
-        <label htmlFor="key-expires">{t('account:keys.expiresOption')}</label>
+        <label htmlFor="key-expires">
+          {t('account:keys.expiresOption')}
+          <Tip text={t('account:keys.expiresTip')} />
+        </label>
         <input id="key-expires" type="datetime-local" value={expires} onChange={(e) => setExpires(e.target.value)} />
         <button type="submit" className="primary" disabled={create.isPending || chosen.size === 0}>
           {t('account:keys.create')}

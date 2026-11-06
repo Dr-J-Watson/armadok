@@ -55,12 +55,16 @@ export function VulnsPage() {
 
   return (
     <main>
-      <h1>{t('vulns:title')}</h1>
-      <p>{t('vulns:explain')}</p>
+      <header className="page-head">
+        <div>
+          <h1>{t('vulns:title')}</h1>
+          <p className="hint">{t('vulns:explain')}</p>
+        </div>
+      </header>
       {failed != null && (
         <Problem error={failed} />
       )}
-      {list.isPending && <p>{t('loading')}</p>}
+      {list.isPending && <p className="loading">{t('loading')}</p>}
       {data && !data.enabled && <p className="notice">{t('vulns:off')}</p>}
       {data?.enabled && (
         <p>
@@ -70,14 +74,17 @@ export function VulnsPage() {
               : t('vulns:lastFailed', { code: data.scan.error ?? '' })
             : t('vulns:never')}{' '}
           {data.can_manage && (
-            <button type="button" disabled={scan.isPending} onClick={() => scan.mutate()}>
+            <button type="button" className="primary" disabled={scan.isPending} title={t('vulns:scanTip')} onClick={() => scan.mutate()}>
               {t('vulns:scanNow')}
             </button>
           )}
           {scan.isSuccess && <span role="status"> {t('vulns:scanned', { count: scan.data.announced })}</span>}
         </p>
       )}
-      {data?.enabled && data.scan?.ok && data.findings.length === 0 && <p className="ok-text">{t('vulns:none')}</p>}
+      {data?.enabled && data.scan?.ok && data.findings.length === 0 && <p className="all-good">{t('vulns:none')}</p>}
+      {data && data.findings.length > 0 && (
+        <p className="hint">{t('vulns:count', { count: data.findings.filter((f) => !f.ignored_reason).length, accepted: data.findings.filter((f) => f.ignored_reason).length })}</p>
+      )}
       <ul className="links">
         {(data?.findings ?? []).map((f) => (
           <li key={f.id}>
@@ -99,7 +106,7 @@ export function VulnsPage() {
                   {t('vulns:stopAccepting')}
                 </button>
               ) : (
-                <button type="button" onClick={() => setAccepting(f)}>
+                <button type="button" title={t('vulns:acceptTip')} onClick={() => setAccepting(f)}>
                   {t('vulns:accept')}
                 </button>
               ))}
@@ -114,9 +121,9 @@ export function VulnsPage() {
           </p>
           <label>
             {t('vulns:reason')}
-            <input value={reason} required minLength={3} maxLength={300} onChange={(e) => setReason(e.target.value)} />
+            <input value={reason} required minLength={3} maxLength={300} placeholder={t('vulns:reasonPlaceholder')} autoFocus onChange={(e) => setReason(e.target.value)} />
           </label>
-          <button type="submit" disabled={accept.isPending}>
+          <button type="submit" className="primary" disabled={accept.isPending}>
             {t('vulns:accept')}
           </button>{' '}
           <button type="button" onClick={() => setAccepting(null)}>

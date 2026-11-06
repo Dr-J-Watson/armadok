@@ -48,5 +48,10 @@
   "workers.add.docker": "Add the Docker worker",
   "workers.add.network": "Add the network worker",
   "workers.confirm": "Add {{name}} to this node? Its menus and rights appear at once.",
-  "workers.yes": "Add"
+  "workers.yes": "Add",
+  "create.typeTip": "Decides which pages the node gets. You can add the other worker later, from the node's settings.",
+  "create.openTip": "Register a new machine to manage",
+  "create.descriptionPlaceholder": "Optional, e.g. Basement server",
+  "create.namePlaceholder": "e.g. Home server",
+  "details.copy": "Copy the identifier"
 }

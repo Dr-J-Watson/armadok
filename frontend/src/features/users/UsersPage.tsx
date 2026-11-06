@@ -38,7 +38,13 @@ export function UsersPage() {
 
   return (
     <>
-      <h1>{t('users:title')}</h1>
+      <header className="page-head">
+        <div>
+          <h1>{t('users:title')}</h1>
+          <p className="hint">{t('users:subtitle', { count: users.data?.length ?? 0 })}</p>
+        </div>
+      </header>
+      {users.isPending && <p className="loading">{t('loading')}</p>}
       {users.isError && (
         <Problem error={users.error} />
       )}
@@ -63,7 +69,7 @@ export function UsersPage() {
       {canCreate && (
         <section>
           <h2>{t('users:create.title')}</h2>
-          <p>{t('users:create.explain')}</p>
+          <p className="hint">{t('users:create.explain')}</p>
           <form className="form" onSubmit={submit}>
             <label htmlFor="new-username">{t('users:create.username')}</label>
             <input
@@ -72,6 +78,7 @@ export function UsersPage() {
               minLength={3}
               pattern="[A-Za-z0-9_.\-]{3,64}"
               autoComplete="off"
+              placeholder={t('users:create.usernamePlaceholder')}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />

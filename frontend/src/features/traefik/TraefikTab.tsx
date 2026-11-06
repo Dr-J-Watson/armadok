@@ -39,6 +39,7 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
             type="button"
             aria-pressed={view === name}
             className={view === name ? 'primary' : undefined}
+            title={t(`traefik:viewHints.${name}`)}
             onClick={() => go({ view: name })}
           >
             {t(`traefik:views.${name}`)}
@@ -71,7 +72,7 @@ function FilesView({ nodeId, file, onPick }: { nodeId: string; file: string | nu
     queryKey: ['traefik-files', nodeId],
     queryFn: () => api.get<{ files: { path: string; size: number }[]; truncated: boolean }>(`/nodes/${nodeId}/traefik/files`),
   })
-  if (files.isPending) return <p>{t('loading')}</p>
+  if (files.isPending) return <p className="loading">{t('loading')}</p>
   if (files.isError)
     return (
       <Problem error={files.error} />

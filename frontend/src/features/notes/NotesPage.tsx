@@ -27,8 +27,12 @@ export function NotesPage() {
 
   return (
     <>
-      <h1>{t('notes:page')}</h1>
-      <p className="hint">{t('notes:private')}</p>
+      <header className="page-head">
+        <div>
+          <h1>{t('notes:page')}</h1>
+          <p className="hint">{t('notes:private')}</p>
+        </div>
+      </header>
       <div className="filters">
         <label>
           <span className="visually-hidden">{t('notes:search')}</span>

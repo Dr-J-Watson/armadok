@@ -31,5 +31,16 @@
   "scope.everywhere": "Partout",
   "scope.node": "Nœud : {{name}}",
   "service": "service",
-  "serviceHint": "Un compte de service : une identité pour un outil, avec des clés et sans mot de passe."
+  "serviceHint": "Un compte de service : une identité pour un outil, avec des clés et sans mot de passe.",
+  "subtitle": "{{count}} compte(s). Ouvrez-en un pour gérer ses droits.",
+  "create.usernamePlaceholder": "ex. alice",
+  "account.disableTip": "La personne ne peut plus se connecter. Ses données sont conservées.",
+  "account.disableConfirm": "Désactiver le compte {{name}} ? La personne sera déconnectée et ne pourra plus se connecter.",
+  "account.resetTwofaTip": "À utiliser si la personne a perdu son téléphone et ses codes de secours.",
+  "account.resetTwofaConfirm": "Retirer la double authentification de {{name}} ? Son compte ne sera protégé que par le mot de passe jusqu'à ce qu'elle soit reconfigurée.",
+  "account.since": "Compte créé le {{date}}",
+  "grants.removeConfirm": "Retirer le droit {{right}} de ce compte ?",
+  "grants.scopeTip": "Partout, ou sur un seul nœud. Une portée étroite est plus sûre.",
+  "grants.expiresTip": "Facultatif. Le droit disparaît tout seul à cette date : pratique pour un dépannage ponctuel.",
+  "grants.tip": "Un droit permet à ce compte une action précise. Préférez les rôles pour l'usage courant ; les droits isolés servent aux exceptions."
 }

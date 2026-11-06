@@ -73,7 +73,7 @@ export function NodeSettings({ nodeId }: { nodeId: string }) {
     },
   })
 
-  if (settings.isPending) return <p>{t('loading')}</p>
+  if (settings.isPending) return <p className="loading">{t('loading')}</p>
   if (settings.isError) return <Problem error={settings.error} />
   const data = settings.data
   const hasTraefik = Object.keys(data.places).some((name) => TRAEFIK_PLACES.includes(name))

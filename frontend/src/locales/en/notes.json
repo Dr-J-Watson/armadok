@@ -31,5 +31,8 @@
   "mine": "My notes",
   "from": "Shared by {{author}} (read-only)",
   "find": "Look up",
-  "nobody": "No such person can see this node."
+  "nobody": "No such person can see this node.",
+  "deleteConfirm": "Delete this note? This cannot be undone.",
+  "placeholder": "A reminder, a password hint location, what you did…",
+  "noneHere": "No note on this object yet."
 }

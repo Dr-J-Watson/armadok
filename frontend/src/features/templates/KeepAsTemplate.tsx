@@ -15,7 +15,7 @@ export function KeepAsTemplate({ draft }: { draft: ProjectDraft }) {
   })
   return (
     <>
-      <button type="button" onClick={() => save.mutate()} disabled={save.isPending || !draft.compose.trim()}>
+      <button type="button" title={t('templates:keepTip')} onClick={() => save.mutate()} disabled={save.isPending || !draft.compose.trim()}>
         {t('templates:keep')}
       </button>
       {save.isSuccess && <small> {t('templates:kept')}</small>}

@@ -39,5 +39,13 @@
   "keys.sensitiveNote": "Les droits sensibles (gérer les droits, réinitialiser des mots de passe) ne sont jamais disponibles pour une clé. Choisir un droit choisit aussi ce dont il a besoin.",
   "keys.readOnlyOption": "Lecture seule (peut consulter, ne peut rien modifier)",
   "keys.expiresOption": "Expire le (facultatif)",
-  "keys.create": "Créer la clé"
+  "keys.create": "Créer la clé",
+  "twoFactorOn": "Double authentification activée",
+  "twoFactorOff": "Double authentification désactivée",
+  "keys.revokeTip": "La clé cesse de fonctionner immédiatement. C'est irréversible.",
+  "keys.revokeConfirm": "Révoquer la clé {{name}} ? Tout ce qui l'utilise cessera de fonctionner.",
+  "keys.namePlaceholder": "ex. Script de sauvegarde",
+  "keys.readOnlyTip": "La clé peut consulter mais jamais modifier, quels que soient ses droits.",
+  "keys.expiresTip": "Facultatif. Une clé qui expire limite les dégâts si elle fuit.",
+  "twofa.backupCopy": "Copier les codes"
 }

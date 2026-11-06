@@ -12,5 +12,8 @@
   "save": "Save",
   "state.connecting": "Connecting…",
   "state.open": "Connected",
-  "state.ended": "Ended"
+  "state.ended": "Ended",
+  "writableTip": "Lets the shell change the project's files. Off, it can only read them.",
+  "networkTip": "Gives the shell network access, so it can reach the internet and other containers.",
+  "openTip": "Opens a shell in a throwaway container, in this project's folder"
 }

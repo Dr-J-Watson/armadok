@@ -79,12 +79,12 @@ export function TrafficTab({ nodeId }: { nodeId: string }) {
             {t(`traffic:range.${r}`)}
           </button>
         ))}
-        <button type="button" disabled={test.isPending} onClick={() => test.mutate()}>
+        <button type="button" disabled={test.isPending} title={t('traffic:testTip')} onClick={() => test.mutate()}>
           {t('traffic:test')}
         </button>
       </div>
       {test.data && (
-        <p role="status">{test.data.ok ? t('traffic:testOk') : codeMessage(t, test.data.error ?? 'common.unknown')}</p>
+        <p role="status" className={test.data.ok ? 'ok-text' : 'error'}>{test.data.ok ? t('traffic:testOk') : codeMessage(t, test.data.error ?? 'common.unknown')}</p>
       )}
       {status && !status.last_error && (
         <p className="hint">
@@ -103,6 +103,7 @@ export function TrafficTab({ nodeId }: { nodeId: string }) {
           <p>{t('traffic:setup.step3')}</p>
         </div>
       )}
+      {stats.isPending && <p className="loading">{t('loading')}</p>}
       {stats.data && stats.data.services.length === 0 && !unconfigured && <p className="empty">{t('traffic:none')}</p>}
       {stats.data && stats.data.services.length > 0 && (
         <table className="table">
@@ -129,7 +130,7 @@ export function TrafficTab({ nodeId }: { nodeId: string }) {
                 <td data-label={t('traffic:col.errors')} className={s.error_rate > 0.05 ? 'error' : undefined}>
                   {(s.error_rate * 100).toFixed(1)} % <small>({s.errors_5xx} × 5xx, {s.errors_4xx} × 4xx)</small>
                 </td>
-                <td data-label={t('traffic:col.latency')}>
+                <td data-label={t('traffic:col.latency')} title={t('traffic:latencyTip')}>
                   p50 {seconds(s.p50)} · p95 {seconds(s.p95)} · p99 {seconds(s.p99)}
                 </td>
                 <td data-label={t('traffic:col.bytes')}>

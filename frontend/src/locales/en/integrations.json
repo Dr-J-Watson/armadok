@@ -18,5 +18,10 @@
   "hooks.lastUsed": "last called {{when}}",
   "actions.project.redeploy": "Redeploy",
   "metrics.title": "Metrics for Prometheus",
-  "metrics.explain": "Create an API key with the right to read metrics and give it to Prometheus. It sees only the nodes you can see."
+  "metrics.explain": "Create an API key with the right to read metrics and give it to Prometheus. It sees only the nodes you can see.",
+  "subtitle": "Connect outside tools: a CI that redeploys a project, a monitoring that reads metrics.",
+  "copy": "Copy",
+  "hooks.namePlaceholder": "e.g. GitHub Actions",
+  "hooks.expiresTip": "Optional. After this date the hook stops working.",
+  "hooks.revokeConfirm": "Revoke the hook {{name}}? The tool that calls it will stop working."
 }

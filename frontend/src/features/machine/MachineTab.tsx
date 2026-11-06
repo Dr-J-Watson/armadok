@@ -58,7 +58,7 @@ export function MachineTab({ nodeId }: { nodeId: string }) {
     queryFn: () => api.get<Stats>(`/nodes/${nodeId}/machine`),
     refetchInterval: 6000,
   })
-  if (stats.isPending) return <p>{t('loading')}</p>
+  if (stats.isPending) return <p className="loading">{t('loading')}</p>
   if (stats.isError) {
     return (
       <Problem error={stats.error} />
@@ -84,6 +84,7 @@ export function MachineTab({ nodeId }: { nodeId: string }) {
         <li>{t('machine:network', { received: gib(s.network_received), sent: gib(s.network_sent) })}</li>
         {s.temperature !== null && <li>{t('machine:temperature', { value: s.temperature })}</li>}
       </ul>
+      <p className="hint">{t('machine:refresh')}</p>
     </section>
   )
 }

@@ -14,5 +14,8 @@
   "transfer.explain": "The person you choose becomes its owner. You stay on as an administrator. Only the owner can do this.",
   "transfer.confirm": "Type the name of the node ({{name}}) to confirm",
   "transfer.go": "Hand it over",
-  "transfer.code": "Second-factor code"
+  "transfer.code": "Second-factor code",
+  "ownerTip": "The owner holds every right on this node and is the only one who can hand it over.",
+  "personPlaceholder": "Start typing a username",
+  "removeConfirm": "Remove {{name}} from this node? They lose the rights this role gave them here."
 }

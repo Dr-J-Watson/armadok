@@ -109,16 +109,16 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
 
   return (
     <>
-      <p>{t('backups:explain')}</p>
+      <p className="hint">{t('backups:explain')}</p>
       {failed != null && (
         <Problem error={failed} />
       )}
-      {list.isPending && <p>{t('loading')}</p>}
+      {list.isPending && <p className="loading">{t('loading')}</p>}
       {data && !data.configured && <p className="notice">{t('backups:notConfigured')}</p>}
       {data?.configured && (
         <>
           {data.can_create && (
-            <form onSubmit={submitBackup} aria-label={t('backups:new')}>
+            <form onSubmit={submitBackup} aria-label={t('backups:new')} className="panel">
               <h2>{t('backups:new')}</h2>
               <label>
                 {t('backups:volume')}
@@ -139,7 +139,7 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
                   <input type="number" min={1} max={365} value={keep} required onChange={(e) => setKeep(e.target.value)} />
                 </label>
               )}
-              <button type="submit" disabled={backup.isPending}>
+              <button type="submit" className="primary" disabled={backup.isPending}>
                 {t('backups:start')}
               </button>
             </form>
@@ -156,6 +156,7 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
                     {' '}
                     <button
                       type="button"
+                      title={t('backups:restoreTip')}
                       onClick={() => {
                         setRestoring(a)
                         setTarget(a.volume)
@@ -166,12 +167,12 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
                     </button>{' '}
                     {data.can_download && (
                       <>
-                        <button type="button" onClick={() => setDownloading(a)}>
+                        <button type="button" title={t('backups:downloadTip')} onClick={() => setDownloading(a)}>
                           {t('backups:download')}
                         </button>{' '}
                       </>
                     )}
-                    <button type="button" onClick={async () => (await confirm(t('backups:confirmDelete'))) && remove.mutate(a)}>
+                    <button type="button" className="danger-button" onClick={async () => (await confirm(t('backups:confirmDelete'))) && remove.mutate(a)}>
                       {t('backups:delete')}
                     </button>
                   </span>
@@ -216,9 +217,9 @@ export function BackupsTab({ nodeId }: { nodeId: string }) {
               {clear && <p className="notice">{t('backups:clearWarn')}</p>}
               <label>
                 {t('backups:typeName')}
-                <input value={typed} required autoComplete="off" onChange={(e) => setTyped(e.target.value)} />
+                <input value={typed} required autoComplete="off" placeholder={target} onChange={(e) => setTyped(e.target.value)} />
               </label>
-              <button type="submit" disabled={restore.isPending || typed !== target}>
+              <button type="submit" className="danger-button" disabled={restore.isPending || typed !== target}>
                 {t('backups:restore')}
               </button>{' '}
               <button type="button" onClick={() => setRestoring(null)}>

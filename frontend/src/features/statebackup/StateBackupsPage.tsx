@@ -49,12 +49,21 @@ export function StateBackupsPage() {
 
   return (
     <main>
-      <h1>{t('statebackup:title')}</h1>
-      <p>{t('statebackup:explain')}</p>
+      <header className="page-head page-head-split">
+        <div>
+          <h1>{t('statebackup:title')}</h1>
+          <p className="hint">{t('statebackup:explain')}</p>
+        </div>
+        {data && (
+          <button type="button" className="primary" disabled={!data.ready || create.isPending} title={t('statebackup:nowTip')} onClick={() => create.mutate()}>
+            {t('statebackup:now')}
+          </button>
+        )}
+      </header>
       {failed != null && (
         <Problem error={failed} />
       )}
-      {list.isPending && <p>{t('loading')}</p>}
+      {list.isPending && <p className="loading">{t('loading')}</p>}
       {data && !data.ready && <p className="notice">{t('statebackup:noKey')}</p>}
       {data && (
         <>
@@ -84,9 +93,6 @@ export function StateBackupsPage() {
               )}
             </>
           )}
-          <button type="button" disabled={!data.ready || create.isPending} onClick={() => create.mutate()}>
-            {t('statebackup:now')}
-          </button>
           {data.backups.length === 0 && <p className="empty">{t('statebackup:none')}</p>}
           <ul className="links">
             {data.backups.map((b) => (
@@ -98,7 +104,7 @@ export function StateBackupsPage() {
                   }}>
                   {t('statebackup:download')}
                 </button>{' '}
-                <button type="button" onClick={async () => (await confirm(t('statebackup:confirmDelete'))) && remove.mutate(b)}>
+                <button type="button" className="danger-button" onClick={async () => (await confirm(t('statebackup:confirmDelete'))) && remove.mutate(b)}>
                   {t('statebackup:delete')}
                 </button>
                 {downloading === b.name && (

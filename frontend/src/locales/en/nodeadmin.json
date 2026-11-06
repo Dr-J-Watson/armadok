@@ -31,5 +31,10 @@
   "warn.purge": "The node is erased from Armadok for good: its members, rights, probes, schedules and backups records. This cannot be undone. Files on the node itself are not touched.",
   "warn.take-over": "The current owner loses every right on this node and the person you choose becomes its owner, with full access to it. This is recorded with your reason.",
   "warn.ban-owner": "The owner's account is disabled and all their sessions end. Their nodes are not touched. An administrator cannot be banned this way.",
-  "warn.strip-creation": "The owner can no longer create nodes. The ones they already own stay as they are."
+  "warn.strip-creation": "The owner can no longer create nodes. The ones they already own stay as they are.",
+  "col.node": "Node",
+  "col.owner": "Owner",
+  "col.state": "State",
+  "col.actions": "Actions",
+  "tip.emergency": "Temporary access to this node, always recorded and visible to its owner."
 }

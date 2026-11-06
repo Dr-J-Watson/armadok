@@ -13,5 +13,6 @@
   "disk.projects": "Projects folder",
   "disk.traefik": "Traefik folder",
   "disk.backups": "Backups folder",
-  "disk.data": "Data folder"
+  "disk.data": "Data folder",
+  "refresh": "These figures refresh every few seconds while this page is open."
 }

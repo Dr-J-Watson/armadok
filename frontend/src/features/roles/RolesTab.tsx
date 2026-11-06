@@ -7,6 +7,7 @@ import { useCan } from '../../core/auth'
 import type { RightInfo } from '../account/rights'
 import type { Role } from './types'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 // Built-in roles carry a translated name; custom roles show the name they were given.
 export function roleLabel(t: (key: string) => string, role: { name: string; builtin: boolean }) {
@@ -17,6 +18,7 @@ export function roleLabel(t: (key: string) => string, role: { name: string; buil
 export function RolesTab() {
   const { t } = useTranslation(['roles', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const canManage = useCan('grants.manage')
   const roles = useQuery({ queryKey: ['roles'], queryFn: () => api.get<Role[]>('/roles') })
   const catalogue = useQuery({ queryKey: ['rights'], queryFn: () => api.get<RightInfo[]>('/rights') })
@@ -39,7 +41,7 @@ export function RolesTab() {
   })
   const remove = useMutation({ mutationFn: (id: string) => api.del(`/roles/${id}`), onSuccess: refresh })
 
-  if (roles.isPending) return <p>{t('loading')}</p>
+  if (roles.isPending) return <p className="loading">{t('loading')}</p>
   if (roles.isError)
     return (
       <Problem error={roles.error} />
@@ -126,7 +128,13 @@ export function RolesTab() {
                     <button type="button" onClick={() => setEditing({ id: role.id, name: role.name, rights: role.rights })}>
                       {t('roles:edit')}
                     </button>
-                    <button type="button" onClick={() => remove.mutate(role.id)}>
+                    <button
+                      type="button"
+                      className="danger-button"
+                      onClick={async () => {
+                        if (await ask(t('roles:deleteConfirm', { name: role.name }))) remove.mutate(role.id)
+                      }}
+                    >
                       {t('roles:delete')}
                     </button>
                   </>

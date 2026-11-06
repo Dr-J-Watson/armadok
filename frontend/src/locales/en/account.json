@@ -39,5 +39,13 @@
   "keys.sensitiveNote": "Sensitive rights (managing rights, resetting passwords) are never available to keys. Choosing a right also chooses what it needs.",
   "keys.readOnlyOption": "Read-only (can look, cannot change)",
   "keys.expiresOption": "Expires on (optional)",
-  "keys.create": "Create the key"
+  "keys.create": "Create the key",
+  "twoFactorOn": "Two-factor on",
+  "twoFactorOff": "Two-factor off",
+  "keys.revokeTip": "The key stops working immediately. This cannot be undone.",
+  "keys.revokeConfirm": "Revoke the key {{name}}? Anything that uses it will stop working.",
+  "keys.namePlaceholder": "e.g. Backup script",
+  "keys.readOnlyTip": "The key can look but never change anything, whatever rights it carries.",
+  "keys.expiresTip": "Optional. A key that expires limits the damage if it leaks.",
+  "twofa.backupCopy": "Copy the codes"
 }

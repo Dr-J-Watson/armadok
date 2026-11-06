@@ -21,5 +21,15 @@
   "offline": "Not connected",
   "activity": "Recent activity",
   "noActivity": "Nothing yet.",
-  "allActivity": "See the whole audit log"
+  "allActivity": "See the whole audit log",
+  "quick.title": "Shortcuts",
+  "quick.nodes": "Manage nodes",
+  "quick.dns": "DNS records",
+  "quick.audit": "Audit log",
+  "stat.machinesTip": "How many nodes you manage, and how many have their worker connected.",
+  "stat.sitesTip": "Sites whose availability check currently fails.",
+  "stat.updatesTip": "Images with a newer version published. Open the node's Image updates page to act.",
+  "stat.unreadTip": "Notifications you have not read yet.",
+  "attention.tip": "Problems found across your nodes: click one to go straight to the page that fixes it.",
+  "allNodes": "All nodes"
 }

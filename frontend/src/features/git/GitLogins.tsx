@@ -1,3 +1,4 @@
+import { useConfirm } from '../../components/Confirm'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
@@ -15,6 +16,7 @@ interface Login {
 export function GitLogins({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['git', 'errors'])
   const client = useQueryClient()
+  const ask = useConfirm()
   const base = `/nodes/${nodeId}/git/logins`
   const key = ['git-logins', nodeId]
   const [host, setHost] = useState('')
@@ -48,7 +50,14 @@ export function GitLogins({ nodeId }: { nodeId: string }) {
         {(list.data?.logins ?? []).map((l) => (
           <li key={l.host}>
             <strong>{l.host}</strong> <small>{l.username}</small>{' '}
-            <button type="button" onClick={() => forget.mutate(l.host)} disabled={forget.isPending}>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={async () => {
+                if (await ask(t('git:logins.forgetConfirm', { host: l.host }))) forget.mutate(l.host)
+              }}
+              disabled={forget.isPending}
+            >
               {t('git:logins.forget')}
             </button>
           </li>

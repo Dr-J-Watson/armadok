@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
@@ -31,12 +32,15 @@ export function SitesView({ nodeId, onOpenFile }: { nodeId: string; onOpenFile: 
     queryFn: () => api.get<Sites>(`/nodes/${nodeId}/traefik/sites`),
   })
 
-  if (sites.isPending) return <p>{t('loading')}</p>
+  const [filter, setFilter] = useState('')
+  if (sites.isPending) return <p className="loading">{t('loading')}</p>
   if (sites.isError)
     return (
       <Problem error={sites.error} />
     )
-  const { routers, errors, truncated } = sites.data
+  const { routers: all, errors, truncated } = sites.data
+  const needle = filter.trim().toLowerCase()
+  const routers = needle ? all.filter((r) => `${r.name} ${r.rule} ${r.service}`.toLowerCase().includes(needle)) : all
   return (
     <>
       {truncated && <p className="notice">{t('traefik:truncated')}</p>}
@@ -48,8 +52,13 @@ export function SitesView({ nodeId, onOpenFile }: { nodeId: string; onOpenFile: 
           </button>
         </p>
       ))}
-      {routers.length === 0 ? (
+      {all.length > 5 && (
+        <input type="search" aria-label={t('traefik:searchSites')} placeholder={t('traefik:searchSites')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+      )}
+      {all.length === 0 ? (
         <p className="empty">{t('traefik:noSites')}</p>
+      ) : routers.length === 0 ? (
+        <p className="empty">{t('traefik:noSiteMatch')}</p>
       ) : (
         <table className="table">
           <thead>

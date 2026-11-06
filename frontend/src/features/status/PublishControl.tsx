@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface Page {
   published: boolean
@@ -15,6 +16,7 @@ interface Page {
 export function PublishControl({ nodeId, probeId, defaultTitle }: { nodeId: string; probeId: string; defaultTitle: string }) {
   const { t } = useTranslation(['status', 'errors'])
   const client = useQueryClient()
+  const ask = useConfirm()
   const path = `/nodes/${nodeId}/uptime/${probeId}/public`
   const key = ['status-page', nodeId, probeId]
   const page = useQuery({ queryKey: key, queryFn: () => api.get<Page>(path) })
@@ -32,18 +34,27 @@ export function PublishControl({ nodeId, probeId, defaultTitle }: { nodeId: stri
         {t('status:title')}
         <input value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
       </label>{' '}
-      <button type="button" disabled={open.isPending || title.trim() === ''} onClick={() => open.mutate()}>
+      <button type="button" className="primary" disabled={open.isPending || title.trim() === ''} onClick={() => open.mutate()}>
         {page.data?.published ? t('status:retitle') : t('status:open')}
       </button>
       {page.data?.published && (
         <>
           {' '}
-          <button type="button" onClick={() => close.mutate()}>
+          <button
+            type="button"
+            className="danger-button"
+            onClick={async () => {
+              if (await ask(t('status:closeConfirm'))) close.mutate()
+            }}
+          >
             {t('status:close')}
           </button>
           {link && (
             <p>
-              {t('status:address')} <a href={link}>{link}</a>
+              {t('status:address')} <a href={link}>{link}</a>{' '}
+              <button type="button" className="link-button" onClick={() => void navigator.clipboard?.writeText(link)}>
+                {t('status:copy')}
+              </button>
             </p>
           )}
         </>

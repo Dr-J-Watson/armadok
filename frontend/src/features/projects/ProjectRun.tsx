@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface Service {
   service: string
@@ -28,6 +29,7 @@ const ACTIONS = ['up', 'down', 'stop', 'start', 'restart', 'pull', 'build'] as c
 export function ProjectRun({ nodeId, project }: { nodeId: string; project: string }) {
   const { t } = useTranslation(['projects', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const base = `/nodes/${nodeId}/projects/${encodeURIComponent(project)}`
   const [taskId, setTaskId] = useState<string | null>(null)
   const [showLogs, setShowLogs] = useState(false)
@@ -62,13 +64,17 @@ export function ProjectRun({ nodeId, project }: { nodeId: string; project: strin
           <button
             key={action}
             type="button"
+            className={action === 'up' ? 'primary' : action === 'down' ? 'danger-button' : undefined}
             disabled={run.isPending || task.data?.state === 'running'}
-            onClick={() => run.mutate(action)}
+            title={t(`projects:run.tip.${action}`)}
+            onClick={async () => {
+              if (action !== 'down' || (await ask(t('projects:run.downConfirm', { project })))) run.mutate(action)
+            }}
           >
             {t(`projects:run.action.${action}`)}
           </button>
         ))}
-        <button type="button" onClick={() => setShowLogs((v) => !v)}>
+        <button type="button" aria-pressed={showLogs} onClick={() => setShowLogs((v) => !v)}>
           {t(showLogs ? 'projects:run.hideLogs' : 'projects:run.showLogs')}
         </button>
       </div>
@@ -77,7 +83,9 @@ export function ProjectRun({ nodeId, project }: { nodeId: string; project: strin
       )}
       {task.data && (
         <div role="status">
-          <p>{t(`projects:run.state.${task.data.state}`, { action: task.data.action })}</p>
+          <p className={task.data.state === 'failed' ? 'error' : task.data.state === 'success' ? 'ok-text' : 'hint'}>
+            {t(`projects:run.state.${task.data.state}`, { action: task.data.action })}
+          </p>
           {task.data.output && <pre className="output">{task.data.output}</pre>}
         </div>
       )}
@@ -91,7 +99,7 @@ export function ProjectRun({ nodeId, project }: { nodeId: string; project: strin
         <ul className="links">
           {status.data.services.map((s) => (
             <li key={s.name}>
-              <strong>{s.service}</strong> — {s.state} ({s.status}) <code>{s.image}</code>
+              <strong>{s.service}</strong> <span className={`badge ${s.state === 'running' ? 'ok' : 'off'}`}>{s.state}</span> <small>{s.status}</small> <code>{s.image}</code>
             </li>
           ))}
         </ul>

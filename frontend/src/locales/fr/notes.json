@@ -31,5 +31,8 @@
   "mine": "Mes notes",
   "from": "Partagée par {{author}} (lecture seule)",
   "find": "Chercher",
-  "nobody": "Aucune personne de ce nom ne voit ce nœud."
+  "nobody": "Aucune personne de ce nom ne voit ce nœud.",
+  "deleteConfirm": "Supprimer cette note ? C'est irréversible.",
+  "placeholder": "Un rappel, un détail à retenir, ce que vous avez fait…",
+  "noneHere": "Aucune note sur cet objet pour l'instant."
 }

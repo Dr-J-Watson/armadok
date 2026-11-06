@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { roleLabel } from '../roles/RolesTab'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
+import { Tip } from '../../components/Tip'
 
 interface Member {
   assignment_id: string
@@ -37,6 +39,8 @@ function PersonPicker({ value, onPick }: { value: Person | null; onPick: (p: Per
         {t('members:person')}
         <input
           list="people"
+          placeholder={t('members:personPlaceholder')}
+          autoComplete="off"
           value={value ? value.username : text}
           onChange={(e) => {
             setText(e.target.value)
@@ -57,6 +61,7 @@ function PersonPicker({ value, onPick }: { value: Person | null; onPick: (p: Per
 export function MembersTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['members', 'roles', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const base = `/nodes/${nodeId}`
   const list = useQuery({
     queryKey: ['members', nodeId],
@@ -100,7 +105,7 @@ export function MembersTab({ nodeId }: { nodeId: string }) {
     },
   })
 
-  if (list.isPending) return <p>{t('loading')}</p>
+  if (list.isPending) return <p className="loading">{t('loading')}</p>
   if (list.isError) return <p className="hint">{t('members:notAllowed')}</p>
   const failed = add.error ?? change.error ?? remove.error ?? transfer.error
   const roleOptions = roles.data ?? []
@@ -111,13 +116,13 @@ export function MembersTab({ nodeId }: { nodeId: string }) {
 
   return (
     <>
-      <p>
-        {t('members:owner')}: <strong>{list.data.owner.name}</strong>
+      <p className="hint">
+        {t('members:owner')}: <strong>{list.data.owner.name}</strong> <Tip text={t('members:ownerTip')} />
       </p>
       {failed != null && (
         <Problem error={failed} />
       )}
-      <form onSubmit={submit} aria-label={t('members:add')}>
+      <form onSubmit={submit} aria-label={t('members:add')} className="panel">
         <PersonPicker value={person} onPick={setPerson} />
         <label>
           {t('members:role')}
@@ -130,7 +135,7 @@ export function MembersTab({ nodeId }: { nodeId: string }) {
             ))}
           </select>
         </label>
-        <button type="submit" disabled={!person || add.isPending}>
+        <button type="submit" className="primary" disabled={!person || add.isPending}>
           {t('members:invite')}
         </button>
       </form>
@@ -151,15 +156,21 @@ export function MembersTab({ nodeId }: { nodeId: string }) {
               ))}
             </select>{' '}
             {m.expires_at && <small>{t('members:until', { date: new Date(m.expires_at).toLocaleString() })}</small>}{' '}
-            <button type="button" onClick={() => remove.mutate(m.assignment_id)}>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={async () => {
+                if (await ask(t('members:removeConfirm', { name: m.subject_name ?? '?' }))) remove.mutate(m.assignment_id)
+              }}
+            >
               {t('members:remove')}
             </button>
           </li>
         ))}
       </ul>
-      <section>
+      <section className="danger-zone-box">
         <h3>{t('members:transfer.title')}</h3>
-        <p>{t('members:transfer.explain')}</p>
+        <p className="hint">{t('members:transfer.explain')}</p>
         <PersonPicker value={target} onPick={setTarget} />
         <label>
           {t('members:transfer.confirm', { name: node.data?.name ?? '' })}
@@ -169,7 +180,7 @@ export function MembersTab({ nodeId }: { nodeId: string }) {
           {t('members:transfer.code')}
           <input value={code} autoComplete="one-time-code" onChange={(e) => setCode(e.target.value)} />
         </label>
-        <button type="button" disabled={!target || !code || confirm !== node.data?.name || transfer.isPending} onClick={() => transfer.mutate()}>
+        <button type="button" className="danger-button" disabled={!target || !code || confirm !== node.data?.name || transfer.isPending} onClick={() => transfer.mutate()}>
           {t('members:transfer.go')}
         </button>
       </section>

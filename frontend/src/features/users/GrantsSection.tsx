@@ -7,6 +7,8 @@ import { useCan } from '../../core/auth'
 import type { RightInfo } from '../account/rights'
 import type { Node } from '../nodes/types'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
+import { Tip } from '../../components/Tip'
 
 interface StoredGrant {
   id: string
@@ -20,6 +22,7 @@ interface StoredGrant {
 export function GrantsSection({ userId }: { userId: string }) {
   const { t } = useTranslation(['users', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const canManage = useCan('grants.manage')
   const base = `/users/${userId}/grants`
   const grants = useQuery({ queryKey: ['grants', userId], queryFn: () => api.get<StoredGrant[]>(base) })
@@ -54,7 +57,10 @@ export function GrantsSection({ userId }: { userId: string }) {
 
   return (
     <section>
-      <h2>{t('users:grants.title')}</h2>
+      <h2>
+        {t('users:grants.title')}
+        <Tip text={t('users:grants.tip')} />
+      </h2>
       {failed != null && (
         <Problem error={failed} />
       )}
@@ -69,7 +75,13 @@ export function GrantsSection({ userId }: { userId: string }) {
               {grant.expires_at && <> · {t('users:grants.until', { date: new Date(grant.expires_at).toLocaleString() })}</>}
             </span>{' '}
             {canManage && (
-              <button type="button" className="link-button" onClick={() => remove.mutate(grant.id)}>
+              <button
+                type="button"
+                className="link-button"
+                onClick={async () => {
+                  if (await ask(t('users:grants.removeConfirm', { right: grant.right }))) remove.mutate(grant.id)
+                }}
+              >
                 {t('users:grants.remove')}
               </button>
             )}
@@ -93,7 +105,10 @@ export function GrantsSection({ userId }: { userId: string }) {
               </option>
             ))}
           </select>
-          <label htmlFor="grant-scope">{t('users:grants.scope')}</label>
+          <label htmlFor="grant-scope">
+            {t('users:grants.scope')}
+            <Tip text={t('users:grants.scopeTip')} />
+          </label>
           <select id="grant-scope" value={scope} onChange={(e) => setScope(e.target.value)}>
             <option value="*">{t('users:scope.everywhere')}</option>
             {nodes.data?.map((n) => (
@@ -102,7 +117,10 @@ export function GrantsSection({ userId }: { userId: string }) {
               </option>
             ))}
           </select>
-          <label htmlFor="grant-expires">{t('users:grants.expires')}</label>
+          <label htmlFor="grant-expires">
+            {t('users:grants.expires')}
+            <Tip text={t('users:grants.expiresTip')} />
+          </label>
           <input id="grant-expires" type="datetime-local" value={expires} onChange={(e) => setExpires(e.target.value)} />
           <button type="submit" className="primary" disabled={add.isPending || !right}>
             {t('users:grants.add')}

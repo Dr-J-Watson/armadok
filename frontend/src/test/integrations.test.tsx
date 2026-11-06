@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -37,6 +38,7 @@ afterEach(() => {
 
 describe('integrations', () => {
   it('creates a hook, shows its token once with a ready curl line, and can revoke it', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true) // the removal now asks first
     server()
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>

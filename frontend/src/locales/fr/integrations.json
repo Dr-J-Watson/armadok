@@ -18,5 +18,10 @@
   "hooks.lastUsed": "dernier appel {{when}}",
   "actions.project.redeploy": "Redéployer",
   "metrics.title": "Métriques pour Prometheus",
-  "metrics.explain": "Créez une clé d'API avec le droit de lire les métriques et donnez-la à Prometheus. Elle ne voit que les nœuds que vous voyez."
+  "metrics.explain": "Créez une clé d'API avec le droit de lire les métriques et donnez-la à Prometheus. Elle ne voit que les nœuds que vous voyez.",
+  "subtitle": "Connectez des outils extérieurs : une CI qui redéploie un projet, une supervision qui lit les métriques.",
+  "copy": "Copier",
+  "hooks.namePlaceholder": "ex. GitHub Actions",
+  "hooks.expiresTip": "Facultatif. Passée cette date, le hook cesse de fonctionner.",
+  "hooks.revokeConfirm": "Révoquer le hook {{name}} ? L'outil qui l'appelle cessera de fonctionner."
 }

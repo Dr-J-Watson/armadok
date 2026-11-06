@@ -9,6 +9,7 @@ import { errorMessage } from '../../core/errors'
 import { NodeIcon } from '../../components/NodeIcon'
 import type { Node, NodeType } from './types'
 import { Problem } from '../../components/Problem'
+import { Tip } from '../../components/Tip'
 
 const TYPES: NodeType[] = ['full', 'docker', 'network']
 
@@ -45,7 +46,7 @@ export function NodesPage() {
         </div>
         {/* With no machine yet the empty state below carries the one call to action. */}
         {(nodes.data?.length ?? 0) > 0 || adding ? (
-          <button type="button" className="primary" onClick={() => setAdding(!adding)} aria-expanded={adding}>
+          <button type="button" className="primary" onClick={() => setAdding(!adding)} aria-expanded={adding} title={t('nodes:create.openTip')}>
             <Plus size={16} aria-hidden="true" /> {t('nodes:create.open')}
           </button>
         ) : null}
@@ -55,10 +56,13 @@ export function NodesPage() {
         <form onSubmit={submit} className="panel form-grid" aria-label={t('nodes:create.title')}>
           <label htmlFor="node-name">
             {t('nodes:create.name')}
-            <input id="node-name" required autoFocus maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
+            <input id="node-name" required autoFocus placeholder={t('nodes:create.namePlaceholder')} maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
           </label>
           <label htmlFor="node-type">
-            {t('nodes:create.type')}
+            <span>
+              {t('nodes:create.type')}
+              <Tip text={t('nodes:create.typeTip')} />
+            </span>
             <select id="node-type" value={type} onChange={(e) => setType(e.target.value as NodeType)}>
               {TYPES.map((value) => (
                 <option key={value} value={value}>
@@ -70,7 +74,7 @@ export function NodesPage() {
           </label>
           <label htmlFor="node-description" className="wide">
             {t('nodes:create.description')}
-            <input id="node-description" maxLength={300} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <input id="node-description" placeholder={t('nodes:create.descriptionPlaceholder')} maxLength={300} value={description} onChange={(e) => setDescription(e.target.value)} />
           </label>
           {create.isError && (
             <p role="alert" className="error wide">

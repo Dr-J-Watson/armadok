@@ -9,5 +9,8 @@
   "sharing.title": "Partage",
   "sharing.everyone": "Tout le monde sur cet Armadok",
   "sharing.group": "Membres de {{name}}",
-  "sharing.hint": "Ils peuvent créer des projets à partir de lui, pas le modifier ni le supprimer. Ne mets jamais de secret dans un modèle partagé."
+  "sharing.hint": "Ils peuvent créer des projets à partir de lui, pas le modifier ni le supprimer. Ne mets jamais de secret dans un modèle partagé.",
+  "useTip": "Remplit le nouveau projet avec ce modèle. Vous pouvez tout modifier avant de le créer.",
+  "deleteConfirm": "Supprimer le modèle {{name}} ? Les projets déjà créés à partir de lui ne sont pas touchés.",
+  "keepTip": "Enregistre ce texte compose comme modèle réutilisable"
 }

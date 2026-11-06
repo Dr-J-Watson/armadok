@@ -74,5 +74,16 @@
   "push.enable": "Activer dans ce navigateur",
   "push.unsupported": "Ce navigateur ne peut pas recevoir de notifications push (il faut l'application web installée ou une connexion sécurisée).",
   "push.denied": "Le navigateur a refusé l'autorisation. Autorisez les notifications pour ce site dans ses réglages, puis réessayez.",
-  "push.noWorker": "L'interface n'est pas encore installée comme application web (sa partie en arrière-plan ne tourne pas). Ouvrez-la en https et rechargez."
+  "push.noWorker": "L'interface n'est pas encore installée comme application web (sa partie en arrière-plan ne tourne pas). Ouvrez-la en https et rechargez.",
+  "subtitle": "Ce qui s'est passé, et où vous voulez en être informé.",
+  "tabHints.inbox": "Messages reçus dans Armadok",
+  "tabHints.channels": "Destinations : e-mail, messagerie ou notification push",
+  "tabHints.rules": "Quel évènement va où, et à partir de quelle gravité",
+  "inbox.readAllTip": "Marque tous les messages non lus comme lus",
+  "inbox.openNode": "Ouvrir le nœud",
+  "rules.unsaved": "Modifications non enregistrées",
+  "channels.removeConfirm": "Supprimer le canal {{name}} ? Les règles qui y envoyaient des messages ne l'atteindront plus.",
+  "channels.testTip": "Envoie dès maintenant un message d'essai sur ce canal",
+  "channels.namePlaceholder": "ex. Mon téléphone",
+  "channels.topicTip": "Le nom du sujet ntfy auquel vous êtes abonné. Quiconque le connaît peut le lire : choisissez-en un difficile à deviner."
 }

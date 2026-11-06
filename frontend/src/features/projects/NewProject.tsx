@@ -6,6 +6,7 @@ import { Problem } from '../../components/Problem'
 import { api } from '../../core/api'
 import type { ProjectDraft } from '../../core/registry'
 import { useFeatures } from '../../core/useFeatures'
+import { Tip } from '../../components/Tip'
 
 const EMPTY = 'services:\n  app:\n    image: nginx:1.27\n    ports:\n      - "8080:80"\n'
 const NAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/
@@ -75,15 +76,21 @@ export function NewProject({ nodeId, onCreated, onCancel }: { nodeId: string; on
         <form onSubmit={submit}>
           {draft?.notes}
           <label>
-            {t('projects:new.name')}
-            <input value={name} onChange={(e) => setName(e.target.value)} pattern={NAME.source} maxLength={64} required />
+            <span>
+              {t('projects:new.name')}
+              <Tip text={t('projects:new.nameTip')} />
+            </span>
+            <input placeholder="my-app" autoFocus value={name} onChange={(e) => setName(e.target.value)} pattern={NAME.source} maxLength={64} required />
           </label>
           <label>
             compose.yaml
             <textarea className="editor" rows={14} spellCheck={false} value={compose} onChange={(e) => setCompose(e.target.value)} required />
           </label>
           <label>
-            .env
+            <span>
+              .env
+              <Tip text={t('projects:new.envTip')} />
+            </span>
             <textarea className="editor" rows={4} spellCheck={false} value={env} onChange={(e) => setEnv(e.target.value)} />
           </label>
           <p className="hint">{t('projects:new.envHint')}</p>

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ApiError, api } from '../../core/api'
 import { ShareNote } from './ShareNote'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 export interface Note {
   id: string
@@ -26,6 +27,7 @@ const IMPORTANCE = ['info', 'warning', 'todo'] as const
 // One note: shown, and editable in place. Text only (no HTML): a note can never inject markup.
 export function NoteItem({ note, onChanged }: { note: Note; onChanged: () => void }) {
   const { t } = useTranslation(['notes', 'errors'])
+  const ask = useConfirm()
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(note.body)
   const [sharing, setSharing] = useState(false)
@@ -81,7 +83,15 @@ export function NoteItem({ note, onChanged }: { note: Note; onChanged: () => voi
           <button type="button" className="link-button" onClick={() => patch.mutate({ pinned: !note.pinned })}>
             {note.pinned ? t('notes:unpin') : t('notes:pin')}
           </button>
-          <button type="button" className="link-button" onClick={() => remove.mutate()}>{t('notes:delete')}</button>
+          <button
+            type="button"
+            className="link-button"
+            onClick={async () => {
+              if (await ask(t('notes:deleteConfirm'))) remove.mutate()
+            }}
+          >
+            {t('notes:delete')}
+          </button>
         </div>
       )}
     </li>
@@ -134,11 +144,12 @@ export function NotesPanel({ nodeId, objectType, objectId }: Props) {
       <p className="hint">{t('notes:private')}</p>
       {notes.isError && <Problem error={notes.error} />}
       <ul className="notes-list">
+        {notes.data?.length === 0 && <li className="hint">{t('notes:noneHere')}</li>}
         {notes.data?.map((n) => <NoteItem key={`${n.id}:${n.updated_at}`} note={n} onChanged={() => void refresh()} />)}
       </ul>
       <form className="form" onSubmit={submit}>
         <label htmlFor={`new-note-${objectId}`}>{t('notes:new')}</label>
-        <textarea id={`new-note-${objectId}`} className="note-text" required maxLength={4000} value={body} onChange={(e) => setBody(e.target.value)} />
+        <textarea id={`new-note-${objectId}`} className="note-text" required placeholder={t('notes:placeholder')} maxLength={4000} value={body} onChange={(e) => setBody(e.target.value)} />
         <label htmlFor={`note-importance-${objectId}`}>{t('notes:importanceLabel')}</label>
         <select id={`note-importance-${objectId}`} value={importance} onChange={(e) => setImportance(e.target.value as Note['importance'])}>
           {IMPORTANCE.map((i) => <option key={i} value={i}>{t(`notes:importance.${i}`)}</option>)}

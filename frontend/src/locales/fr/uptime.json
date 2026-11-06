@@ -26,5 +26,8 @@
   "reason.timeout": "pas de réponse à temps",
   "reason.tls": "erreur de certificat ou de TLS",
   "reason.failed": "réponse invalide",
-  "reason.address_not_allowed": "adresse non autorisée"
+  "reason.address_not_allowed": "adresse non autorisée",
+  "checkNowTip": "Vérifie tout de suite au lieu d'attendre la prochaine ronde",
+  "confirmDelete": "Supprimer la vérification {{name}} et son historique ?",
+  "namePlaceholder": "ex. Site principal"
 }

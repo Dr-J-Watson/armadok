@@ -64,7 +64,7 @@ export function MapTab({ nodeId }: { nodeId: string }) {
     setParams(next, { replace: true })
   }
 
-  if (map.isPending) return <p>{t('loading')}</p>
+  if (map.isPending) return <p className="loading">{t('loading')}</p>
   if (map.isError) {
     return (
       <Problem error={map.error} />

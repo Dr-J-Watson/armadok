@@ -29,14 +29,15 @@ export function CertsTab({ nodeId }: { nodeId: string }) {
     queryFn: () => api.get<{ certificates: Certificate[]; hosts: HostState[]; truncated: boolean }>(`/nodes/${nodeId}/certs`),
   })
 
-  if (certs.isPending) return <p>{t('loading')}</p>
+  if (certs.isPending) return <p className="loading">{t('loading')}</p>
   if (certs.isError) return <Problem error={certs.error} />
   const { certificates, hosts, truncated } = certs.data
   const problems = hosts.filter((h) => h.state !== 'ok')
 
   return (
     <>
-      <p>{t('certs:explain')}</p>
+      <p className="hint">{t('certs:explain')}</p>
+      {problems.length === 0 && hosts.length > 0 && <p className="all-good">{t('certs:allGood')}</p>}
       {truncated && <p className="notice">{t('certs:truncated')}</p>}
       {problems.length > 0 && (
         <section className="notice" aria-label={t('certs:problems.title')}>
@@ -44,7 +45,7 @@ export function CertsTab({ nodeId }: { nodeId: string }) {
           <ul className="links">
             {problems.map((h) => (
               <li key={h.host}>
-                <strong>{h.host}</strong> <span className="badge off">{t(`certs:states.${h.state}`)}</span>
+                <strong>{h.host}</strong> <span className="badge danger-badge">{t(`certs:states.${h.state}`)}</span>
               </li>
             ))}
           </ul>
@@ -73,7 +74,7 @@ export function CertsTab({ nodeId }: { nodeId: string }) {
                 </td>
                 <td data-label={t('certs:columns.issuer')}>{c.issuer}</td>
                 <td data-label={t('certs:columns.expires')}>
-                  <span className={`badge ${c.state === 'ok' ? 'ok' : 'off'}`}>
+                  <span className={`badge ${c.state === 'ok' ? 'ok' : 'danger-badge'}`}>
                     {c.state === 'expired' ? t('certs:expired') : t('certs:daysLeft', { count: c.days_left })}
                   </span>{' '}
                   <small>{new Date(c.not_after).toLocaleDateString()}</small>
@@ -100,7 +101,7 @@ export function CertsTab({ nodeId }: { nodeId: string }) {
               <tr key={h.host}>
                 <td data-label={t('certs:hosts.host')}>{h.host}</td>
                 <td data-label={t('certs:hosts.state')}>
-                  <span className={`badge ${h.state === 'ok' ? 'ok' : 'off'}`}>{t(`certs:states.${h.state}`)}</span>
+                  <span className={`badge ${h.state === 'ok' ? 'ok' : 'danger-badge'}`}>{t(`certs:states.${h.state}`)}</span>
                 </td>
               </tr>
             ))}

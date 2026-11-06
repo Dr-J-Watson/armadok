@@ -13,5 +13,6 @@
   "disk.projects": "Dossier des projets",
   "disk.traefik": "Dossier de Traefik",
   "disk.backups": "Dossier des sauvegardes",
-  "disk.data": "Dossier des données"
+  "disk.data": "Dossier des données",
+  "refresh": "Ces chiffres se rafraîchissent toutes les quelques secondes tant que cette page est ouverte."
 }

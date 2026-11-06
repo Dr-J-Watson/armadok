@@ -26,5 +26,8 @@
   "reason.timeout": "no answer in time",
   "reason.tls": "certificate or TLS error",
   "reason.failed": "invalid answer",
-  "reason.address_not_allowed": "address not allowed"
+  "reason.address_not_allowed": "address not allowed",
+  "checkNowTip": "Checks right now instead of waiting for the next round",
+  "confirmDelete": "Delete the check {{name}} and its history?",
+  "namePlaceholder": "e.g. Main website"
 }

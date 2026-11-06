@@ -10,8 +10,12 @@ export function DnsPage() {
   const providers = useQuery({ queryKey: ['dns-providers'], queryFn: () => api.get<Provider[]>('/dns/providers') })
   return (
     <>
-      <h1>{t('title')}</h1>
-      <p>{t('intro')}</p>
+      <header className="page-head">
+        <div>
+          <h1>{t('title')}</h1>
+          <p className="hint">{t('intro')}</p>
+        </div>
+      </header>
       <DomainsSection />
       {providers.data && <AccountsSection providers={providers.data} />}
     </>

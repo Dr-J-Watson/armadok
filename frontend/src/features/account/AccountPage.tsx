@@ -13,17 +13,26 @@ export function AccountPage() {
   // Fresh from the server (not from the login state): 2FA can change while this page is open.
   const me = useQuery({ queryKey: ['me'], queryFn: () => api.get<User>('/auth/me') })
 
-  if (me.isPending) return <p>{t('loading')}</p>
+  if (me.isPending) return <p className="loading">{t('loading')}</p>
   if (me.isError)
     return (
       <Problem error={me.error} />
     )
   return (
     <>
-      <h1>{t('account:title')}</h1>
-      <p>
-        {t('account:signedInAs')} <strong>{me.data.username}</strong>
-      </p>
+      <header className="page-head">
+        <div>
+          <h1>{t('account:title')}</h1>
+          <p className="hint">
+            {t('account:signedInAs')} <strong>{me.data.username}</strong>
+            {me.data.totp_enabled ? (
+              <span className="badge ok">{t('account:twoFactorOn')}</span>
+            ) : (
+              <span className="badge off">{t('account:twoFactorOff')}</span>
+            )}
+          </p>
+        </div>
+      </header>
       <TwoFactor me={me.data} />
       {modules?.has('apikeys') && <ApiKeys me={me.data} />}
     </>

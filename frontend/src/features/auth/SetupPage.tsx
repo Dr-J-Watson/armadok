@@ -35,13 +35,15 @@ export function SetupPage() {
 
   return (
     <AuthLayout title={t('auth:setup.title')}>
-      <p>{t('auth:setup.intro')}</p>
+      <p className="hint">{t('auth:setup.intro')}</p>
       <form onSubmit={submit} className="form">
         <label htmlFor="code">{t('auth:setup.code')}</label>
         <input
           id="code"
           required
+          autoFocus
           autoComplete="off"
+          spellCheck={false}
           value={code}
           onChange={(e) => setCode(e.target.value)}
         />

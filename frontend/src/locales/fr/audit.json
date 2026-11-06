@@ -45,5 +45,9 @@
   "event.traefik.file_read": "Fichier Traefik lu",
   "event.traefik.file_write": "Fichier Traefik enregistré",
   "verify.unsigned": "Attention : aucune clé de signature n'est configurée (ARMADOK_ENCRYPTION_KEY), cette vérification ne protège donc pas contre quelqu'un qui peut écrire dans la base.",
-  "event.audit.export": "Journal d'audit exporté"
+  "event.audit.export": "Journal d'audit exporté",
+  "filters.clear": "Effacer les filtres",
+  "filters.clearTip": "Réafficher toutes les entrées",
+  "export.tip": "Télécharge les entrées qui correspondent aux filtres ci-dessus.",
+  "verify.tip": "Vérifie qu'aucune entrée n'a été modifiée ou retirée depuis son écriture."
 }

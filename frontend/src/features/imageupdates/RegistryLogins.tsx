@@ -1,3 +1,4 @@
+import { useConfirm } from '../../components/Confirm'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
@@ -15,6 +16,7 @@ interface Login {
 export function RegistryLogins({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['imageupdates', 'errors'])
   const client = useQueryClient()
+  const ask = useConfirm()
   const base = `/nodes/${nodeId}/image-updates/registries`
   const key = ['registry-logins', nodeId]
   const [host, setHost] = useState('')
@@ -52,7 +54,14 @@ export function RegistryLogins({ nodeId }: { nodeId: string }) {
         {(list.data?.registries ?? []).map((l) => (
           <li key={l.host}>
             <strong>{l.host}</strong> <small>{l.username}</small>{' '}
-            <button type="button" onClick={() => forget.mutate(l.host)} disabled={forget.isPending}>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={async () => {
+                if (await ask(t('imageupdates:logins.forgetConfirm', { host: l.host }))) forget.mutate(l.host)
+              }}
+              disabled={forget.isPending}
+            >
               {t('imageupdates:logins.forget')}
             </button>
           </li>

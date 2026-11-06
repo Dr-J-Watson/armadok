@@ -14,5 +14,8 @@
   "transfer.explain": "La personne choisie en devient propriétaire. Vous restez administrateur. Seul le propriétaire peut le faire.",
   "transfer.confirm": "Tapez le nom du nœud ({{name}}) pour confirmer",
   "transfer.go": "Transmettre",
-  "transfer.code": "Code de second facteur"
+  "transfer.code": "Code de second facteur",
+  "ownerTip": "Le propriétaire détient tous les droits sur ce nœud et est le seul à pouvoir le céder.",
+  "personPlaceholder": "Commencez à saisir un nom d'utilisateur",
+  "removeConfirm": "Retirer {{name}} de ce nœud ? La personne perd les droits que ce rôle lui donnait ici."
 }

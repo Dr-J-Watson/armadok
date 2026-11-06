@@ -24,14 +24,16 @@ export function NodeDnsTab({ nodeId }: { nodeId: string }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dns-report', nodeId] }),
   })
 
-  if (report.isPending) return <p>{t('loading')}</p>
+  if (report.isPending) return <p className="loading">{t('loading')}</p>
   if (report.isError) return <Problem error={report.error} />
   const hosts = report.data.hosts
+  const missing = hosts.filter((h) => h.status === 'missing').length
   if (hosts.length === 0) return <p className="empty">{t('dns:report.empty')}</p>
 
   return (
     <>
-      <p>{t('dns:report.explain')}</p>
+      <p className="hint">{t('dns:report.explain')}</p>
+      {missing > 0 && <p className="notice" role="status">{t('dns:report.missing', { count: missing })}</p>}
       {fix.isError && <Problem error={fix.error} />}
       <table className="table">
         <thead>
@@ -49,7 +51,7 @@ export function NodeDnsTab({ nodeId }: { nodeId: string }) {
               </td>
               <td>
                 {h.status === 'missing' && (
-                  <button type="button" disabled={fix.isPending} onClick={() => fix.mutate(h.host)}>{t('dns:report.fix')}</button>
+                  <button type="button" disabled={fix.isPending} title={t('dns:report.fixTip')} onClick={() => fix.mutate(h.host)}>{t('dns:report.fix')}</button>
                 )}
               </td>
             </tr>

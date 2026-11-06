@@ -1,3 +1,4 @@
+import { Tip } from '../../components/Tip'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
@@ -71,7 +72,7 @@ export function TerminalPanel({ nodeId, project }: { nodeId: string; project: st
           <div>
             {codeField}
             <div className="actions">
-              <button type="button" className="primary" onClick={() => open.mutate()} disabled={open.isPending}>
+              <button type="button" className="primary" title={t('terminal:openTip')} onClick={() => open.mutate()} disabled={open.isPending}>
                 {t('terminal:open')}
               </button>
             </div>
@@ -90,10 +91,12 @@ export function TerminalPanel({ nodeId, project }: { nodeId: string; project: st
             <label className="legend-item">
               <input type="checkbox" checked={current.writable} onChange={(e) => setDraft({ ...current, writable: e.target.checked })} />{' '}
               {t('terminal:writable')}
+              <Tip text={t('terminal:writableTip')} />
             </label>
             <label className="legend-item">
               <input type="checkbox" checked={current.network} onChange={(e) => setDraft({ ...current, network: e.target.checked })} />{' '}
               {t('terminal:network')}
+              <Tip text={t('terminal:networkTip')} />
             </label>
             <label>
               {t('terminal:image')}
@@ -101,7 +104,7 @@ export function TerminalPanel({ nodeId, project }: { nodeId: string; project: st
             </label>
             {codeField}
             <div className="actions">
-              <button type="submit" disabled={save.isPending || draft === null}>
+              <button type="submit" className="primary" disabled={save.isPending || draft === null}>
                 {t('terminal:save')}
               </button>
             </div>

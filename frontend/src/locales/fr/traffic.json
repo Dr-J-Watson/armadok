@@ -35,5 +35,7 @@
   "visitors.lastSeen": "Dernière visite",
   "visitors.kept": "{{count}} entrées conservées.",
   "visitors.purge": "Supprimer les entrées conservées",
-  "visitors.purgeConfirm": "Supprimer toutes les entrées du journal d'accès conservées pour ce nœud ? Cette action est définitive."
+  "visitors.purgeConfirm": "Supprimer toutes les entrées du journal d'accès conservées pour ce nœud ? Cette action est définitive.",
+  "testTip": "Lit une fois les métriques de Traefik, pour vérifier la connexion",
+  "latencyTip": "p50 est le temps de réponse typique ; p95 et p99 montrent les 5 % et 1 % de requêtes les plus lentes."
 }

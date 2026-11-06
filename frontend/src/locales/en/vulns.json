@@ -20,5 +20,9 @@
   "stopAccepting": "Stop accepting",
   "acceptTitle": "Accept this finding for now",
   "reason": "Why (kept in the audit log)",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "scanTip": "Looks the components up again in the public database now",
+  "count": "{{count}} to look at, {{accepted}} accepted",
+  "acceptTip": "Keep using it knowingly: write down why, so the next person understands.",
+  "reasonPlaceholder": "e.g. Not reachable from outside"
 }

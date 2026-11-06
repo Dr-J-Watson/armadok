@@ -19,5 +19,6 @@
   "hosts.title": "Noms utilisés par les sites",
   "hosts.empty": "Aucun nom utilisé.",
   "hosts.host": "Nom",
-  "hosts.state": "Certificat"
+  "hosts.state": "Certificat",
+  "allGood": "Chaque adresse utilisée par vos sites a un certificat valide."
 }

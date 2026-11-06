@@ -73,7 +73,10 @@ export function TwoFactor({ me }: { me: User }) {
           <h3>{t('account:twofa.backupTitle')}</h3>
           <p>{t('account:twofa.backupExplain')}</p>
           <pre>{backupCodes.join('\n')}</pre>
-          <button type="button" onClick={() => setBackupCodes(null)}>
+          <button type="button" onClick={() => void navigator.clipboard?.writeText(backupCodes.join('\n'))}>
+            {t('account:twofa.backupCopy')}
+          </button>{' '}
+          <button type="button" className="primary" onClick={() => setBackupCodes(null)}>
             {t('account:twofa.backupSaved')}
           </button>
         </div>
@@ -138,7 +141,7 @@ export function TwoFactor({ me }: { me: User }) {
             value={code}
             onChange={(e) => setCode(e.target.value)}
           />
-          <button type="submit" disabled={disable.isPending}>
+          <button type="submit" className="danger-button" disabled={disable.isPending}>
             {t('account:twofa.disable')}
           </button>
         </form>

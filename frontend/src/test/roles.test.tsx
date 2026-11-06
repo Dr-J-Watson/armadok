@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -66,6 +67,7 @@ describe('access page', () => {
   })
 
   it('lists assignments and takes one away', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true) // the removal now asks first
     server()
     renderPage('assignments')
     expect(await screen.findByRole('cell', { name: /bob/ })).toBeInTheDocument()

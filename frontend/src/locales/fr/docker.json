@@ -35,5 +35,18 @@
   "prune.confirm.networks": "Les réseaux sans conteneur rattaché seront supprimés. Le réseau d'un conteneur arrêté est conservé.",
   "prune.go": "Nettoyer maintenant",
   "prune.cancel": "Annuler",
-  "prune.done": "{{count}} supprimé(s), {{mib}} Mio libérés."
+  "prune.done": "{{count}} supprimé(s), {{mib}} Mio libérés.",
+  "summary": "{{running}} en marche sur {{total}} conteneur(s)",
+  "search": "Filtrer par nom ou image",
+  "noMatch": "Aucun conteneur ne correspond à ce filtre.",
+  "live.tip": "Mesure le processeur et la mémoire toutes les quelques secondes. Cela charge un peu la machine : désactivé par défaut.",
+  "stopConfirm": "Arrêter {{name}} ? Ce qu'il sert sera indisponible jusqu'à son redémarrage.",
+  "actionTip.stop": "Arrête le conteneur (il pourra être relancé)",
+  "actionTip.restart": "Arrête puis relance le conteneur",
+  "actionTip.start": "Démarre le conteneur",
+  "actionTip.remove": "Supprime le conteneur lui-même, pas ses volumes",
+  "actionTip.logs": "Affiche les 200 dernières lignes de sa sortie",
+  "prune.tip.containers": "Supprime les conteneurs arrêtés",
+  "prune.tip.images": "Supprime les images qu'aucun conteneur n'utilise",
+  "prune.tip.networks": "Supprime les réseaux auxquels rien n'est connecté"
 }

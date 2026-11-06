@@ -35,5 +35,18 @@
   "prune.confirm.networks": "Networks with no container attached will be removed. The network of a stopped container is kept.",
   "prune.go": "Clean up now",
   "prune.cancel": "Cancel",
-  "prune.done": "{{count}} removed, {{mib}} MiB freed."
+  "prune.done": "{{count}} removed, {{mib}} MiB freed.",
+  "summary": "{{running}} running out of {{total}} container(s)",
+  "search": "Filter by name or image",
+  "noMatch": "No container matches this filter.",
+  "live.tip": "Measures CPU and memory every few seconds. It puts a little load on the machine, so it is off by default.",
+  "stopConfirm": "Stop {{name}}? What it serves will be unavailable until it starts again.",
+  "actionTip.stop": "Stops the container (it can be started again)",
+  "actionTip.restart": "Stops then starts the container",
+  "actionTip.start": "Starts the container",
+  "actionTip.remove": "Deletes the container itself, not its volumes",
+  "actionTip.logs": "Shows the last 200 lines of its output",
+  "prune.tip.containers": "Removes stopped containers",
+  "prune.tip.images": "Removes images no container uses",
+  "prune.tip.networks": "Removes networks nothing is connected to"
 }

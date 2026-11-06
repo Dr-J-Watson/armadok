@@ -28,5 +28,7 @@
   "downloadWarn": "{{archive}} contient tous les fichiers du volume, mots de passe et clés compris. Elle va du nœud à votre navigateur en passant par ce serveur, qui ne garde rien. Seules les archives faites depuis l'existence de cette option sont téléchargeables.",
   "code": "Code de double authentification",
   "clearFirst": "Vider le volume avant",
-  "clearWarn": "Tout le contenu du volume est supprimé avant la restauration : il sera exactement comme l'archive. L'archive est vérifiée d'abord ; si elle est abîmée, rien n'est supprimé."
+  "clearWarn": "Tout le contenu du volume est supprimé avant la restauration : il sera exactement comme l'archive. L'archive est vérifiée d'abord ; si elle est abîmée, rien n'est supprimé.",
+  "restoreTip": "Réécrit cette archive dans un volume. Les fichiers existants peuvent être écrasés.",
+  "downloadTip": "Télécharge l'archive sur votre ordinateur (demande un code récent)"
 }

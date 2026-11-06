@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import type { Node } from '../nodes/types'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
+import { Tip } from '../../components/Tip'
+import { Copy } from 'lucide-react'
 
 interface Hook {
   id: string
@@ -28,6 +31,7 @@ interface Created {
 export function HooksSection() {
   const { t } = useTranslation(['integrations', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const hooks = useQuery({
     queryKey: ['hooks'],
     queryFn: () => api.get<{ hooks: Hook[]; actions: string[] }>('/hooks'),
@@ -70,7 +74,7 @@ export function HooksSection() {
   return (
     <section>
       <h2>{t('integrations:hooks.title')}</h2>
-      <p>{t('integrations:hooks.explain')}</p>
+      <p className="hint">{t('integrations:hooks.explain')}</p>
       {failed != null && (
         <Problem error={failed} />
       )}
@@ -84,15 +88,18 @@ export function HooksSection() {
             <input readOnly value={created.token} onFocus={(e) => e.currentTarget.select()} />
           </label>
           <pre className="output">{`curl -X POST -H "Authorization: Bearer ${created.token}" ${url}`}</pre>
-          <button type="button" onClick={() => setCreated(null)}>
+          <button type="button" onClick={() => void navigator.clipboard?.writeText(`curl -X POST -H "Authorization: Bearer ${created.token}" ${url}`)}>
+            <Copy size={14} aria-hidden="true" /> {t('integrations:copy')}
+          </button>{' '}
+          <button type="button" className="primary" onClick={() => setCreated(null)}>
             {t('integrations:hooks.copied')}
           </button>
         </div>
       )}
-      <form onSubmit={submit} aria-label={t('integrations:hooks.new')}>
+      <form onSubmit={submit} aria-label={t('integrations:hooks.new')} className="panel form-grid">
         <label>
           {t('integrations:hooks.name')}
-          <input value={form.name} required maxLength={60} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <input value={form.name} required placeholder={t('integrations:hooks.namePlaceholder')} maxLength={60} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </label>
         <label>
           {t('integrations:hooks.node')}
@@ -117,12 +124,17 @@ export function HooksSection() {
           </select>
         </label>
         <label>
-          {t('integrations:hooks.expires')}
+          <span>
+            {t('integrations:hooks.expires')}
+            <Tip text={t('integrations:hooks.expiresTip')} />
+          </span>
           <input type="datetime-local" value={form.expires} onChange={(e) => setForm({ ...form, expires: e.target.value })} />
         </label>
-        <button type="submit" disabled={create.isPending}>
-          {t('integrations:hooks.create')}
-        </button>
+        <div className="wide actions">
+          <button type="submit" className="primary" disabled={create.isPending}>
+            {t('integrations:hooks.create')}
+          </button>
+        </div>
       </form>
       {hooks.data && hooks.data.hooks.length === 0 && <p className="empty">{t('integrations:hooks.none')}</p>}
       <ul className="links">
@@ -140,7 +152,13 @@ export function HooksSection() {
             </small>
             {!h.revoked && (
               <div className="actions">
-                <button type="button" onClick={() => revoke.mutate(h.id)}>
+                <button
+                  type="button"
+                  className="danger-button"
+                  onClick={async () => {
+                    if (await ask(t('integrations:hooks.revokeConfirm', { name: h.name }))) revoke.mutate(h.id)
+                  }}
+                >
                   {t('integrations:hooks.revoke')}
                 </button>
               </div>

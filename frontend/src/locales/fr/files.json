@@ -6,5 +6,7 @@
   "editorLabel": "Contenu de {{file}}",
   "conflict": "Ce fichier a été modifié sur le nœud depuis que vous l'avez ouvert. Rien n'a été écrasé.",
   "reload": "Recharger le fichier depuis le nœud (perdre mes modifications)",
-  "keepMine": "Garder ma version (remplacera l'autre au prochain enregistrement)"
+  "keepMine": "Garder ma version (remplacera l'autre au prochain enregistrement)",
+  "lines": "{{count}} ligne(s)",
+  "shortcut": "Ctrl+S enregistre"
 }

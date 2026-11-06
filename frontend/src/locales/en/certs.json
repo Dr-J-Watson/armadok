@@ -19,5 +19,6 @@
   "hosts.title": "Hosts used by the sites",
   "hosts.empty": "No host in use.",
   "hosts.host": "Host",
-  "hosts.state": "Certificate"
+  "hosts.state": "Certificate",
+  "allGood": "Every address your sites use has a valid certificate."
 }

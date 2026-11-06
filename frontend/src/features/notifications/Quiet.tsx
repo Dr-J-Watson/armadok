@@ -40,7 +40,7 @@ export function Quiet() {
   return (
     <form onSubmit={submit} aria-label={t('notifications:quiet.title')}>
       <h3>{t('notifications:quiet.title')}</h3>
-      <p>{t('notifications:quiet.explain')}</p>
+      <p className="hint">{t('notifications:quiet.explain')}</p>
       {(current.error ?? save.error) != null && (
         <Problem error={current.error ?? save.error} />
       )}

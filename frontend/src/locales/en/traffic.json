@@ -35,5 +35,7 @@
   "visitors.lastSeen": "Last seen",
   "visitors.kept": "{{count}} entries kept.",
   "visitors.purge": "Delete the kept entries",
-  "visitors.purgeConfirm": "Delete every kept access-log entry of this node? This cannot be undone."
+  "visitors.purgeConfirm": "Delete every kept access-log entry of this node? This cannot be undone.",
+  "testTip": "Reads Traefik's metrics once, to check the connection",
+  "latencyTip": "p50 is the typical response time; p95 and p99 show the slowest 5 % and 1 % of requests."
 }

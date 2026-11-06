@@ -42,7 +42,7 @@ export function RelationsPanel({ nodeId, object, onSelect, extra }: Props) {
         {object.label} <span className="badge">{t(`relations:types.${object.type}`, { defaultValue: object.type })}</span>
       </h2>
       {extra}
-      {panel.isPending && <p>{t('loading')}</p>}
+      {panel.isPending && <p className="loading">{t('loading')}</p>}
       {panel.isError && (
         <Problem error={panel.error} />
       )}

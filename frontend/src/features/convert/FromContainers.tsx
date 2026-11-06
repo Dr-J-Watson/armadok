@@ -28,7 +28,7 @@ export function FromContainers({ nodeId, onDraft }: ProjectSourceProps) {
     onSuccess: (r) => onDraft(draftOf(r)),
   })
   const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
-  if (list.isPending) return <p>{t('loading')}</p>
+  if (list.isPending) return <p className="loading">{t('loading')}</p>
   if (list.isError) return <Problem error={list.error} />
   return (
     <>

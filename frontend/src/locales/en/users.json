@@ -31,5 +31,16 @@
   "scope.everywhere": "Everywhere",
   "scope.node": "Node: {{name}}",
   "service": "service",
-  "serviceHint": "A service account: an identity for a tool, with keys and no password."
+  "serviceHint": "A service account: an identity for a tool, with keys and no password.",
+  "subtitle": "{{count}} account(s). Open one to manage its rights.",
+  "create.usernamePlaceholder": "e.g. alice",
+  "account.disableTip": "The person can no longer sign in. Their data is kept.",
+  "account.disableConfirm": "Disable the account {{name}}? They will be signed out and unable to log in.",
+  "account.resetTwofaTip": "Use this when the person lost their phone and their backup codes.",
+  "account.resetTwofaConfirm": "Remove the second factor of {{name}}? Their account will only be protected by the password until they set it up again.",
+  "account.since": "Account created on {{date}}",
+  "grants.removeConfirm": "Remove the right {{right}} from this account?",
+  "grants.scopeTip": "Everywhere, or on one node only. A narrow scope is safer.",
+  "grants.expiresTip": "Optional. The right disappears by itself at that date: handy for a one-off helper.",
+  "grants.tip": "A right lets this account do one precise thing. Prefer roles for everyday use; use single rights for exceptions."
 }

@@ -98,7 +98,7 @@ export function ScheduleTab({ nodeId }: { nodeId: string }) {
 
   return (
     <>
-      <p>{t('schedule:explain')}</p>
+      <p className="hint">{t('schedule:explain')}</p>
       {failed != null && (
         <Problem error={failed} />
       )}
@@ -107,7 +107,7 @@ export function ScheduleTab({ nodeId }: { nodeId: string }) {
           {run.data.result === 'ok' ? t('schedule:ran') : t('schedule:ranFailed', { code: run.data.result })}
         </p>
       )}
-      {list.isPending && <p>{t('loading')}</p>}
+      {list.isPending && <p className="loading">{t('loading')}</p>}
       {list.data && list.data.tasks.length === 0 && <p className="empty">{t('schedule:none')}</p>}
       <ul className="links">
         {(list.data?.tasks ?? []).map((x) => (
@@ -140,13 +140,13 @@ export function ScheduleTab({ nodeId }: { nodeId: string }) {
             {list.data?.can_manage && (
               <span>
                 {' '}
-                <button type="button" onClick={() => run.mutate(x)}>
+                <button type="button" disabled={run.isPending} title={t('schedule:runNowTip')} onClick={() => run.mutate(x)}>
                   {t('schedule:runNow')}
                 </button>{' '}
                 <button type="button" onClick={() => toggle.mutate(x)}>
                   {t(x.enabled ? 'schedule:pause' : 'schedule:resume')}
                 </button>{' '}
-                <button type="button" onClick={async () => (await confirm(t('schedule:confirmDelete'))) && remove.mutate(x)}>
+                <button type="button" className="danger-button" onClick={async () => (await confirm(t('schedule:confirmDelete'))) && remove.mutate(x)}>
                   {t('schedule:delete')}
                 </button>
               </span>
@@ -155,11 +155,11 @@ export function ScheduleTab({ nodeId }: { nodeId: string }) {
         ))}
       </ul>
       {list.data?.can_manage && (
-        <form onSubmit={submit} aria-label={t('schedule:new')}>
+        <form onSubmit={submit} aria-label={t('schedule:new')} className="panel">
           <h2>{t('schedule:new')}</h2>
           <label>
             {t('schedule:name')}
-            <input value={form.name} required maxLength={60} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <input value={form.name} required placeholder={t('schedule:namePlaceholder')} maxLength={60} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </label>
           <label>
             {t('schedule:action')}
@@ -191,7 +191,7 @@ export function ScheduleTab({ nodeId }: { nodeId: string }) {
           ))}
           <WhenPicker value={when} onChange={setWhen} />
           <p className="hint">{t('schedule:warn')}</p>
-          <button type="submit" disabled={create.isPending}>
+          <button type="submit" className="primary" disabled={create.isPending}>
             {t('schedule:create')}
           </button>
         </form>

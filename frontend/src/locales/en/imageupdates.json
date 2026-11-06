@@ -15,5 +15,8 @@
   "logins.username": "User",
   "logins.secret": "Password or token",
   "logins.save": "Save the login",
-  "logins.forget": "Forget"
+  "logins.forget": "Forget",
+  "checkTip": "Compares each image's tag with the registry's. Nothing is downloaded.",
+  "summary": "{{count}} update(s) available out of {{total}} image(s)",
+  "logins.forgetConfirm": "Forget the saved login for {{host}}? Private images there can no longer be checked."
 }

@@ -6,6 +6,8 @@ import { Link, useParams } from 'react-router-dom'
 import { api } from '../../core/api'
 import type { Domain } from './DomainsSection'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
+import { Tip } from '../../components/Tip'
 
 interface DnsRecord {
   id: string
@@ -21,6 +23,7 @@ export function DomainPage() {
   const { t } = useTranslation(['dns', 'errors'])
   const { domainId = '' } = useParams()
   const queryClient = useQueryClient()
+  const confirm = useConfirm()
   const domains = useQuery({ queryKey: ['dns-domains'], queryFn: () => api.get<Domain[]>('/dns/domains') })
   const records = useQuery({
     queryKey: ['dns-records', domainId],
@@ -49,7 +52,7 @@ export function DomainPage() {
   })
   const remove = useMutation({ mutationFn: (id: string) => api.del(`${base}/${encodeURIComponent(id)}`), onSuccess: refresh })
 
-  if (domains.isPending) return <p>{t('loading')}</p>
+  if (domains.isPending) return <p className="loading">{t('loading')}</p>
   if (!domain) return <><p role="alert" className="error">{t('errors:common.not_found')}</p><Link to="/dns">{t('dns:back')}</Link></>
 
   const shown = (records.data?.records ?? []).filter((r) => `${r.name} ${r.target} ${r.type}`.toLowerCase().includes(search.toLowerCase()))
@@ -65,8 +68,17 @@ export function DomainPage() {
 
   return (
     <>
-      <p><Link to="/dns">{t('dns:back')}</Link></p>
-      <h1>{domain.name}</h1>
+      <nav className="crumbs"><Link to="/dns">{t('dns:back')}</Link></nav>
+      <header className="page-head">
+        <div>
+          <h1>
+            {domain.name}
+            <span className="badge">{domain.provider ? t(`dns:providers.${domain.provider}`, { defaultValue: domain.provider }) : t('dns:domains.shared')}</span>
+            {domain.access !== 'owner' && <span className="badge">{t(`dns:access.${domain.access}`)}</span>}
+          </h1>
+          {records.data && <p className="hint">{t('dns:records.count', { count: records.data.records.length })}</p>}
+        </div>
+      </header>
       {failed != null && <Problem error={failed} />}
       {caps.length === 0 && <p className="notice">{t('dns:records.localExplain')}</p>}
       {caps.includes('publish_ip') && !caps.includes('write') && <p className="notice">{t('dns:records.publishIpExplain')}</p>}
@@ -75,7 +87,8 @@ export function DomainPage() {
         <>
           <label className="visually-hidden" htmlFor="dns-search">{t('dns:records.search')}</label>
           <input id="dns-search" type="search" placeholder={t('dns:records.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
-          {shown.length === 0 && <p className="empty">{t('dns:records.empty')}</p>}
+          {records.isPending && <p className="loading">{t('loading')}</p>}
+          {shown.length === 0 && !records.isPending && <p className="empty">{t('dns:records.empty')}</p>}
           {shown.length > 0 && (
             <table className="table">
               <thead>
@@ -94,7 +107,15 @@ export function DomainPage() {
                       {canWrite && caps.includes('write') && (
                         <>
                           <button type="button" className="link-button" onClick={() => edit(r)}>{t('dns:records.edit')}</button>{' '}
-                          <button type="button" className="link-button" onClick={() => remove.mutate(r.id)}>{t('dns:records.delete')}</button>
+                          <button
+                            type="button"
+                            className="link-button"
+                            onClick={async () => {
+                              if (await confirm(t('dns:records.deleteConfirm', { type: r.type, name: r.name || '@' }))) remove.mutate(r.id)
+                            }}
+                          >
+                            {t('dns:records.delete')}
+                          </button>
                         </>
                       )}
                     </td>
@@ -114,10 +135,16 @@ export function DomainPage() {
             {TYPES.map((x) => <option key={x} value={x}>{x}</option>)}
           </select>
           <label htmlFor="rec-name">{t('dns:records.nameHelp')}</label>
-          <input id="rec-name" value={name} onChange={(e) => setName(e.target.value)} />
-          <label htmlFor="rec-target">{t('dns:records.target')}</label>
-          <input id="rec-target" required value={target} onChange={(e) => setTarget(e.target.value)} />
-          <label htmlFor="rec-ttl">{t('dns:records.ttl')}</label>
+          <input id="rec-name" placeholder="www" autoComplete="off" spellCheck={false} value={name} onChange={(e) => setName(e.target.value)} />
+          <label htmlFor="rec-target">
+            {t('dns:records.target')}
+            <Tip text={t(`dns:records.targetTip.${type}`, { defaultValue: t('dns:records.targetTip.other') })} />
+          </label>
+          <input id="rec-target" required autoComplete="off" spellCheck={false} placeholder={t(`dns:records.targetExample.${type}`, { defaultValue: '' })} value={target} onChange={(e) => setTarget(e.target.value)} />
+          <label htmlFor="rec-ttl">
+            {t('dns:records.ttl')}
+            <Tip text={t('dns:records.ttlTip')} />
+          </label>
           <input id="rec-ttl" type="number" min={60} max={604800} value={ttl} onChange={(e) => setTtl(Number(e.target.value))} />
           <button type="submit" className="primary" disabled={save.isPending}>{editing ? t('dns:records.save') : t('dns:records.add')}</button>
           {editing && <button type="button" onClick={reset}>{t('dns:records.cancel')}</button>}

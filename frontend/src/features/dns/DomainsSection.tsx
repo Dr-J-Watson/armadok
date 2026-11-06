@@ -6,6 +6,8 @@ import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
 import type { Node } from '../nodes/types'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
+import { Tip } from '../../components/Tip'
 
 export interface Domain {
   id: string
@@ -30,6 +32,7 @@ interface Account {
 export function DomainsSection() {
   const { t } = useTranslation(['dns', 'errors'])
   const queryClient = useQueryClient()
+  const confirm = useConfirm()
   const domains = useQuery({ queryKey: ['dns-domains'], queryFn: () => api.get<Domain[]>('/dns/domains') })
   const accounts = useQuery({ queryKey: ['dns-accounts'], queryFn: () => api.get<Account[]>('/dns/accounts') })
   const nodes = useQuery({ queryKey: ['nodes'], queryFn: () => api.get<Node[]>('/nodes') })
@@ -76,8 +79,12 @@ export function DomainsSection() {
 
   return (
     <section>
-      <h2>{t('dns:domains.title')}</h2>
+      <h2>
+        {t('dns:domains.title')}
+        <Tip text={t('dns:domains.tip')} />
+      </h2>
       {failed != null && <Problem error={failed} />}
+      {domains.isPending && <p className="loading">{t('loading')}</p>}
       {domains.data?.length === 0 && <p className="empty">{t('dns:domains.empty')}</p>}
       <ul className="cards">
         {domains.data?.map((d) => (
@@ -105,7 +112,16 @@ export function DomainsSection() {
                     </select>
                   </label>
                 </p>
-                <button type="button" onClick={() => remove.mutate(d.id)}>{t('dns:domains.remove')}</button>
+                <button
+                  type="button"
+                  className="danger-button"
+                  title={t('dns:domains.removeTip')}
+                  onClick={async () => {
+                    if (await confirm(t('dns:domains.removeConfirm', { name: d.name }))) remove.mutate(d.id)
+                  }}
+                >
+                  {t('dns:domains.remove')}
+                </button>
               </>
             )}
           </li>
@@ -160,7 +176,9 @@ export function DomainsSection() {
 
       {accounts.data?.map((a) => (
         <p key={a.id}>
-          <button type="button" onClick={() => importZones.mutate(a.id)}>{t('dns:domains.import', { account: a.name })}</button>
+          <button type="button" disabled={importZones.isPending} title={t('dns:domains.importTip')} onClick={() => importZones.mutate(a.id)}>
+            {t('dns:domains.import', { account: a.name })}
+          </button>
         </p>
       ))}
       {imported !== null && <p role="status" className="ok-text">{imported ? t('dns:domains.imported', { names: imported }) : t('dns:domains.nothingNew')}</p>}
@@ -168,7 +186,7 @@ export function DomainsSection() {
       <form className="form" onSubmit={submit}>
         <h3>{t('dns:domains.add')}</h3>
         <label htmlFor="dns-domain-name">{t('dns:domains.name')}</label>
-        <input id="dns-domain-name" required placeholder="example.com" value={name} onChange={(e) => setName(e.target.value)} />
+        <input id="dns-domain-name" required autoComplete="off" spellCheck={false} placeholder="example.com" value={name} onChange={(e) => setName(e.target.value)} />
         <label htmlFor="dns-domain-account">{t('dns:domains.account')}</label>
         <select id="dns-domain-account" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
           <option value="">{t('dns:domains.local')}</option>

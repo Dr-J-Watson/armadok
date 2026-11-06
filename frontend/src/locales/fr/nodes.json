@@ -48,5 +48,10 @@
   "workers.add.docker": "Ajouter le worker Docker",
   "workers.add.network": "Ajouter le worker réseau",
   "workers.confirm": "Ajouter {{name}} à ce nœud ? Ses menus et ses droits apparaissent aussitôt.",
-  "workers.yes": "Ajouter"
+  "workers.yes": "Ajouter",
+  "create.typeTip": "Décide des pages du nœud. Vous pourrez ajouter l'autre worker plus tard, dans les paramètres du nœud.",
+  "create.openTip": "Enregistrer une nouvelle machine à gérer",
+  "create.descriptionPlaceholder": "Facultatif, ex. Serveur de la cave",
+  "create.namePlaceholder": "ex. Serveur maison",
+  "details.copy": "Copier l'identifiant"
 }

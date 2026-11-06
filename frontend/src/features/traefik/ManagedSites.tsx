@@ -79,15 +79,16 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
       />
     )
   }
-  if (list.isPending) return <p>{t('loading')}</p>
+  if (list.isPending) return <p className="loading">{t('loading')}</p>
   if (list.isError)
     return (
       <Problem error={list.error} />
     )
   return (
     <>
-      <div className="actions">
-        <button type="button" className="primary" onClick={() => setForm('new')}>
+      <div className="actions between">
+        <p className="hint">{t('traefik:managed.count', { count: list.data.sites.length, paused: list.data.sites.filter((x) => x.paused).length })}</p>
+        <button type="button" className="primary" title={t('traefik:managed.newTip')} onClick={() => setForm('new')}>
           {t('traefik:managed.new')}
         </button>
       </div>
@@ -95,6 +96,7 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
         <Problem error={act.error} />
       )}
       {list.data.sites.length === 0 && <p className="empty">{t('traefik:managed.none')}</p>}
+      {list.data.sites.length > 0 && list.data.sites.filter(matches).length === 0 && <p className="empty">{t('traefik:noSiteMatch')}</p>}
       <label className="site-search">
         <span className="visually-hidden">{t('traefik:managed.search')}</span>
         <input type="search" placeholder={t('traefik:managed.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -139,7 +141,7 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
                   {t('traefik:managed.resume')}
                 </button>
               ) : (
-                <button type="button" onClick={() => act.mutate(() => api.post(`${base}/sites/${s.name}/pause`))}>
+                <button type="button" title={t('traefik:managed.pauseTip')} onClick={() => act.mutate(() => api.post(`${base}/sites/${s.name}/pause`))}>
                   {t('traefik:managed.pause')}
                 </button>
               )}
@@ -153,7 +155,7 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
                   </button>
                 </>
               )}
-              <button type="button" onClick={() => setHistoryOf(historyOf === s.name ? null : s.name)}>
+              <button type="button" aria-pressed={historyOf === s.name} title={t('traefik:managed.historyTip')} onClick={() => setHistoryOf(historyOf === s.name ? null : s.name)}>
                 {t('traefik:managed.history')}
               </button>
               {confirmDelete === s.name ? (
@@ -165,7 +167,7 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
                   {t('traefik:managed.confirmDelete')}
                 </button>
               ) : (
-                <button type="button" onClick={() => setConfirmDelete(s.name)}>
+                <button type="button" className="danger-button" onClick={() => setConfirmDelete(s.name)}>
                   {t('traefik:managed.delete')}
                 </button>
               )}
@@ -188,7 +190,8 @@ export function ManagedSites({ nodeId }: { nodeId: string }) {
                     onChange={(e) => setRenaming({ name: s.name, to: e.target.value })}
                   />
                 </label>
-                <button type="submit">{t('traefik:managed.rename')}</button>
+                <button type="submit" className="primary">{t('traefik:managed.rename')}</button>{' '}
+                <button type="button" onClick={() => setRenaming(null)}>{t('traefik:managed.cancel')}</button>
               </form>
             )}
             {historyOf === s.name && (

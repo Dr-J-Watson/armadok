@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -76,6 +77,7 @@ describe('dns', () => {
   })
 
   it('lets the owner add and delete records on a provider that can write', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true) // the removal now asks first
     server()
     wrap(<Routes><Route path="/dns/:domainId" element={<DomainPage />} /></Routes>, '/dns/d1')
     expect(await screen.findByText('203.0.113.7')).toBeInTheDocument()

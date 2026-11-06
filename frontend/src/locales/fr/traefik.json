@@ -190,5 +190,18 @@
   "form.moveUp": "Monter {{name}}",
   "form.moveDown": "Descendre {{name}}",
   "form.removeMiddleware": "Retirer {{name}}",
-  "form.entrypoints": "Points d'entrée (vide = celui du nœud)"
+  "form.entrypoints": "Points d'entrée (vide = celui du nœud)",
+  "viewHints.sites": "Ce que définissent les fichiers de configuration, en lecture seule",
+  "viewHints.managed": "Les sites que vous créez et modifiez depuis Armadok",
+  "viewHints.middlewares": "Étapes réutilisables appliquées aux requêtes : redirections, authentification, en-têtes…",
+  "viewHints.coherence": "Repère les sites qui pointent dans le vide, les middlewares manquants, les services inutilisés",
+  "viewHints.static": "Réglages de démarrage de Traefik (points d'entrée, résolveurs, journaux)",
+  "viewHints.files": "Modifier les fichiers de configuration bruts",
+  "searchSites": "Chercher un site",
+  "noSiteMatch": "Aucun site ne correspond à cette recherche.",
+  "managed.count": "{{count}} site(s), dont {{paused}} en pause",
+  "managed.newTip": "Ouvre le constructeur de site : adresse, destination, sécurité",
+  "managed.pauseTip": "Met le site hors ligne sans le supprimer ; reprenez-le quand vous voulez.",
+  "managed.historyTip": "Anciennes versions de ce site, pour en remettre une",
+  "managed.cancel": "Annuler"
 }

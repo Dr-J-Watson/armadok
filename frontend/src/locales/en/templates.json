@@ -9,5 +9,8 @@
   "sharing.title": "Sharing",
   "sharing.everyone": "Everybody on this Armadok",
   "sharing.group": "Members of {{name}}",
-  "sharing.hint": "They can start projects from it, not change or delete it. Never put secrets in a template you share."
+  "sharing.hint": "They can start projects from it, not change or delete it. Never put secrets in a template you share.",
+  "useTip": "Fills the new project with this template. You can still change everything before creating it.",
+  "deleteConfirm": "Delete the template {{name}}? Projects already made from it are not affected.",
+  "keepTip": "Saves this compose text as a reusable template"
 }

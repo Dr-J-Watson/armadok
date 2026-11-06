@@ -102,9 +102,13 @@ export function StartPage() {
 
   return (
     <>
-      <h1>{t('start:title')}</h1>
-      <p>{t('start:intro')}</p>
-      <p role="status" className={open === 0 ? 'notice' : 'hint'}>
+      <header className="page-head">
+        <div>
+          <h1>{t('start:title')}</h1>
+          <p className="hint">{t('start:intro')}</p>
+        </div>
+      </header>
+      <p role="status" className={open === 0 ? 'all-good' : 'notice'}>
         {open === 0 ? t('start:allGood') : t('start:toLookAt', { count: open })}
       </p>
       <section>

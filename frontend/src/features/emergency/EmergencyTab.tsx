@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface Notice {
   id: string
@@ -23,6 +24,7 @@ interface Notice {
 export function EmergencyTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['emergency', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const notices = useQuery({
     queryKey: ['emergency', nodeId],
     queryFn: () => api.get<Notice[]>(`/nodes/${nodeId}/emergency`),
@@ -36,12 +38,12 @@ export function EmergencyTab({ nodeId }: { nodeId: string }) {
     mutationFn: (id: string) => api.post(`/nodes/${nodeId}/emergency/${id}/acknowledge`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['emergency', nodeId] }),
   })
-  if (notices.isPending) return <p>{t('loading')}</p>
+  if (notices.isPending) return <p className="loading">{t('loading')}</p>
   if (notices.isError) return <p className="hint">{t('emergency:ownerOnly')}</p>
   if (notices.data.length === 0) return <p className="empty">{t('emergency:none')}</p>
   return (
     <>
-      <p>{t('emergency:explain')}</p>
+      <p className="hint">{t('emergency:explain')}</p>
       {(ack.isError || cut.isError) && (
         <Problem error={ack.error ?? cut.error} />
       )}
@@ -49,14 +51,21 @@ export function EmergencyTab({ nodeId }: { nodeId: string }) {
         {notices.data.map((n) => (
           <li key={n.id}>
             <strong>{n.admin}</strong>{' '}
-            <span className={`badge ${n.open ? 'off' : 'ok'}`}>{t(n.open ? 'emergency:open_now' : 'emergency:over')}</span>
+            <span className={`badge ${n.open ? 'danger-badge' : 'ok'}`}>{t(n.open ? 'emergency:open_now' : 'emergency:over')}</span>
             <br />
             <small>
               {new Date(n.started_at).toLocaleString()} — {n.reason}
             </small>
             {n.ended_by_owner && <small> — {t('emergency:cutByOwner')}</small>}
             {n.open && (
-              <button type="button" onClick={() => cut.mutate(n.id)}>
+              <button
+                type="button"
+                className="danger-button"
+                title={t('emergency:cutTip')}
+                onClick={async () => {
+                  if (await ask(t('emergency:cutConfirm', { admin: n.admin }))) cut.mutate(n.id)
+                }}
+              >
                 {t('emergency:cut')}
               </button>
             )}

@@ -190,5 +190,18 @@
   "form.moveUp": "Move {{name}} up",
   "form.moveDown": "Move {{name}} down",
   "form.removeMiddleware": "Remove {{name}}",
-  "form.entrypoints": "Entry points (empty = the node's default)"
+  "form.entrypoints": "Entry points (empty = the node's default)",
+  "viewHints.sites": "What the configuration files define, read-only",
+  "viewHints.managed": "Sites you create and edit from Armadok",
+  "viewHints.middlewares": "Reusable steps applied to requests: redirects, authentication, headers…",
+  "viewHints.coherence": "Finds sites pointing nowhere, missing middlewares, unused services",
+  "viewHints.static": "Traefik's start-up settings (entry points, resolvers, logs)",
+  "viewHints.files": "Edit the raw configuration files",
+  "searchSites": "Search a site",
+  "noSiteMatch": "No site matches this search.",
+  "managed.count": "{{count}} site(s), {{paused}} paused",
+  "managed.newTip": "Opens the site builder: address, destination, security",
+  "managed.pauseTip": "Takes the site offline without deleting it; resume it any time.",
+  "managed.historyTip": "Earlier versions of this site, to put one back",
+  "managed.cancel": "Cancel"
 }

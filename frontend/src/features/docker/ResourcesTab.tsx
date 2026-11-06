@@ -28,7 +28,11 @@ function Kind({ nodeId, kind }: { nodeId: string; kind: (typeof KINDS)[number] }
   })
   return (
     <section aria-label={t(`docker:resources.${kind}`)}>
-      <h3>{t(`docker:resources.${kind}`)}</h3>
+      <h3>
+        {t(`docker:resources.${kind}`)}
+        {list.data && <span className="badge">{list.data.items.length}{list.data.truncated ? '+' : ''}</span>}
+      </h3>
+      {list.isPending && <p className="loading">{t('loading')}</p>}
       {list.isError ? (
         <Problem error={list.error} />
       ) : list.data && list.data.items.length === 0 ? (
@@ -68,10 +72,10 @@ function Cleanup({ nodeId }: { nodeId: string }) {
     <section aria-label={t('docker:prune.title')}>
       <h3>{t('docker:prune.title')}</h3>
       <p className="hint">{t('docker:prune.hint')}</p>
-      <ul className="links">
+      <ul className="quick">
         {PRUNE_KINDS.map((kind) => (
-          <li key={kind}>
-            <button type="button" disabled={prune.isPending} onClick={() => setAsked(kind)}>
+          <li key={kind} style={{ display: 'contents' }}>
+            <button type="button" disabled={prune.isPending} title={t(`docker:prune.tip.${kind}`)} onClick={() => setAsked(kind)}>
               {t(`docker:prune.${kind}`)}
             </button>
           </li>
@@ -80,7 +84,7 @@ function Cleanup({ nodeId }: { nodeId: string }) {
       {asked && (
         <div className="notice" role="alertdialog" aria-label={t('docker:prune.confirmTitle')}>
           <p>{t(`docker:prune.confirm.${asked}`)}</p>
-          <button type="button" disabled={prune.isPending} onClick={() => prune.mutate(asked)}>
+          <button type="button" className="danger-button" disabled={prune.isPending} onClick={() => prune.mutate(asked)}>
             {t('docker:prune.go')}
           </button>{' '}
           <button type="button" onClick={() => setAsked(null)}>

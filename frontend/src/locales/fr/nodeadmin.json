@@ -31,5 +31,10 @@
   "warn.purge": "Le nœud est effacé définitivement d'Armadok : ses membres, droits, sondes, tâches planifiées et enregistrements de sauvegarde. C'est irréversible. Les fichiers sur le nœud lui-même ne sont pas touchés.",
   "warn.take-over": "Le propriétaire actuel perd tous ses droits sur ce nœud et la personne choisie en devient propriétaire, avec un accès complet. L'action est enregistrée avec votre motif.",
   "warn.ban-owner": "Le compte du propriétaire est désactivé et toutes ses sessions se terminent. Ses nœuds ne sont pas touchés. Un administrateur ne peut pas être banni ainsi.",
-  "warn.strip-creation": "Le propriétaire ne peut plus créer de nœuds. Ceux qu'il possède déjà restent tels quels."
+  "warn.strip-creation": "Le propriétaire ne peut plus créer de nœuds. Ceux qu'il possède déjà restent tels quels.",
+  "col.node": "Nœud",
+  "col.owner": "Propriétaire",
+  "col.state": "État",
+  "col.actions": "Actions",
+  "tip.emergency": "Accès temporaire à ce nœud, toujours consigné et visible de son propriétaire."
 }

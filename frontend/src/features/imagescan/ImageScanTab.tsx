@@ -48,16 +48,17 @@ export function ImageScanTab({ nodeId }: { nodeId: string }) {
 
   return (
     <>
-      <p>{t('imagescan:explain')}</p>
+      <p className="hint">{t('imagescan:explain')}</p>
       {failed != null && (
         <Problem error={failed} />
       )}
       {data && !data.enabled && <p className="notice">{t('imagescan:off')}</p>}
       {data?.can_run && data.enabled && (
-        <button type="button" disabled={scan.isPending} onClick={() => scan.mutate(undefined)}>
+        <button type="button" className="primary" disabled={scan.isPending} title={t('imagescan:scanTip')} onClick={() => scan.mutate(undefined)}>
           {scan.isPending ? t('imagescan:scanning') : t('imagescan:scanAll')}
         </button>
       )}
+      {list.isPending && <p className="loading">{t('loading')}</p>}
       {data && data.scans.length === 0 && <p className="empty">{t('imagescan:none')}</p>}
       <ul className="links">
         {data?.scans.map((s) => (
@@ -68,7 +69,7 @@ export function ImageScanTab({ nodeId }: { nodeId: string }) {
               <span>
                 {' '}
                 {SEVERITIES.filter((k) => s.counts[k]).map((k) => (
-                  <span key={k} className={`badge ${k === 'critical' || k === 'high' ? 'off' : ''}`}>
+                  <span key={k} className={`badge ${k === 'critical' || k === 'high' ? 'danger-badge' : ''}`}>
                     {t(`imagescan:severity.${k}`)} {s.counts[k]}{' '}
                   </span>
                 ))}

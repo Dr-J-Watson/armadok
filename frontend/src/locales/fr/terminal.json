@@ -12,5 +12,8 @@
   "save": "Enregistrer",
   "state.connecting": "Connexion…",
   "state.open": "Connecté",
-  "state.ended": "Terminé"
+  "state.ended": "Terminé",
+  "writableTip": "Permet au shell de modifier les fichiers du projet. Désactivé, il ne peut que les lire.",
+  "networkTip": "Donne l'accès réseau au shell : il peut joindre Internet et les autres conteneurs.",
+  "openTip": "Ouvre un shell dans un conteneur jetable, dans le dossier de ce projet"
 }

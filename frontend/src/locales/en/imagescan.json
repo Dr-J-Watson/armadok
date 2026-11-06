@@ -20,5 +20,6 @@
   "status.unsupported": "This operating system is not covered by the database.",
   "status.empty": "No package list found in this image (it may be very minimal).",
   "status.ok": "Scanned",
-  "status.partial": "Only the first 5000 packages were checked: the result is incomplete."
+  "status.partial": "Only the first 5000 packages were checked: the result is incomplete.",
+  "scanTip": "Reads each image's package list (nothing is started) and checks versions against a public database."
 }

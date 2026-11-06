@@ -1,3 +1,4 @@
+import { Copy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { HooksSection } from './HooksSection'
 
@@ -14,12 +15,20 @@ export function IntegrationsPage() {
       - targets: ['${location.host}']`
   return (
     <>
-      <h1>{t('integrations:title')}</h1>
+      <header className="page-head">
+        <div>
+          <h1>{t('integrations:title')}</h1>
+          <p className="hint">{t('integrations:subtitle')}</p>
+        </div>
+      </header>
       <HooksSection />
       <section>
         <h2>{t('integrations:metrics.title')}</h2>
-        <p>{t('integrations:metrics.explain')}</p>
+        <p className="hint">{t('integrations:metrics.explain')}</p>
         <pre className="output">{scrape}</pre>
+        <button type="button" onClick={() => void navigator.clipboard?.writeText(scrape)}>
+          <Copy size={14} aria-hidden="true" /> {t('integrations:copy')}
+        </button>
       </section>
     </>
   )

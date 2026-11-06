@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import type { RightInfo } from '../account/rights'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
+import { Tip } from '../../components/Tip'
 
 interface Account {
   id: string
@@ -28,6 +30,7 @@ interface Key {
 export function ServiceAccountsPage() {
   const { t } = useTranslation(['serviceAccounts', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const accounts = useQuery({
     queryKey: ['service-accounts'],
     queryFn: () => api.get<Account[]>('/service-accounts'),
@@ -52,24 +55,31 @@ export function ServiceAccountsPage() {
 
   return (
     <>
-      <h1>{t('serviceAccounts:title')}</h1>
-      <p>{t('serviceAccounts:explain')}</p>
+      <header className="page-head">
+        <div>
+          <h1>{t('serviceAccounts:title')}</h1>
+          <p className="hint">{t('serviceAccounts:explain')}</p>
+        </div>
+      </header>
       {failed != null && (
         <Problem error={failed} />
       )}
-      <form onSubmit={submit} aria-label={t('serviceAccounts:new')}>
+      <form onSubmit={submit} aria-label={t('serviceAccounts:new')} className="panel form-grid">
         <label>
           {t('serviceAccounts:name')}
-          <input value={form.name} required pattern="[a-z0-9][a-z0-9\-]{0,30}" onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <input value={form.name} required placeholder="ci-deploy" autoComplete="off" pattern="[a-z0-9][a-z0-9\-]{0,30}" onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </label>
         <label>
           {t('serviceAccounts:description')}
           <input value={form.description} maxLength={200} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </label>
-        <button type="submit" disabled={create.isPending}>
-          {t('serviceAccounts:create')}
-        </button>
+        <div className="wide actions">
+          <button type="submit" className="primary" disabled={create.isPending}>
+            {t('serviceAccounts:create')}
+          </button>
+        </div>
       </form>
+      {accounts.isPending && <p className="loading">{t('loading')}</p>}
       {accounts.data?.length === 0 && <p className="empty">{t('serviceAccounts:none')}</p>}
       <ul className="links">
         {accounts.data?.map((a) => (
@@ -85,7 +95,14 @@ export function ServiceAccountsPage() {
                 <button type="button" onClick={() => setOpen(open === a.id ? null : a.id)}>
                   {t('serviceAccounts:keys')}
                 </button>
-                <button type="button" onClick={() => close.mutate(a.id)}>
+                <button
+                  type="button"
+                  className="danger-button"
+                  title={t('serviceAccounts:closeTip')}
+                  onClick={async () => {
+                    if (await ask(t('serviceAccounts:closeConfirm', { name: a.username }))) close.mutate(a.id)
+                  }}
+                >
                   {t('serviceAccounts:close')}
                 </button>
               </div>
@@ -101,6 +118,7 @@ export function ServiceAccountsPage() {
 function Keys({ accountId }: { accountId: string }) {
   const { t } = useTranslation(['serviceAccounts', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const base = `/service-accounts/${accountId}/keys`
   const keys = useQuery({ queryKey: ['service-account-keys', accountId], queryFn: () => api.get<Key[]>(base) })
   const catalogue = useQuery({ queryKey: ['rights'], queryFn: () => api.get<RightInfo[]>('/rights') })
@@ -133,7 +151,7 @@ function Keys({ accountId }: { accountId: string }) {
           </p>
           <input readOnly aria-label={t('serviceAccounts:keyValue')} value={shown} onFocus={(e) => e.currentTarget.select()} />
           <p className="hint">{t('serviceAccounts:oauthHint')}</p>
-          <button type="button" onClick={() => setShown(null)}>
+          <button type="button" className="primary" onClick={() => setShown(null)}>
             {t('serviceAccounts:copied')}
           </button>
         </div>
@@ -150,7 +168,10 @@ function Keys({ accountId }: { accountId: string }) {
           <input value={name} required maxLength={100} onChange={(e) => setName(e.target.value)} />
         </label>
         <fieldset>
-          <legend>{t('serviceAccounts:rights')}</legend>
+          <legend>
+            {t('serviceAccounts:rights')}
+            <Tip text={t('serviceAccounts:rightsTip')} />
+          </legend>
           {offered.map((r) => (
             <label key={r.id}>
               <input
@@ -162,7 +183,7 @@ function Keys({ accountId }: { accountId: string }) {
             </label>
           ))}
         </fieldset>
-        <button type="submit" disabled={create.isPending || picked.length === 0}>
+        <button type="submit" className="primary" disabled={create.isPending || picked.length === 0}>
           {t('serviceAccounts:createKey')}
         </button>
       </form>
@@ -173,7 +194,13 @@ function Keys({ accountId }: { accountId: string }) {
             {k.revoked ? (
               <span className="badge off">{t('serviceAccounts:revoked')}</span>
             ) : (
-              <button type="button" onClick={() => revoke.mutate(k.id)}>
+              <button
+                type="button"
+                className="danger-button"
+                onClick={async () => {
+                  if (await ask(t('serviceAccounts:revokeConfirm', { name: k.name }))) revoke.mutate(k.id)
+                }}
+              >
                 {t('serviceAccounts:revoke')}
               </button>
             )}

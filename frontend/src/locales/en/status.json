@@ -13,5 +13,7 @@
   "state.unknown": "Unknown",
   "recent": "Latest results",
   "availability": "Available {{value}}% of the checks.",
-  "checked": "Last check: {{at}}"
+  "checked": "Last check: {{at}}",
+  "closeConfirm": "Stop publishing this status page? The public address will stop working.",
+  "copy": "Copy the address"
 }

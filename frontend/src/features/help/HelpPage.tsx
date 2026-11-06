@@ -9,12 +9,16 @@ export function HelpPage() {
   const { t } = useTranslation('help')
   return (
     <main>
-      <h1>{t('title')}</h1>
-      <p>{t('intro')}</p>
+      <header className="page-head">
+        <div>
+          <h1>{t('title')}</h1>
+          <p className="hint">{t('intro')}</p>
+        </div>
+      </header>
       <nav aria-label={t('title')}>
-        <ul className="links">
+        <ul className="quick">
           {SECTIONS.map((s) => (
-            <li key={s}>
+            <li key={s} style={{ display: 'contents' }}>
               <a href={`#help-${s}`}>{t(`${s}.title`)}</a>
             </li>
           ))}

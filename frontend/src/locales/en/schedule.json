@@ -66,5 +66,7 @@
   "missedWait": "Wait for the next time",
   "actions.imagescan.scan": "Scan images for flaws",
   "actions.images.check": "Check for image updates",
-  "actions.project.autoupdate": "Update a project when something is new (Git, images)"
+  "actions.project.autoupdate": "Update a project when something is new (Git, images)",
+  "runNowTip": "Runs it once now, without changing the schedule",
+  "namePlaceholder": "e.g. Nightly update"
 }

@@ -45,5 +45,9 @@
   "event.traefik.file_read": "Traefik file read",
   "event.traefik.file_write": "Traefik file saved",
   "verify.unsigned": "Warning: no signing key is configured (ARMADOK_ENCRYPTION_KEY), so this check cannot protect against someone who can write to the database.",
-  "event.audit.export": "Audit log exported"
+  "event.audit.export": "Audit log exported",
+  "filters.clear": "Clear filters",
+  "filters.clearTip": "Show every entry again",
+  "export.tip": "Downloads the entries that match the filters above.",
+  "verify.tip": "Checks that no entry was altered or removed since it was written."
 }

@@ -66,7 +66,7 @@ export function FileEditor({ path, title, fileName, queryKey: key }: Props) {
     setConflict(false)
   }
 
-  if (loaded.isPending) return <p>{t('loading')}</p>
+  if (loaded.isPending) return <p className="loading">{t('loading')}</p>
   if (loaded.isError)
     return (
       <Problem error={loaded.error} />
@@ -108,6 +108,13 @@ export function FileEditor({ path, title, fileName, queryKey: key }: Props) {
           setDraft(e.target.value)
           setSaved(false)
         }}
+        onKeyDown={(e) => {
+          // Ctrl+S (or Cmd+S) saves instead of opening the browser's own save box.
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault()
+            if (dirty && !save.isPending) save.mutate()
+          }
+        }}
       />
       <div className="actions">
         <button type="button" className="primary" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
@@ -118,6 +125,7 @@ export function FileEditor({ path, title, fileName, queryKey: key }: Props) {
             {t('files:discard')}
           </button>
         )}
+        <span className="hint">{t('files:lines', { count: text.split('\n').length })} · {t('files:shortcut')}</span>
       </div>
     </div>
   )

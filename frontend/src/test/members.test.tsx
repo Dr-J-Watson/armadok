@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -44,6 +45,7 @@ afterEach(() => {
 
 describe('members', () => {
   it('lists the owner and members, invites by name, changes a role and removes', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true) // the removal now asks first
     server()
     renderTab()
     expect(await screen.findByText('olga')).toBeInTheDocument()

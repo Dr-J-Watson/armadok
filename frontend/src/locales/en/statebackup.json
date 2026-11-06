@@ -17,5 +17,6 @@
   "sharedKey": "These backups use the same key as your stored secrets. If that key is lost, the backups cannot be opened either. A key of their own avoids that.",
   "makeKey": "Generate a key of their own",
   "keyShown": "Write this key down somewhere safe, outside this server, then add it to the server's configuration and restart. It is shown only now and is not kept anywhere.",
-  "keySaved": "I saved it"
+  "keySaved": "I saved it",
+  "nowTip": "Creates an encrypted copy of Armadok's data right now"
 }

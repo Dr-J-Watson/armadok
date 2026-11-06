@@ -8,6 +8,7 @@ import type { Node } from '../nodes/types'
 import { roleLabel } from './RolesTab'
 import type { Assignment, Group, Role } from './types'
 import { Problem } from '../../components/Problem'
+import { useConfirm } from '../../components/Confirm'
 
 interface User {
   id: string
@@ -18,6 +19,7 @@ interface User {
 export function AssignmentsTab() {
   const { t } = useTranslation(['roles', 'users', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
   const canManage = useCan('grants.manage')
   const list = useQuery({ queryKey: ['assignments'], queryFn: () => api.get<Assignment[]>('/assignments') })
   const roles = useQuery({ queryKey: ['roles'], queryFn: () => api.get<Role[]>('/roles') })
@@ -40,7 +42,7 @@ export function AssignmentsTab() {
   })
   const remove = useMutation({ mutationFn: (id: string) => api.del(`/assignments/${id}`), onSuccess: refresh })
 
-  if (list.isPending) return <p>{t('loading')}</p>
+  if (list.isPending) return <p className="loading">{t('loading')}</p>
   if (list.isError)
     return (
       <Problem error={list.error} />
@@ -124,7 +126,12 @@ export function AssignmentsTab() {
               <td>{a.expires_at ? new Date(a.expires_at).toLocaleString() : t('roles:assign.never')}</td>
               <td>
                 {canManage && (
-                  <button type="button" onClick={() => remove.mutate(a.id)}>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (await ask(t('roles:assign.takeConfirm', { who: a.subject_name ?? a.subject_id }))) remove.mutate(a.id)
+                    }}
+                  >
                     {t('roles:assign.take')}
                   </button>
                 )}

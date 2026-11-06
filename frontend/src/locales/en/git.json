@@ -20,5 +20,11 @@
   "logins.username": "User",
   "logins.secret": "Access token",
   "logins.save": "Save the login",
-  "logins.forget": "Forget"
+  "logins.forget": "Forget",
+  "panel.checkTip": "Asks the remote whether the branch has new commits",
+  "panel.updateTip": "Replaces the project's files with the latest commit. Nothing is redeployed.",
+  "panel.updateDeployTip": "Updates the files, then runs docker compose up -d",
+  "panel.forgetTip": "Stops following the repository. The files stay as they are.",
+  "panel.forgetConfirm": "Stop following the Git repository? The project's files stay, but Armadok will no longer update them.",
+  "logins.forgetConfirm": "Forget the saved login for {{host}}? Private repositories there can no longer be updated."
 }

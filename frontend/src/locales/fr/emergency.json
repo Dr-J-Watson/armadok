@@ -13,5 +13,7 @@
   "acknowledge": "Acquitter",
   "cut": "Mettre fin à cette session",
   "truncated": "Seules les premières et dernières actions sont montrées : {{total}} en tout.",
-  "cutByOwner": "terminée par le propriétaire"
+  "cutByOwner": "terminée par le propriétaire",
+  "cutTip": "Met fin tout de suite à la session de l'administrateur.",
+  "cutConfirm": "Mettre fin maintenant à la session d'urgence de {{admin}} ?"
 }

@@ -13,5 +13,7 @@
   "acknowledge": "Acknowledge",
   "cut": "End this session",
   "truncated": "Showing the first and last actions only: {{total}} in all.",
-  "cutByOwner": "ended by the owner"
+  "cutByOwner": "ended by the owner",
+  "cutTip": "Ends the administrator's session right away.",
+  "cutConfirm": "End the emergency session of {{admin}} now?"
 }

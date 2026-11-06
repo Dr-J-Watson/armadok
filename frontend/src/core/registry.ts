@@ -25,6 +25,8 @@ export interface NodeTabProps {
 export interface NodeTab {
   id: string
   labelKey: string // in the feature's own namespace, e.g. "docker:tab"
+  // Optional one-line explanation, shown as a tooltip on the tab (same namespace rules).
+  hintKey?: string
   // Where it lives: in the Docker menu, in the network menu, among the node's own pages (map,
   // resources), or - when omitted - in the node's settings (members, rights, worker...).
   area?: 'docker' | 'network' | 'node'

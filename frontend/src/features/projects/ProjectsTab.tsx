@@ -18,6 +18,7 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['projects', 'errors'])
   const [params, setParams] = useSearchParams()
   const [creating, setCreating] = useState(false)
+  const [filter, setFilter] = useState('')
   const panels = useFeatures().flatMap((f) => f.projectPanels ?? [])
   const projects = useQuery({
     queryKey: ['projects', nodeId],
@@ -34,7 +35,7 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
     setParams(next, { replace: true })
   }
 
-  if (projects.isPending) return <p>{t('loading')}</p>
+  if (projects.isPending) return <p className="loading">{t('loading')}</p>
   if (projects.isError)
     return (
       <Problem error={projects.error} />
@@ -49,8 +50,9 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
       }}
     />
   ) : (
-    <div className="actions">
-      <button type="button" className="primary" onClick={() => setCreating(true)}>
+    <div className="actions between">
+      <p className="hint">{t('projects:count', { count: projects.data.projects.length })}</p>
+      <button type="button" className="primary" title={t('projects:new.tip')} onClick={() => setCreating(true)}>
         {t('projects:new.button')}
       </button>
     </div>
@@ -68,8 +70,11 @@ export function ProjectsTab({ nodeId }: { nodeId: string }) {
     {create}
     <div className="projects-layout">
       <nav aria-label={t('projects:list')}>
+        {projects.data.projects.length > 6 && (
+          <input type="search" aria-label={t('projects:search')} placeholder={t('projects:search')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+        )}
         <ul className="links">
-          {projects.data.projects.map((p) => (
+          {projects.data.projects.filter((p) => p.name.toLowerCase().includes(filter.trim().toLowerCase())).map((p) => (
             <li key={p.name}>
               <strong>{p.name}</strong>
               <ul className="links">

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, download } from '../../core/api'
 import { useCan } from '../../core/auth'
 import { Problem } from '../../components/Problem'
+import { Download, ShieldCheck, X } from 'lucide-react'
 
 interface Entry {
   id: number
@@ -78,15 +79,20 @@ export function AuditList({ nodeId }: { nodeId?: string }) {
             ))}
           </select>
         </label>
-        <button type="button" onClick={() => exportAs.mutate('csv')}>
-          {t('audit:export.csv')}
+        {(actor || event || outcome) && (
+          <button type="button" onClick={() => { setActor(''); setEvent(''); setOutcome('') }} title={t('audit:filters.clearTip')}>
+            <X size={14} aria-hidden="true" /> {t('audit:filters.clear')}
+          </button>
+        )}
+        <button type="button" title={t('audit:export.tip')} onClick={() => exportAs.mutate('csv')}>
+          <Download size={14} aria-hidden="true" /> {t('audit:export.csv')}
         </button>
-        <button type="button" onClick={() => exportAs.mutate('json')}>
-          {t('audit:export.json')}
+        <button type="button" title={t('audit:export.tip')} onClick={() => exportAs.mutate('json')}>
+          <Download size={14} aria-hidden="true" /> {t('audit:export.json')}
         </button>
         {!nodeId && canVerify && (
-          <button type="button" onClick={() => verify.mutate()}>
-            {t('audit:verify.button')}
+          <button type="button" title={t('audit:verify.tip')} disabled={verify.isPending} onClick={() => verify.mutate()}>
+            <ShieldCheck size={14} aria-hidden="true" /> {t('audit:verify.button')}
           </button>
         )}
       </form>
@@ -102,7 +108,7 @@ export function AuditList({ nodeId }: { nodeId?: string }) {
       {(log.error ?? verify.error ?? exportAs.error) != null && (
         <Problem error={log.error ?? verify.error ?? exportAs.error} />
       )}
-      {log.isPending && <p>{t('loading')}</p>}
+      {log.isPending && <p className="loading">{t('loading')}</p>}
       {log.isSuccess && entries.length === 0 && <p className="empty">{t('audit:empty')}</p>}
 
       {entries.length > 0 && (
@@ -119,11 +125,13 @@ export function AuditList({ nodeId }: { nodeId?: string }) {
           <tbody>
             {entries.map((e) => (
               <tr key={e.id}>
-                <td data-label={t('audit:columns.when')}>{new Date(e.at).toLocaleString()}</td>
+                <td data-label={t('audit:columns.when')}>
+                  <time dateTime={e.at} title={e.at}>{new Date(e.at).toLocaleString()}</time>
+                </td>
                 <td data-label={t('audit:columns.who')}>{e.actor_name}</td>
                 <td data-label={t('audit:columns.what')}>{label(e)}</td>
                 <td data-label={t('audit:columns.result')}>
-                  <span className={`badge ${e.outcome === 'success' ? 'ok' : 'off'}`}>{t(`audit:outcome.${e.outcome}`)}</span>
+                  <span className={`badge ${e.outcome === 'success' ? 'ok' : 'danger-badge'}`}>{t(`audit:outcome.${e.outcome}`)}</span>
                 </td>
                 <td data-label={t('audit:columns.details')}>
                   <small>

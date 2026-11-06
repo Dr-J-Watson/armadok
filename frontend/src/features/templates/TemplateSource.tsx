@@ -1,3 +1,4 @@
+import { useConfirm } from '../../components/Confirm'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Problem } from '../../components/Problem'
@@ -23,6 +24,7 @@ interface Group {
 export function TemplateSource({ onDraft }: ProjectSourceProps) {
   const { t } = useTranslation(['templates', 'errors'])
   const client = useQueryClient()
+  const ask = useConfirm()
   const list = useQuery({ queryKey: ['templates'], queryFn: () => api.get<Template[]>('/templates') })
   const use = useMutation({
     mutationFn: (id: string) => api.get<{ name: string; compose: string }>(`/templates/${id}`),
@@ -47,11 +49,18 @@ export function TemplateSource({ onDraft }: ProjectSourceProps) {
           <li key={tpl.id}>
             <strong>{tpl.name}</strong> <small>{tpl.description}</small>
             {!tpl.mine && <small> — {t('templates:sharedBy', { name: tpl.owner_name })}</small>}{' '}
-            <button type="button" onClick={() => use.mutate(tpl.id)} disabled={use.isPending}>
+            <button type="button" className="primary" title={t('templates:useTip')} onClick={() => use.mutate(tpl.id)} disabled={use.isPending}>
               {t('templates:use')}
             </button>{' '}
             {tpl.mine && (
-              <button type="button" onClick={() => remove.mutate(tpl.id)} disabled={remove.isPending}>
+              <button
+                type="button"
+                className="danger-button"
+                onClick={async () => {
+                  if (await ask(t('templates:deleteConfirm', { name: tpl.name }))) remove.mutate(tpl.id)
+                }}
+                disabled={remove.isPending}
+              >
                 {t('templates:delete')}
               </button>
             )}

@@ -26,5 +26,18 @@
   "new.name": "Project name",
   "new.envHint": "The .env stays on the node (private file, never shown again here). Leave it empty if the project needs none. Nothing is started: deploy from the project page.",
   "new.create": "Create the project",
-  "new.cancel": "Cancel"
+  "new.cancel": "Cancel",
+  "count": "{{count}} project(s)",
+  "search": "Search a project",
+  "new.tip": "Creates a project folder with its compose file. Nothing runs until you deploy it.",
+  "new.nameTip": "Becomes the folder name on the node and the Compose project name. Letters, digits, dots, dashes and underscores.",
+  "new.envTip": "Optional private values (passwords, keys). Never shown again in the audit log, only the variable names.",
+  "run.tip.up": "Creates and starts the services (docker compose up -d)",
+  "run.tip.down": "Stops and removes the containers. Volumes are kept.",
+  "run.tip.stop": "Stops the services without removing them",
+  "run.tip.start": "Starts services that were stopped",
+  "run.tip.restart": "Restarts the services",
+  "run.tip.pull": "Downloads newer images; does not restart anything",
+  "run.tip.build": "Builds the images from the project's Dockerfiles",
+  "run.downConfirm": "Bring {{project}} down? Its containers are removed (volumes are kept) and its sites go offline."
 }

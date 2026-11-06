@@ -14,7 +14,12 @@ export function AccessPage() {
   const tab = TABS.find((x) => x === asked) ?? 'roles'
   return (
     <>
-      <h1>{t('roles:title')}</h1>
+      <header className="page-head">
+        <div>
+          <h1>{t('roles:title')}</h1>
+          <p className="hint">{t('roles:subtitle')}</p>
+        </div>
+      </header>
       <div className="actions">
         {TABS.map((name) => (
           <button
@@ -22,6 +27,7 @@ export function AccessPage() {
             type="button"
             aria-pressed={tab === name}
             className={tab === name ? 'primary' : undefined}
+            title={t(`roles:tabHints.${name}`)}
             onClick={() => setParams({ tab: name }, { replace: true })}
           >
             {t(`roles:tabs.${name}`)}

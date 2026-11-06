@@ -28,5 +28,7 @@
   "downloadWarn": "{{archive}} contains every file of the volume, passwords and keys included. It goes from the node to your browser through this server, which keeps nothing. Only archives made since this option exists can be downloaded.",
   "code": "Second-factor code",
   "clearFirst": "Empty the volume first",
-  "clearWarn": "Everything in the volume is deleted before the archive is restored, so it ends up exactly as the archive was. The archive is checked first; if it is damaged, nothing is deleted."
+  "clearWarn": "Everything in the volume is deleted before the archive is restored, so it ends up exactly as the archive was. The archive is checked first; if it is damaged, nothing is deleted.",
+  "restoreTip": "Writes this archive back into a volume. Existing files can be overwritten.",
+  "downloadTip": "Downloads the archive to your computer (asks for a fresh code)"
 }

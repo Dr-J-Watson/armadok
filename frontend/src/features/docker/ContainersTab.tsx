@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { Problem } from '../../components/Problem'
+import { Tip } from '../../components/Tip'
+import { useConfirm } from '../../components/Confirm'
 
 interface Port {
   private: number | null
@@ -40,6 +42,8 @@ function publishedPorts(ports: Port[]): string {
 export function ContainersTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['docker', 'errors'])
   const queryClient = useQueryClient()
+  const ask = useConfirm()
+  const [filter, setFilter] = useState('')
   const [logsOf, setLogsOf] = useState<string | null>(null)
   // Removing asks again first: it cannot be undone.
   const [confirming, setConfirming] = useState<string | null>(null)
@@ -72,26 +76,43 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
     refetchInterval: 10000,
   })
 
-  if (containers.isPending) return <p>{t('loading')}</p>
+  if (containers.isPending) return <p className="loading">{t('loading')}</p>
   if (containers.isError) {
     return (
       <Problem error={containers.error} />
     )
   }
-  const { containers: list, truncated } = containers.data
-  if (list.length === 0) return <p className="empty">{t('docker:empty')}</p>
+  const { containers: all, truncated } = containers.data
+  const needle = filter.trim().toLowerCase()
+  const list = needle ? all.filter((c) => `${c.names.join(' ')} ${c.image}`.toLowerCase().includes(needle)) : all
+  const running = all.filter((c) => c.state === 'running').length
+  if (all.length === 0) return <p className="empty">{t('docker:empty')}</p>
 
   return (
     <>
       {truncated && <p className="notice">{t('docker:truncated')}</p>}
-      <label>
-        <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} /> {t('docker:live.toggle')}
-      </label>
+      <div className="actions between">
+        <p className="hint">{t('docker:summary', { running, total: all.length })}</p>
+        <div className="actions">
+          <input
+            type="search"
+            aria-label={t('docker:search')}
+            placeholder={t('docker:search')}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+          <label>
+            <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} /> {t('docker:live.toggle')}
+            <Tip text={t('docker:live.tip')} />
+          </label>
+        </div>
+      </div>
+      {list.length === 0 && <p className="empty">{t('docker:noMatch')}</p>}
       {live && stats.isError && (
         <Problem error={stats.error} />
       )}
       {live && stats.data?.truncated && <p className="notice">{t('docker:live.truncated')}</p>}
-      <table className="table">
+      <table className="table" hidden={list.length === 0}>
         <thead>
           <tr>
             <th>{t('docker:columns.name')}</th>
@@ -135,7 +156,10 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
                       key={action}
                       type="button"
                       disabled={act.isPending}
-                      onClick={() => act.mutate({ id: c.id, action })}
+                      title={t(`docker:actionTip.${action}`)}
+                      onClick={async () => {
+                        if (action !== 'stop' || (await ask(t('docker:stopConfirm', { name: c.names[0] ?? c.id.slice(0, 12) }), { danger: false }))) act.mutate({ id: c.id, action })
+                      }}
                     >
                       {t(`docker:action.${action}`)}
                     </button>
@@ -146,11 +170,11 @@ export function ContainersTab({ nodeId }: { nodeId: string }) {
                         {t('docker:action.confirmRemove')}
                       </button>
                     ) : (
-                      <button type="button" onClick={() => setConfirming(c.id)}>
+                      <button type="button" title={t('docker:actionTip.remove')} onClick={() => setConfirming(c.id)}>
                         {t('docker:action.remove')}
                       </button>
                     ))}
-                  <button type="button" onClick={() => setLogsOf(logsOf === c.id ? null : c.id)}>
+                  <button type="button" aria-pressed={logsOf === c.id} title={t('docker:actionTip.logs')} onClick={() => setLogsOf(logsOf === c.id ? null : c.id)}>
                     {t('docker:action.logs')}
                   </button>
                 </div>

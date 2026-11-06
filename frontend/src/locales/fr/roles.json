@@ -52,5 +52,12 @@
   "effective.viaRole": "rôle {{role}}",
   "effective.viaGroup": "rôle {{role}} par le groupe {{group}}",
   "effective.everywhere": "partout",
-  "access.explain": "Les droits qui fonctionnent sur ce nœud pour chaque compte, qu'ils viennent d'un rôle, d'un groupe ou d'un droit donné directement."
+  "access.explain": "Les droits qui fonctionnent sur ce nœud pour chaque compte, qu'ils viennent d'un rôle, d'un groupe ou d'un droit donné directement.",
+  "subtitle": "Qui peut faire quoi : les rôles regroupent des droits, les groupes réunissent des personnes.",
+  "tabHints.roles": "Ensembles de droits nommés",
+  "tabHints.groups": "Ensembles de personnes",
+  "tabHints.assignments": "Qui détient quel rôle, et où",
+  "deleteConfirm": "Supprimer le rôle {{name}} ? Les personnes qui le détiennent perdent ses droits.",
+  "groups.deleteConfirm": "Supprimer le groupe {{name}} ? Ses membres gardent leurs propres droits.",
+  "assign.takeConfirm": "Retirer ce rôle à {{who}} ?"
 }
