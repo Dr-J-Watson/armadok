@@ -1,7 +1,7 @@
 """`GET /api/v1/metrics` (and `GET /metrics`): the hub's state in the Prometheus text format.
 
 Needs the `metrics.read` right, given to an API key that Prometheus presents as a bearer token.
-What it shows follows what that key's owner may see: machines they cannot see are absent, and
+What it shows follows what that key's owner may see: nodes they cannot see are absent, and
 so are their workers and deployments. Values are counts and states, never names of secrets,
 file contents or addresses of visitors.
 """
@@ -53,7 +53,7 @@ def metrics(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> PlainTextResponse:
-    """Return the metrics. Needs `metrics.read`; shows only the machines you can see."""
+    """Return the metrics. Needs `metrics.read`; shows only the nodes you can see."""
     catalogue = registry.rights()
     who.require("metrics.read", catalogue)
     nodes = [
@@ -75,14 +75,14 @@ def metrics(
     page.family(
         "armadok_nodes",
         "gauge",
-        "Machines you can see, by type.",
+        "Nodes you can see, by type.",
         [({"type": t}, c) for t, c in sorted(by_type.items())],
     )
     hub = getattr(request.app.state, "worker_hub", None)
     page.family(
         "armadok_worker_connected",
         "gauge",
-        "1 when the machine's worker is connected.",
+        "1 when the node's worker is connected.",
         [
             ({"node": n["name"], "node_id": n["id"]}, 1 if hub and hub.get(n["id"]) else 0)
             for n in nodes

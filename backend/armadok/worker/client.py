@@ -102,7 +102,7 @@ def _answer(call_id: int, handler: Operation | None, args: Any) -> dict[str, Any
     except OperationError as error:
         return {"id": call_id, "ok": False, "error": error.code}
     except Exception:
-        # Details stay on the machine; the hub only gets a stable code.
+        # Details stay on the node; the hub only gets a stable code.
         return {"id": call_id, "ok": False, "error": MAX_ERROR_CODE}
 
 

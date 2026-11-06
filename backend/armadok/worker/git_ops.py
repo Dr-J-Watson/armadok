@@ -16,7 +16,7 @@ on each command. A `.git` that appears in the project folder is not read.
 On top of that:
 
 - only `https://` addresses; every other protocol (`file:`, `ext:`, `ssh:`, `git:`) is turned
-  off, redirects are not followed, and the machine's own network is off limits unless the
+  off, redirects are not followed, and the node's own network is off limits unless the
   operator allows it (`ARMADOK_GIT_ALLOW_PRIVATE=true`): the address is resolved first and the
   command is pinned to the address that was checked;
 - no shell and no prompt: an argument list built from validated parts, with a deadline, an
@@ -115,7 +115,7 @@ def _allow_private() -> bool:
 
 
 def _pin(url: str) -> list[str]:
-    """Resolve the repository's host, refuse the machine's own network, and pin the address.
+    """Resolve the repository's host, refuse the node's own network, and pin the address.
 
     Without this a repository address could be used to probe the worker's network. The command
     is told which address to use, so a name that answers differently a moment later (DNS
@@ -231,7 +231,7 @@ def _run(
 
 
 def _fail(output: str) -> OperationError:
-    """Turn Git's complaint into a stable code; the text itself never leaves the machine."""
+    """Turn Git's complaint into a stable code; the text itself never leaves the node."""
     low = output.lower()
     if any(w in low for w in ("authentication failed", "could not read username", "403", "401")):
         return OperationError("worker.git_auth")
@@ -251,7 +251,7 @@ def _git(folder_fd: int, project: str, argv: list[str], url: str, login: Any = N
 def _incoming_ok(folder_fd: int, project: str, url: str, ref: str) -> None:
     """Refuse a tree holding links, submodules or a tracked `.env`, before writing any of it.
 
-    A symbolic link in a repository can point at any file of the machine and Compose would
+    A symbolic link in a repository can point at any file of the node and Compose would
     follow it; a submodule is a repository inside the folder; a tracked `.env` would replace
     the private one.
     """

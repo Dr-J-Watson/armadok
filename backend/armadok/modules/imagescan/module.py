@@ -25,11 +25,11 @@ module = Module(
             {
                 "en": (
                     "New serious flaws in an image",
-                    "On this machine, the image {image} has {count} new serious flaw(s).",
+                    "On this node, the image {image} has {count} new serious flaw(s).",
                 ),
                 "fr": (
                     "Nouvelles failles graves dans une image",
-                    "Sur cette machine, l'image {image} a {count} nouvelle(s) faille(s) grave(s).",
+                    "Sur cette node, l'image {image} a {count} nouvelle(s) faille(s) grave(s).",
                 ),
             },
         ),

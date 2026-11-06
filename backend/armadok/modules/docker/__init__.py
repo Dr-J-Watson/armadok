@@ -1,1 +1,1 @@
-"""Docker of a machine: containers, and later projects, images, networks and volumes."""
+"""Docker of a node: containers, and later projects, images, networks and volumes."""

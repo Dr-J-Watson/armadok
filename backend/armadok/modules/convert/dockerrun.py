@@ -1,6 +1,6 @@
 """Converting a `docker run` command into a Compose service.
 
-Pure text in, text out: the command is read, never run, and nothing is looked up on a machine.
+Pure text in, text out: the command is read, never run, and nothing is looked up on a node.
 It is split like a shell would split it (no variable or command substitution: `$(...)` stays
 the text it is, with a warning), then each flag is mapped to its Compose field. What cannot be
 converted is listed, not guessed. Values that look like secrets are moved to a `.env` text so

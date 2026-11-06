@@ -1,7 +1,7 @@
 {
   "tab": "Containers",
-  "empty": "No container on this machine.",
-  "truncated": "The list is incomplete: this machine has more containers than can be shown at once.",
+  "empty": "No container on this node.",
+  "truncated": "The list is incomplete: this node has more containers than can be shown at once.",
   "columns.name": "Name",
   "columns.image": "Image",
   "columns.state": "State",

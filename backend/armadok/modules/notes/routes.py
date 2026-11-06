@@ -2,7 +2,7 @@
 
 Notes are private to their author: every route works on the caller's own notes only, and
 nothing here (or anywhere) lets an administrator read someone else's. The one exception is the
-author's own choice: a note can be shown, read-only, to named people who can see its machine.
+author's own choice: a note can be shown, read-only, to named people who can see its node.
 
 Notes are deliberately not written to the audit log: their existence on an object is as
 private as their content.
@@ -107,7 +107,7 @@ def shared_notes(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> list[dict]:
-    """Return notes shared with you, read-only, on machines you can still see."""
+    """Return notes shared with you, read-only, on nodes you can still see."""
     visible = [
         n
         for n in repository.shared_to(conn, _settings(request), who.id)
@@ -121,7 +121,7 @@ people_limiter = FailureLimiter({"user": 10})
 
 
 def _may_see(conn, registry, user_id: str, node_id: str) -> bool:
-    """Tell whether an active, unblocked person can see the machine."""
+    """Tell whether an active, unblocked person can see the node."""
     if registry.account_blocked(conn, user_id):
         return False
     return registry.principal_for(conn, user_id, kind="background").has(
@@ -137,10 +137,10 @@ def share_candidate(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> list[dict]:
-    """Return the person with exactly this user name, if they can see the machine.
+    """Return the person with exactly this user name, if they can see the node.
 
     An exact name, not a prefix, and a few tries a minute: this must not be a way to list who
-    has access to a machine. Nothing is returned for someone who cannot see it.
+    has access to a node. Nothing is returned for someone who cannot see it.
     """
     if nodes_repo.get_node(conn, node_id) is None or not who.has(
         "nodes.read", registry.rights(), f"node:{node_id}"
@@ -184,9 +184,9 @@ def share_note(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Share one of your notes, read-only, with a person who can see the machine it is about.
+    """Share one of your notes, read-only, with a person who can see the node it is about.
 
-    Only you can share or stop sharing it. Someone who loses access to the machine stops seeing
+    Only you can share or stop sharing it. Someone who loses access to the node stops seeing
     the note. A key cannot share (it is a decision about who reads your words).
     """
     who.require("notes.write", registry.rights())
@@ -201,7 +201,7 @@ def share_note(
     if people_limiter.blocked(user=who.id):
         raise ApiError("members.too_many_searches", 429)
     people_limiter.remember(user=who.id)
-    # Someone who could not see the machine would learn that it exists: not shareable with them.
+    # Someone who could not see the node would learn that it exists: not shareable with them.
     if not _may_see(conn, registry, target["id"], note["node_id"]):
         raise ApiError("notes.share_no_access", 409)
     if repository.share(conn, who.id, note_id, target["id"]) == "full":

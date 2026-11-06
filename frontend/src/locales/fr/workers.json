@@ -9,11 +9,11 @@
   "ping": "Tester la connexion",
   "pingOk": "Le worker a répondu.",
   "revoke": "Révoquer le worker",
-  "enrolment.title": "Démarrer le worker sur la machine",
-  "enrolment.explain": "Mettez ces trois valeurs dans le .env de la machine, puis démarrez le worker. Le jeton ne sert qu'une fois et expire à {{time}}.",
+  "enrolment.title": "Démarrer le worker sur le nœud",
+  "enrolment.explain": "Mettez ces trois valeurs dans le .env du nœud, puis démarrez le worker. Le jeton ne sert qu'une fois et expire à {{time}}.",
   "enrolment.copy": "Copier",
   "enrolment.copied": "Copié",
   "enrolment.once": "Ce jeton n'est affiché que maintenant. Si vous le perdez, enrôlez à nouveau.",
-  "state.local": "Cette machine (pas de worker nécessaire)",
-  "localExplain": "C'est la machine sur laquelle tourne Armadok. Le hub agit directement dessus : il n'y a pas de worker à installer."
+  "state.local": "Ce nœud (pas de worker nécessaire)",
+  "localExplain": "C'est le nœud sur lequel tourne Armadok. Le hub agit directement dessus : il n'y a pas de worker à installer."
 }

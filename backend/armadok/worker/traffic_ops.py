@@ -1,6 +1,6 @@
-"""Reading Traefik's Prometheus metrics, on the machine that runs it.
+"""Reading Traefik's Prometheus metrics, on the node that runs it.
 
-The metrics endpoint is private to the machine (an entry point that is not published), so the
+The metrics endpoint is private to the node (an entry point that is not published), so the
 worker is the one that can read it: it makes a single `GET` to the address the operator gave in
 `ARMADOK_TRAEFIK_METRICS_URL`, never to one the hub names. What comes back is reduced to counters
 per service (requests by status class, duration buckets, bytes) and a few health facts; the hub

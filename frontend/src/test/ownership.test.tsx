@@ -67,7 +67,7 @@ describe('ownership section', () => {
     })
   })
 
-  it('offers to take back an object owned by someone else, only to the machine owner', async () => {
+  it('offers to take back an object owned by someone else, only to the node owner', async () => {
     owners = {
       types: ['project'], node_owner: true, can_take: true, mine: [],
       others: [{ type: 'project', id: 'blog', owner: 'u2', owner_name: 'bob' }],
@@ -85,7 +85,7 @@ describe('ownership section', () => {
     server()
     wrap(<OwnershipSection nodeId="n1" objectType="project" objectId="blog" />)
     await userEvent.click(await screen.findByLabelText(/Apply to everything of this kind/))
-    // One preview for giving, one for taking back (the caller owns the machine).
+    // One preview for giving, one for taking back (the caller owns the node).
     expect(await screen.findAllByText('1 object(s) will change hands.')).toHaveLength(2)
   })
 })

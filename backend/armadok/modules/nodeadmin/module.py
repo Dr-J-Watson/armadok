@@ -31,11 +31,11 @@ module = Module(
             None,
             {
                 "en": (
-                    "Machine ownership changed",
+                    "Node ownership changed",
                     "An administrator changed the owner of {node}.",
                 ),
                 "fr": (
-                    "Propriété d'une machine modifiée",
+                    "Propriété d'un nœud modifiée",
                     "Un administrateur a changé le propriétaire de {node}.",
                 ),
             },
@@ -45,10 +45,10 @@ module = Module(
             "warning",
             None,
             {
-                "en": ("Machine deleted", "An administrator deleted {node}. It can be restored."),
+                "en": ("Node deleted", "An administrator deleted {node}. It can be restored."),
                 "fr": (
-                    "Machine supprimée",
-                    "Un administrateur a supprimé {node}. Elle peut être restaurée.",
+                    "Nœud supprimé",
+                    "Un administrateur a supprimé {node}. Il peut être restauré.",
                 ),
             },
         ),

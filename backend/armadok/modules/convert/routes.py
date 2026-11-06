@@ -62,7 +62,7 @@ async def from_containers(
     """Read how the containers were started and return a Compose file and a `.env` text.
 
     Needs `convert.containers` (sensitive: the environment variables are read). Nothing is
-    stored or changed on the machine. The audit entry names the machine and how many containers,
+    stored or changed on the node. The audit entry names the node and how many containers,
     never the settings or the variables.
     """
     authorise(conn, registry, who, node_id, "convert.containers")

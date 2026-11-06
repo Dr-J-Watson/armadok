@@ -1,1 +1,1 @@
-"""Ownership of the objects inside a machine: give, accept, take back."""
+"""Ownership of the objects inside a node: give, accept, take back."""

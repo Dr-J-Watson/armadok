@@ -1,4 +1,4 @@
-"""Scanning an image: list its packages on the machine, ask OSV, keep what is found."""
+"""Scanning an image: list its packages on the node, ask OSV, keep what is found."""
 
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ def ecosystem(os_id: str, version: str) -> str | None:
 
 
 async def scan_image(app: Any, node_id: str, image_id: str, name: str) -> dict[str, Any]:
-    """Scan one image of a machine and store the result; return what was stored.
+    """Scan one image of a node and store the result; return what was stored.
 
     The result's `status` is `ok`, `unsupported` (an operating system OSV does not cover),
     `empty` (no package list found) or an error code.
@@ -149,7 +149,7 @@ def _save(app, node_id, image_id, name, listed, count, status, findings) -> None
 
 
 async def _listings(app: Any, node_id: str) -> tuple[Any, Any]:
-    """Ask the machine for its containers and images, and check the (untrusted) answers."""
+    """Ask the node for its containers and images, and check the (untrusted) answers."""
     registry = app.state.registry
     try:
         containers = docker_schemas.ContainerList.model_validate(
@@ -164,7 +164,7 @@ async def _listings(app: Any, node_id: str) -> tuple[Any, Any]:
 
 
 async def images_in_use(app: Any, node_id: str) -> list[tuple[str, str]]:
-    """Return `(image id, name)` of the images the machine's containers run, at most 20."""
+    """Return `(image id, name)` of the images the node's containers run, at most 20."""
     containers, images = await _listings(app, node_id)
     await asyncio.to_thread(_forget, app, node_id, {i.id for i in images.items})
     wanted = {c.image for c in containers.containers if c.image}
@@ -178,7 +178,7 @@ async def images_in_use(app: Any, node_id: str) -> list[tuple[str, str]]:
 
 
 async def name_of(app: Any, node_id: str, image_id: str) -> str | None:
-    """Return the name of an image the machine has, or None if it has no such image."""
+    """Return the name of an image the node has, or None if it has no such image."""
     _, images = await _listings(app, node_id)
     for image in images.items:
         if image.id == image_id:

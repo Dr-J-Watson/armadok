@@ -31,7 +31,7 @@ describe('line diff', () => {
 })
 
 describe('static configuration', () => {
-  it('explains how to set it up when the machine has no folder for it', async () => {
+  it('explains how to set it up when the node has no folder for it', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ configured: false }))
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>

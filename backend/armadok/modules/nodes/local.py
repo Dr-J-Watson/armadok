@@ -1,4 +1,4 @@
-"""The local node: the hub's own machine, managed without a worker.
+"""The local node: the hub's own node, managed without a worker.
 
 Created at start-up when `ARMADOK_LOCAL_NODE=true`. It belongs to the first account (the
 super-administrator), who receives the usual owner rights on it, and to nobody else: like any
@@ -34,9 +34,9 @@ def give_owner_rights(conn: sqlite3.Connection, registry: Registry, user_id: str
 
 
 def ensure_owner_rights(conn: sqlite3.Connection, settings: Any, registry: Registry) -> None:
-    """Start-up hook: every machine's owner holds the owner rights of every enabled module.
+    """Start-up hook: every node's owner holds the owner rights of every enabled module.
 
-    A module added after a machine was made declares new owner rights; without this, only the
+    A module added after a node was made declares new owner rights; without this, only the
     local node's owner would ever receive them. Idempotent.
     """
     rights = registry.node_owner_rights()

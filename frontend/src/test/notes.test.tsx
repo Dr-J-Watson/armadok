@@ -90,7 +90,7 @@ describe('notes panel', () => {
 })
 
 describe('sharing a note', () => {
-  it('shows who it is shared with and lets the author add someone who sees the machine', async () => {
+  it('shows who it is shared with and lets the author add someone who sees the node', async () => {
     notes = [note()]
     sent.length = 0
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {

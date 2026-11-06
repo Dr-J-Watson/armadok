@@ -56,7 +56,7 @@ class MemberPatch(BaseModel):
 
 
 class TransferIn(BaseModel):
-    """The person who becomes the owner, the machine's name and a fresh second-factor code."""
+    """The person who becomes the owner, the node's name and a fresh second-factor code."""
 
     model_config = ConfigDict(extra="forbid")
     user_id: str = Field(max_length=64)
@@ -282,7 +282,7 @@ def directory(
 ) -> list[dict]:
     """Return up to 20 active people whose name starts with `q`: names only, nothing else.
 
-    For people who manage members of a live machine they can use, and who have no right to
+    For people who manage members of a live node they can use, and who have no right to
     list accounts. At least two letters, and a few searches a minute.
     """
     catalogue = registry.rights()
@@ -318,7 +318,7 @@ def transfer(
     """Make another person the owner. Only the owner can; you stay on as an administrator.
 
     It cannot be undone by you, so it asks for what the quick actions of an administrator ask:
-    a real session (not a key), the machine's name, and a fresh second-factor code.
+    a real session (not a key), the node's name, and a fresh second-factor code.
     """
     node, _ = _gate(conn, registry, who, node_id, "nodes.transfer")
     if who.kind != "session":

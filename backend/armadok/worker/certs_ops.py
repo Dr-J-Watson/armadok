@@ -1,7 +1,7 @@
 """Certificates Traefik obtained, read from its `acme.json` WITHOUT ever returning a key.
 
 `acme.json` holds the private keys of every certificate (and of the ACME account). They must not
-leave the machine, so this reads the file, extracts only public facts from each certificate (the
+leave the node, so this reads the file, extracts only public facts from each certificate (the
 names it covers, who issued it, when it is valid) and drops everything else before answering.
 Nothing from the file is logged, and an unreadable or odd file gives a plain error code that
 quotes none of it.

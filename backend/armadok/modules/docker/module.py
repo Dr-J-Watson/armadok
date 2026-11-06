@@ -33,7 +33,7 @@ module = Module(
             provide=relations.provide,
         ),
     ),
-    # Only for machines that run Docker.
+    # Only for nodes that run Docker.
     worker_ops=(
         WorkerOp("docker.info", ("docker", "full")),
         WorkerOp("docker.containers.list", ("docker", "full")),

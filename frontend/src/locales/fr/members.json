@@ -5,14 +5,14 @@
   "role": "Rôle",
   "add": "Ajouter un membre",
   "invite": "Inviter",
-  "none": "Personne d'autre ne travaille sur cette machine pour l'instant.",
+  "none": "Personne d'autre ne travaille sur ce nœud pour l'instant.",
   "remove": "Retirer",
   "changeRole": "Rôle de {{name}}",
   "until": "jusqu'au {{date}}",
-  "notAllowed": "Vous ne pouvez pas gérer les membres de cette machine.",
-  "transfer.title": "Transmettre la machine",
+  "notAllowed": "Vous ne pouvez pas gérer les membres de ce nœud.",
+  "transfer.title": "Transmettre le nœud",
   "transfer.explain": "La personne choisie en devient propriétaire. Vous restez administrateur. Seul le propriétaire peut le faire.",
-  "transfer.confirm": "Tapez le nom de la machine ({{name}}) pour confirmer",
+  "transfer.confirm": "Tapez le nom du nœud ({{name}}) pour confirmer",
   "transfer.go": "Transmettre",
   "transfer.code": "Code de second facteur"
 }

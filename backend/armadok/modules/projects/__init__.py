@@ -1,1 +1,1 @@
-"""Compose projects of a machine: list them, read and edit their Compose files."""
+"""Compose projects of a node: list them, read and edit their Compose files."""

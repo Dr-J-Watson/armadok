@@ -1,7 +1,7 @@
 """Change signals: "something changed here, look again".
 
-A signal carries no data, only its name (`docker.changed`) and, when it concerns one machine,
-that machine's id. The screen reloads through the API, which applies the rights; so a signal
+A signal carries no data, only its name (`docker.changed`) and, when it concerns one node,
+that node's id. The screen reloads through the API, which applies the rights; so a signal
 can never show anyone what they may not see. Modules declare the names they own in
 `Module.signals`; an undeclared name is ignored.
 
@@ -57,7 +57,7 @@ async def announce(
     Unknown names are dropped; a failure here never fails the change that caused it (it is
     only logged).
 
-    `actor_id` is who made the change; a signal that names no machine goes to them alone
+    `actor_id` is who made the change; a signal that names no node goes to them alone
     unless the module marked it shared (see `Signal`).
     """
     if signal not in app.state.registry.signals():

@@ -35,5 +35,5 @@
   "visitors.lastSeen": "Last seen",
   "visitors.kept": "{{count}} entries kept.",
   "visitors.purge": "Delete the kept entries",
-  "visitors.purgeConfirm": "Delete every kept access-log entry of this machine? This cannot be undone."
+  "visitors.purgeConfirm": "Delete every kept access-log entry of this node? This cannot be undone."
 }

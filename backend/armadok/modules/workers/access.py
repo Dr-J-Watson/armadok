@@ -31,8 +31,8 @@ def authorise(
     """Return the node if the caller can see it and holds `right` on it.
 
     `obj` is `(type, id)` of the one object the call is about (a project, say): the right may
-    then come from the whole machine or from owning that object. The machine must be visible
-    all the same, so a person who owns something on a machine they cannot see learns nothing.
+    then come from the whole node or from owning that object. The node must be visible
+    all the same, so a person who owns something on a node they cannot see learns nothing.
 
     An invisible or missing node is `NotFound`, never "forbidden", so existence is not leaked.
     """
@@ -75,7 +75,7 @@ def audit_failure(
 ) -> None:
     """Record a refused or failed attempt (with its error code, never any content).
 
-    A write that times out may still have happened on the machine, and a symlink refusal is a
+    A write that times out may still have happened on the node, and a symlink refusal is a
     tamper signal: both deserve a trace even though the caller only got an error.
     """
     audit.record(

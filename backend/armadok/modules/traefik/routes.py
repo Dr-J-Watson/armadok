@@ -48,7 +48,7 @@ async def list_files(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Return the dynamic configuration files of the machine's Traefik folder."""
+    """Return the dynamic configuration files of the node's Traefik folder."""
     authorise(conn, registry, who, node_id, "traefik.read")
     answer = await ask(request, registry, node_id, "traefik.files.list", {}, schemas.FileList)
     return answer.model_dump()

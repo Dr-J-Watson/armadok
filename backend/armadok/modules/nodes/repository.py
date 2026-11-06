@@ -28,7 +28,7 @@ LOCAL_MIGRATION = Migration(
     "nodes-0002-local",
     """
     ALTER TABLE nodes ADD COLUMN is_local INTEGER NOT NULL DEFAULT 0;
-    -- At most one node is the hub's own machine.
+    -- At most one node is the hub's own node.
     CREATE UNIQUE INDEX nodes_one_local ON nodes (is_local) WHERE is_local = 1;
     """,
 )
@@ -83,7 +83,7 @@ def set_suspended(conn: sqlite3.Connection, node_id: str, reason: str | None) ->
 def list_all_for_admin(conn: sqlite3.Connection) -> list[dict]:
     """Return every node, deleted ones included, with only what an administrator may see.
 
-    Name, type, owner and state; never any content of the machine.
+    Name, type, owner and state; never any content of the node.
     """
     rows = conn.execute(
         "SELECT n.id, n.name, n.type, n.owner, n.created_at, n.deleted_at, n.suspended_at,"
@@ -163,7 +163,7 @@ def soft_delete_node(conn: sqlite3.Connection, node_id: str) -> None:
 
 
 def get_local(conn: sqlite3.Connection) -> dict | None:
-    """Return the node that stands for the hub's own machine, if there is one."""
+    """Return the node that stands for the hub's own node, if there is one."""
     row = conn.execute(
         f"SELECT {_COLUMNS} FROM nodes WHERE is_local = 1 AND deleted_at IS NULL"
     ).fetchone()
@@ -171,11 +171,11 @@ def get_local(conn: sqlite3.Connection) -> dict | None:
 
 
 def create_local(conn: sqlite3.Connection) -> dict:
-    """Create the local node (a full node: Docker and Traefik on the hub's machine)."""
+    """Create the local node (a full node: Docker and Traefik on the hub's node)."""
     node_id = uuid.uuid4().hex
     conn.execute(
         "INSERT INTO nodes (id, name, type, description, owner, created_at, is_local)"
-        " VALUES (?, 'Local', 'full', 'The machine Armadok runs on.', 'system', ?, 1)",
+        " VALUES (?, 'Local', 'full', 'The node Armadok runs on.', 'system', ?, 1)",
         (node_id, datetime.now(UTC).isoformat()),
     )
     conn.commit()

@@ -28,7 +28,7 @@ module = Module(
                 "fr": (
                     "Accès d'urgence à {node}",
                     "Un administrateur a ouvert une session d'urgence sur {node}. Ouvrez "
-                    "l'onglet Urgence de la machine pour lire pourquoi et ce qui a été fait.",
+                    "l'onglet Urgence du nœud pour lire pourquoi et ce qui a été fait.",
                 ),
             },
         ),

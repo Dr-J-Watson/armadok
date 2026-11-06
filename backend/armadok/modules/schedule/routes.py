@@ -2,7 +2,7 @@
 
 Reading needs `schedule.read`. Creating, changing, running and removing a task needs
 `schedule.manage` (sensitive: the task will act later, unattended, as its creator) and, at
-creation, the right the action itself needs on that machine: nobody schedules what they could
+creation, the right the action itself needs on that node: nobody schedules what they could
 not do by hand. The same right is checked again at each run.
 """
 
@@ -74,7 +74,7 @@ def _task_of(conn: sqlite3.Connection, node_id: str, task_id: str) -> sqlite3.Ro
 
 
 def _may_touch(registry: Registry, who: Principal, row: sqlite3.Row) -> None:
-    """Refuse unless the caller could do the task's action by hand on this machine.
+    """Refuse unless the caller could do the task's action by hand on this node.
 
     A task acts with its creator's rights: whoever runs, retimes or removes it must hold the
     action's right too, or "schedule.manage" would borrow rights from the creator.
@@ -135,12 +135,12 @@ def create_task(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Create a task. You must hold, on this machine, the right the action needs."""
+    """Create a task. You must hold, on this node, the right the action needs."""
     authorise(conn, registry, who, node_id, "schedule.manage")
     action = registry.hook_actions().get(body.action)
     if action is None or not action.schedulable:
         raise ApiError("schedule.unknown_action", 422)
-    if "node_id" in body.target:  # the machine is the one in the address, nothing else
+    if "node_id" in body.target:  # the node is the one in the address, nothing else
         raise ApiError("schedule.invalid_target", 422)
     try:
         target = action.validate({**body.target, "node_id": node_id})

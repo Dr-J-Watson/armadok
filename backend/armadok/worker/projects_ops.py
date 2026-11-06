@@ -1,4 +1,4 @@
-"""Operations on Compose projects stored on the machine's disk.
+"""Operations on Compose projects stored on the node's disk.
 
 The disk is the source of truth: this only reads and writes the Compose files of projects
 that already live under ONE allowed folder (`ARMADOK_PROJECTS_DIR`). A project is a direct

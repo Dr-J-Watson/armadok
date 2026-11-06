@@ -1,8 +1,8 @@
-"""Availability probes, run from the machine that hosts the site.
+"""Availability probes, run from the node that hosts the site.
 
 A probe only answers "did it respond, how fast, with which status": no body, no header and no
 address ever goes back to the hub. Because the request starts from the worker, a probe can
-reach what the machine reaches (a container on a private network, a site behind Traefik), and
+reach what the node reaches (a container on a private network, a site behind Traefik), and
 that is exactly why creating one needs a sensitive right on the hub.
 
 What is still refused here, whatever the hub says:

@@ -46,7 +46,7 @@ describe('audit list', () => {
       older: { entries: [entry(7, 'auth.login')], next_before_id: null },
     })
     renderList()
-    expect(await screen.findByText('Machine created')).toBeInTheDocument()
+    expect(await screen.findByText('Node created')).toBeInTheDocument()
     expect(screen.getByText('Compose file saved')).toBeInTheDocument()
     expect(screen.getByText('Failed', { selector: '.badge' })).toBeInTheDocument()
     expect(screen.getByText('code: worker.conflict')).toBeInTheDocument()

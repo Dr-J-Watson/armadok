@@ -317,7 +317,7 @@ async def _users_of(
 
 
 async def _still_there(request: Request, registry: Registry, node_id: str, path: str) -> bool:
-    """Tell whether a file is still in the configuration folder (read afresh from the machine)."""
+    """Tell whether a file is still in the configuration folder (read afresh from the node)."""
     snapshot = await ask(request, registry, node_id, "traefik.snapshot", {}, schemas.Snapshot)
     return any(f.path == path for f in snapshot.files)
 
@@ -337,7 +337,7 @@ async def rename_middleware(
     Sites and files written by hand are never rewritten: they are listed (`manual`) so that
     the person fixes them. The new middleware is written first, then the sites, then the old
     file is removed, so the sites never point at nothing; if a step fails the earlier ones are
-    undone (a step is recorded for undoing before its answer is checked, since the machine may
+    undone (a step is recorded for undoing before its answer is checked, since the node may
     have done it even when the answer is lost). With `dry_run` nothing is written.
     """
     _writer(conn, registry, who, node_id)
@@ -428,7 +428,7 @@ async def rename_middleware(
                 schemas.Done,
             )
         except ApiError:
-            # The answer may have been lost after the machine removed the file. Undoing then
+            # The answer may have been lost after the node removed the file. Undoing then
             # would point the sites back at a middleware that is gone, so look first.
             if await _still_there(request, registry, node_id, _path(name)):
                 raise

@@ -1,7 +1,7 @@
 """Endpoints for backups of the hub's own state (platform administration).
 
 All of it needs the sensitive platform right `state_backup.manage`, which gives no access to any
-machine. Downloading a backup needs a person's own session and a fresh second-factor code:
+node. Downloading a backup needs a person's own session and a fresh second-factor code:
 even encrypted, the file holds every account and every secret.
 """
 

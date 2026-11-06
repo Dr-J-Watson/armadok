@@ -4,7 +4,7 @@
   "tabs.roles": "Rôles",
   "tabs.groups": "Groupes",
   "tabs.assignments": "Attributions",
-  "explain": "Un rôle est un ensemble de droits. Les rôles prédéfinis ne se modifient pas, mais on peut en copier un et ajuster la copie. Un rôle ne contient que des droits donnés par machine.",
+  "explain": "Un rôle est un ensemble de droits. Les rôles prédéfinis ne se modifient pas, mais on peut en copier un et ajuster la copie. Un rôle ne contient que des droits donnés par nœud.",
   "builtin.viewer": "Lecteur",
   "builtin.operator": "Opérateur",
   "builtin.developer": "Développeur",
@@ -52,5 +52,5 @@
   "effective.viaRole": "rôle {{role}}",
   "effective.viaGroup": "rôle {{role}} par le groupe {{group}}",
   "effective.everywhere": "partout",
-  "access.explain": "Les droits qui fonctionnent sur cette machine pour chaque compte, qu'ils viennent d'un rôle, d'un groupe ou d'un droit donné directement."
+  "access.explain": "Les droits qui fonctionnent sur ce nœud pour chaque compte, qu'ils viennent d'un rôle, d'un groupe ou d'un droit donné directement."
 }

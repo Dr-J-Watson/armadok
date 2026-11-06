@@ -1,7 +1,7 @@
 {
   "tab": "Backups",
-  "explain": "Archives of Docker volumes, made and kept on the machine itself. Only their names and sizes come here: the files never leave the machine. Schedule a backup from the Scheduled tasks tab.",
-  "notConfigured": "This machine has no backup folder. Set ARMADOK_BACKUP_DIR on its worker (see the worker example) to turn backups on.",
+  "explain": "Archives of Docker volumes, made and kept on the node itself. Only their names and sizes come here: the files never leave the node. Schedule a backup from the Scheduled tasks tab.",
+  "notConfigured": "This node has no backup folder. Set ARMADOK_BACKUP_DIR on its worker (see the worker example) to turn backups on.",
   "new": "Back up a volume",
   "volume": "Volume",
   "keep": "Archives to keep for this volume",
@@ -25,7 +25,7 @@
   "truncated": "The folder holds more archives than can be listed: the oldest are not shown.",
   "download": "Download",
   "downloadTitle": "Download an archive",
-  "downloadWarn": "{{archive}} contains every file of the volume, passwords and keys included. It goes from the machine to your browser through this server, which keeps nothing. Only archives made since this option exists can be downloaded.",
+  "downloadWarn": "{{archive}} contains every file of the volume, passwords and keys included. It goes from the node to your browser through this server, which keeps nothing. Only archives made since this option exists can be downloaded.",
   "code": "Second-factor code",
   "clearFirst": "Empty the volume first",
   "clearWarn": "Everything in the volume is deleted before the archive is restored, so it ends up exactly as the archive was. The archive is checked first; if it is damaged, nothing is deleted."

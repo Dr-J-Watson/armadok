@@ -1,7 +1,7 @@
 {
   "tab": "Projects",
   "list": "Projects and their files",
-  "empty": "No Compose project found in this machine's projects folder.",
+  "empty": "No Compose project found in this node's projects folder.",
   "pickOne": "Choose a file to read or edit it.",
   "run.title": "Run {{project}}",
   "run.action.up": "Deploy (up)",
@@ -24,7 +24,7 @@
   "new.from": "Start from",
   "new.empty": "Nothing (an example to edit)",
   "new.name": "Project name",
-  "new.envHint": "The .env stays on the machine (private file, never shown again here). Leave it empty if the project needs none. Nothing is started: deploy from the project page.",
+  "new.envHint": "The .env stays on the node (private file, never shown again here). Leave it empty if the project needs none. Nothing is started: deploy from the project page.",
   "new.create": "Create the project",
   "new.cancel": "Cancel"
 }

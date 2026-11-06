@@ -1,6 +1,6 @@
 """Safe file access for the worker: no symlinks, no special files, no silent overwrites.
 
-Shared by every operation that touches the machine's disk (Compose projects, Traefik files),
+Shared by every operation that touches the node's disk (Compose projects, Traefik files),
 so the careful parts are written once:
 
 - everything is done from open directory handles (`dir_fd`) with `O_NOFOLLOW`, so a folder or

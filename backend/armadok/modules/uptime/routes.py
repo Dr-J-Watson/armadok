@@ -1,8 +1,8 @@
 """Endpoints of availability probes, per node.
 
 Reading needs `uptime.read`. Creating, changing and removing a probe needs `uptime.manage`
-(sensitive): the probe is a request that starts from the machine, so who may create one is who
-may make that machine knock on a door. The addresses link-local services use are refused.
+(sensitive): the probe is a request that starts from the node, so who may create one is who
+may make that node knock on a door. The addresses link-local services use are refused.
 """
 
 from __future__ import annotations

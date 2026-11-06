@@ -1,4 +1,4 @@
-"""Which container labels may leave a machine.
+"""Which container labels may leave a node.
 
 Labels can carry secrets (a Traefik `basicauth.users` hash, a forward-auth URL with a token,
 custom headers). Only labels the interface needs, to link a container to its project and to

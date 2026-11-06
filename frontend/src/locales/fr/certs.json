@@ -1,6 +1,6 @@
 {
   "tab": "Certificats",
-  "explain": "Les certificats HTTPS obtenus par Traefik. Seules des informations publiques sont affichées : les clés privées ne quittent jamais la machine qui les détient.",
+  "explain": "Les certificats HTTPS obtenus par Traefik. Seules des informations publiques sont affichées : les clés privées ne quittent jamais le nœud qui les détient.",
   "truncated": "La liste est incomplète : il y a plus de certificats qu'on ne peut en lire d'un coup.",
   "problems.title": "Sites avec un problème de certificat",
   "states.ok": "Valide",

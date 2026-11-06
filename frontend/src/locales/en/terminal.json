@@ -7,7 +7,7 @@
   "settings": "Terminal settings",
   "enabled": "Allow a terminal on this project",
   "writable": "Allow writing to the project's files",
-  "network": "Allow network access (the shell can then reach this machine's internal network and the internet)",
+  "network": "Allow network access (the shell can then reach this node's internal network and the internet)",
   "image": "Image of the container",
   "save": "Save",
   "state.connecting": "Connecting…",

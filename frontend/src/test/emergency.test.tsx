@@ -70,6 +70,6 @@ describe('emergency', () => {
   it('tells people who are not the owner that it is the owner who sees this', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => json({ error: { code: 'rights.missing' } }, 403))
     wrap(<EmergencyTab nodeId="n1" />)
-    expect(await screen.findByText('Only the owner of this machine sees the emergency accesses.')).toBeInTheDocument()
+    expect(await screen.findByText('Only the owner of this node sees the emergency accesses.')).toBeInTheDocument()
   })
 })

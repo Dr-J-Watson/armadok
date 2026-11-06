@@ -215,7 +215,7 @@ def _work(task_id: str, argv: list[str], project: str, files: list[str]) -> None
         _finish(task_id, code, output, truncated)
     except OperationError as error:
         _finish(task_id, None, error.code, False)
-    except Exception:  # noqa: BLE001  (details stay on the machine)
+    except Exception:  # noqa: BLE001  (details stay on the node)
         _finish(task_id, None, "worker.op_failed", False)
 
 

@@ -19,7 +19,7 @@ def validate(target: dict[str, Any]) -> dict[str, Any]:
 
 
 async def run(app: Any, who: Any, target: dict[str, Any]) -> None:
-    """Scan the images the machine's containers use, as the creator of the schedule."""
+    """Scan the images the node's containers use, as the creator of the schedule."""
     if not app.state.settings.vuln_check:
         raise ApiError("vulns.disabled", 409)
     conn = app.state.settings.open_db()

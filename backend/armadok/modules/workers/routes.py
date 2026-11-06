@@ -117,7 +117,7 @@ def create_enrolment(
 ) -> dict[str, str]:
     """Return a token valid 15 minutes and the hub key the worker must pin.
 
-    The token is shown only here. It lets one machine become this node's worker; enrolling
+    The token is shown only here. It lets one node become this node's worker; enrolling
     again later replaces the previous worker.
     """
     node = _visible_node(conn, registry, who, node_id)
@@ -145,7 +145,7 @@ def worker_status(
     node = _visible_node(conn, registry, who, node_id)
     who.require("workers.read", registry.rights(), _scope(node_id))
     if node["local"]:
-        # No worker: the hub itself acts on its own machine, so it is always "there".
+        # No worker: the hub itself acts on its own node, so it is always "there".
         return {
             "enrolled": True,
             "worker_id": None,
@@ -193,7 +193,7 @@ async def ping_worker(
 ) -> dict:
     """Send the `ping` operation to the node's worker and return its answer."""
     _visible_node(conn, registry, who, node_id)
-    # Managing right, not just reading: this makes the machine do something.
+    # Managing right, not just reading: this makes the node do something.
     who.require("workers.manage", registry.rights(), _scope(node_id))
     _audit(conn, registry, who.actor, "worker.ping", node_id)
     return await call_operation(request.app, registry, node_id, "ping", {})
@@ -205,7 +205,7 @@ _LOCAL_POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="armadok-loca
 
 
 async def _run_locally(op: str, args: dict[str, Any]) -> dict:
-    """Run an operation on the hub's own machine (the local node has no worker).
+    """Run an operation on the hub's own node (the local node has no worker).
 
     The very same handlers a worker runs, with the same closed list, the same confinement and
     the same error codes, so the rest of the application cannot tell the difference.
@@ -242,7 +242,7 @@ async def call_operation(
     Only operations declared by a module (the closed list) can be sent. A suspended node takes
     none, whoever asks (a background job included), except for someone who may use it all the
     same (`actor_id` with an emergency session). The worker itself stays connected: suspension
-    shuts people out, it does not touch the machine.
+    shuts people out, it does not touch the node.
     """
     declared = registry.worker_ops().get(op)
     if declared is None:

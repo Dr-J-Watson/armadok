@@ -1,4 +1,4 @@
-"""Storage of image scan results: the latest one per image and machine."""
+"""Storage of image scan results: the latest one per image and node."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ RANK = {"critical": 0, "high": 1, "unknown": 2, "moderate": 3, "low": 4}
 
 
 def get(conn: sqlite3.Connection, node_id: str, image_id: str) -> sqlite3.Row | None:
-    """Return the latest scan of one image on one machine, or None."""
+    """Return the latest scan of one image on one node, or None."""
     return conn.execute(
         "SELECT * FROM image_scans WHERE node_id = ? AND image_id = ?", (node_id, image_id)
     ).fetchone()
@@ -94,7 +94,7 @@ def view(row: sqlite3.Row) -> dict[str, Any]:
 
 
 def list_for_node(conn: sqlite3.Connection, node_id: str) -> list[dict[str, Any]]:
-    """Return every stored scan of a machine, worst first."""
+    """Return every stored scan of a node, worst first."""
     rows = conn.execute("SELECT * FROM image_scans WHERE node_id = ?", (node_id,)).fetchall()
     shown = [view(r) for r in rows]
     shown.sort(
@@ -110,7 +110,7 @@ MAX_IMAGES_PER_NODE = 200
 
 
 def forget_others(conn: sqlite3.Connection, node_id: str, present: set[str]) -> None:
-    """Drop results of images the machine no longer has, and keep at most 200 per machine."""
+    """Drop results of images the node no longer has, and keep at most 200 per node."""
     for row in conn.execute(
         "SELECT image_id FROM image_scans WHERE node_id = ?", (node_id,)
     ).fetchall():

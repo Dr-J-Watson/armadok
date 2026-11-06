@@ -41,7 +41,7 @@ describe('traffic', () => {
     await vi.waitFor(() => expect(asked.some((a) => a.endsWith('range=7d'))).toBe(true))
   })
 
-  it('walks through the set-up when the machine has no metrics yet, and never lists a public port', async () => {
+  it('walks through the set-up when the node has no metrics yet, and never lists a public port', async () => {
     // A fresh response for every call: the page asks for the figures and for the visitors.
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       json({ range: '24h', services: [], status: { last_ok: null, last_error: 'worker.metrics_not_configured', reload_ok: null, servers: {} } }),

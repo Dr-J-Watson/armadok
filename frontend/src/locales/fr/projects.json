@@ -1,7 +1,7 @@
 {
   "tab": "Projets",
   "list": "Projets et leurs fichiers",
-  "empty": "Aucun projet Compose trouvé dans le dossier des projets de cette machine.",
+  "empty": "Aucun projet Compose trouvé dans le dossier des projets de ce nœud.",
   "pickOne": "Choisissez un fichier pour le lire ou le modifier.",
   "run.title": "Exécuter {{project}}",
   "run.action.up": "Déployer (up)",
@@ -24,7 +24,7 @@
   "new.from": "Partir de",
   "new.empty": "Rien (un exemple à modifier)",
   "new.name": "Nom du projet",
-  "new.envHint": "Le .env reste sur la machine (fichier privé, jamais réaffiché ici). Laisse vide si le projet n'en a pas besoin. Rien n'est démarré : déploie depuis la page du projet.",
+  "new.envHint": "Le .env reste sur le nœud (fichier privé, jamais réaffiché ici). Laisse vide si le projet n'en a pas besoin. Rien n'est démarré : déploie depuis la page du projet.",
   "new.create": "Créer le projet",
   "new.cancel": "Annuler"
 }

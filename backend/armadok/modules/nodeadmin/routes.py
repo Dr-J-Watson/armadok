@@ -1,7 +1,7 @@
 """Quick actions of a platform administrator on nodes.
 
 An administrator sees that nodes exist (name, owner, state) and can suspend, resume or restore
-them; they never see or touch what is on a machine (that stays with its owner, or needs an
+them; they never see or touch what is on a node (that stays with its owner, or needs an
 emergency session). Each action needs a fresh second-factor code and typing the node's name, and
 is audited with its reason.
 """
@@ -164,7 +164,7 @@ async def suspend(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Refuse every access to the node (its owner is told why), keeping its machine as it is."""
+    """Refuse every access to the node (its owner is told why), keeping its node as it is."""
     _admin(who, registry)
     node = _checked(request, conn, registry, who, node_id, body, "node.suspend")
     if node["deleted_at"] or node["suspended_at"]:

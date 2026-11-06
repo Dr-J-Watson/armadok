@@ -7,7 +7,7 @@
   "settings": "Réglages du terminal",
   "enabled": "Autoriser un terminal sur ce projet",
   "writable": "Autoriser l'écriture dans les fichiers du projet",
-  "network": "Autoriser l'accès au réseau (le shell peut alors atteindre le réseau interne de la machine et Internet)",
+  "network": "Autoriser l'accès au réseau (le shell peut alors atteindre le réseau interne du nœud et Internet)",
   "image": "Image du conteneur",
   "save": "Enregistrer",
   "state.connecting": "Connexion…",

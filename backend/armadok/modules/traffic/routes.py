@@ -1,4 +1,4 @@
-"""Endpoints of the traffic statistics, per machine.
+"""Endpoints of the traffic statistics, per node.
 
 The figures from Traefik's metrics are aggregate (counts per service, error shares, response
 times) and hold nothing personal; reading them needs `traffic.read`. The access-log views
@@ -27,7 +27,7 @@ MIN_TEST_GAP_SECONDS = 10
 _last_test: dict[str, float] = {}
 
 
-@router.get("", summary="Traffic of the sites of a machine")
+@router.get("", summary="Traffic of the sites of a node")
 async def traffic(
     node_id: str,
     range: str = Query(default="24h", pattern="^(1h|24h|7d|30d)$"),  # noqa: A002
@@ -49,7 +49,7 @@ async def test(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Ask the machine's worker to read Traefik's metrics now; say if it worked, and why not."""
+    """Ask the node's worker to read Traefik's metrics now; say if it worked, and why not."""
     authorise(conn, registry, who, node_id, "traffic.read")
     now = time.monotonic()
     if now - _last_test.get(node_id, -1e9) < MIN_TEST_GAP_SECONDS:
@@ -132,7 +132,7 @@ async def log_entries(
     return {"masked": not with_ip, "entries": rows}
 
 
-@router.delete("/log", summary="Delete the kept access-log entries of a machine")
+@router.delete("/log", summary="Delete the kept access-log entries of a node")
 def purge_log(
     node_id: str,
     conn: sqlite3.Connection = Depends(get_db),

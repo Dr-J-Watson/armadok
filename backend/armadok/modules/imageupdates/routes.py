@@ -1,8 +1,8 @@
-"""Endpoints of image update tracking, per machine.
+"""Endpoints of image update tracking, per node.
 
 Reading needs `imageupdates.read`; checking needs `imageupdates.check`. A check makes the hub
-ask the registries named by the images the machine runs (a `HEAD` each, anonymous unless the
-machine has a login stored for that registry): only image
+ask the registries named by the images the node runs (a `HEAD` each, anonymous unless the
+node has a login stored for that registry): only image
 names and tags leave Armadok, and the answers are treated as untrusted.
 """
 
@@ -27,7 +27,7 @@ MIN_GAP_SECONDS = 60
 _last: dict[str, float] = {}
 
 
-@router.get("", summary="Newer versions of the images a machine runs")
+@router.get("", summary="Newer versions of the images a node runs")
 def overview(
     node_id: str,
     conn: sqlite3.Connection = Depends(get_db),
@@ -81,7 +81,7 @@ class LoginIn(BaseModel):
     secret: str = Field(min_length=1, max_length=2000, pattern=r"^[\x21-\x7e]+$")
 
 
-@router.get("/registries", summary="Registries this machine has a login for")
+@router.get("/registries", summary="Registries this node has a login for")
 def list_logins(
     node_id: str,
     conn: sqlite3.Connection = Depends(get_db),
@@ -102,7 +102,7 @@ def save_login(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> None:
-    """Keep (encrypted) the login used to ask a private registry about this machine's images.
+    """Keep (encrypted) the login used to ask a private registry about this node's images.
 
     It is used only for the version checks and is sent only to that registry and its own token
     service. Replaces an earlier login for the same host. The audit entry names the host and

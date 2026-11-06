@@ -281,7 +281,7 @@ async def _expire(app: Any, registry: Registry, ticket: str, item: Pending) -> N
 
 
 async def _close_quietly(app: Any, registry: Registry, item: Pending) -> None:
-    """End the machine's side of a terminal; a worker that is gone has nothing left to end."""
+    """End the node's side of a terminal; a worker that is gone has nothing left to end."""
     try:
         await call_operation(
             app, registry, item.node_id, "terminal.close", {"session": item.worker_session}
@@ -455,7 +455,7 @@ async def _relay(
         for job in jobs:
             job.cancel()
         live.pop(ticket, None)
-        # The trace first: it is quick, and it must exist even if closing the machine's side
+        # The trace first: it is quick, and it must exist even if closing the node's side
         # is cut short.
         _audit_close(app, item, int(time.monotonic() - started))
         await _close_quietly(app, registry, item)

@@ -46,7 +46,7 @@ describe('integrations', () => {
       </QueryClientProvider>,
     )
     await userEvent.type(await screen.findByLabelText('Name'), 'CI')
-    await userEvent.selectOptions(screen.getByLabelText('Machine'), 'n1')
+    await userEvent.selectOptions(screen.getByLabelText('Node'), 'n1')
     await userEvent.selectOptions(await screen.findByLabelText('Project'), 'blog')
     await userEvent.click(screen.getByRole('button', { name: 'Create the hook' }))
     expect(await screen.findByDisplayValue(SHOWN)).toBeInTheDocument()

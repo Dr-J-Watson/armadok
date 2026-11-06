@@ -159,13 +159,13 @@ async def delete_node(
     """Soft-delete a node. Requires `nodes.delete` on this node.
 
     A person whose account has a second factor must send a fresh code (`code`); a missing or
-    wrong code is refused. With a second factor, an API key may not delete a machine at all.
+    wrong code is refused. With a second factor, an API key may not delete a node at all.
     """
     node = _visible_or_404(conn, registry, who, node_id)
     who.require("nodes.delete", registry.rights(), _scope(node_id))
     if second_factor.is_enabled(conn, who.id):
         # A key could be created from a stolen session without any code, so with a second
-        # factor on the account only the person's own session may delete a machine.
+        # factor on the account only the person's own session may delete a node.
         if who.kind != "session":
             raise MissingRight("nodes.not_with_key")
         try:
@@ -187,9 +187,9 @@ async def delete_node(
                 )
             raise
     if node["local"]:
-        # It is the machine Armadok runs on: remove it by turning ARMADOK_LOCAL_NODE off.
+        # It is the node Armadok runs on: remove it by turning ARMADOK_LOCAL_NODE off.
         raise ApiError("nodes.local_not_deletable", 409)
     repository.soft_delete_node(conn, node_id)
     _audit(conn, registry, who, "node.delete", node_id)
-    # Other modules (workers...) react, e.g. by cutting the machine's worker off.
+    # Other modules (workers...) react, e.g. by cutting the node's worker off.
     await emit(request.app, "node.deleted", node_id=node_id)

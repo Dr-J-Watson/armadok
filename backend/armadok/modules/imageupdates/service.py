@@ -1,4 +1,4 @@
-"""Checking a machine's images against their registries."""
+"""Checking a node's images against their registries."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from armadok.modules.imageupdates import refs, registry, repository
 from armadok.modules.workers.routes import call_operation
 
 MAX_IMAGES = 100
-# Registries asked in one check: a machine naming hundreds of hosts is a way to make the hub
+# Registries asked in one check: a node naming hundreds of hosts is a way to make the hub
 # knock on them all.
 MAX_REGISTRIES = 10
 SAFE_REF = re.compile(r"[^A-Za-z0-9._:/@-]")
@@ -29,7 +29,7 @@ log = logging.getLogger("armadok.imageupdates")
 
 
 class LocalImage(BaseModel):
-    """One named image of the machine, as its worker reports it (untrusted)."""
+    """One named image of the node, as its worker reports it (untrusted)."""
 
     model_config = ConfigDict(extra="ignore")
     ref: str = Field(max_length=255)
@@ -44,7 +44,7 @@ class LocalImage(BaseModel):
 
 
 class LocalImages(BaseModel):
-    """The worker's answer: the machine's named images."""
+    """The worker's answer: the node's named images."""
 
     model_config = ConfigDict(extra="ignore")
     images: list[LocalImage] = Field(max_length=300)
@@ -52,7 +52,7 @@ class LocalImages(BaseModel):
 
 
 class Busy(Exception):
-    """A check of this machine is already running."""
+    """A check of this node is already running."""
 
 
 async def _compare(
@@ -88,7 +88,7 @@ async def _compare(
 
 
 def _open_logins(app: Any, node_id: str) -> dict[str, registry.Login]:
-    """Decrypt the machine's registry logins; one that cannot be read is simply not used."""
+    """Decrypt the node's registry logins; one that cannot be read is simply not used."""
     conn = app.state.settings.open_db()
     try:
         sealed = repository.sealed_logins(conn, node_id)
@@ -104,7 +104,7 @@ def _open_logins(app: Any, node_id: str) -> dict[str, registry.Login]:
 
 
 async def check_node(app: Any, node_id: str) -> dict[str, int]:
-    """Compare the machine's images in use with their registries; store and announce.
+    """Compare the node's images in use with their registries; store and announce.
 
     Returns counts by state. Only images a container uses are followed (the others are
     leftovers). A new update is announced once per remote digest. Raises `Busy`.
@@ -176,11 +176,11 @@ async def newer_exists(app: Any, node_id: str, wanted: list[str]) -> bool:
     """Say whether any of these image references (as containers name them) has a newer version.
 
     A quick check of a handful of images, for a project: nothing is stored and nobody is
-    notified (the machine-wide check does that). References that cannot be followed, or whose
+    notified (the node-wide check does that). References that cannot be followed, or whose
     registry does not answer, count as "no news": an update is never guessed.
     """
     targets = {p for ref in wanted if (p := refs.parse(ref)) is not None}
-    # Same bounds as the machine-wide check: a container can name any registry.
+    # Same bounds as the node-wide check: a container can name any registry.
     if len({t.host for t in targets}) > MAX_REGISTRIES or len(targets) > MAX_IMAGES:
         return False
     if not targets:

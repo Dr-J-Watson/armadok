@@ -19,11 +19,11 @@ from armadok.modules.workers.routes import call_operation
 log = logging.getLogger("armadok.traffic")
 TICK_SECONDS = 60
 STARTUP_DELAY_SECONDS = 90
-# A machine without metrics (or whose worker is away) is asked again only now and then.
+# A node without metrics (or whose worker is away) is asked again only now and then.
 RETRY_AFTER_ERROR = timedelta(minutes=10)
 MAX_POINTS = 60
 RANGES = {"1h": 3600, "24h": 86400, "7d": 7 * 86400, "30d": 30 * 86400}
-MAX_SERVICE_NAMES = 500  # distinct names kept per machine over the retention period
+MAX_SERVICE_NAMES = 500  # distinct names kept per node over the retention period
 MAX_NAME = 200
 MAX_HIST_KEYS = 30
 CLASSES = frozenset({"2xx", "3xx", "4xx", "5xx", "other"})
@@ -153,7 +153,7 @@ def delta_of(c: ServiceCounters, before: dict[str, Any] | None) -> dict[str, Any
 
 
 async def read_node(app: Any, node_id: str) -> str | None:
-    """Read one machine's metrics once and store the new traffic; return an error code or None."""
+    """Read one node's metrics once and store the new traffic; return an error code or None."""
     if node_id in _busy:
         return "traffic.busy"
     _busy.add(node_id)
@@ -168,8 +168,8 @@ async def read_node(app: Any, node_id: str) -> str | None:
         else:
             try:
                 await asyncio.to_thread(_store, app, node_id, scrape)
-            except Exception:  # noqa: BLE001  (a machine deleted during the read, say)
-                log.exception("could not store the traffic of a machine")
+            except Exception:  # noqa: BLE001  (a node deleted during the read, say)
+                log.exception("could not store the traffic of a node")
                 return "traffic.not_stored"
             return None
         try:
@@ -198,7 +198,7 @@ def _store(app: Any, node_id: str, scrape: Scrape) -> None:
         kept = repository.service_names(conn, node_id)
         for name, counters in scrape.services.items():
             if name not in kept and len(kept) >= MAX_SERVICE_NAMES:
-                continue  # a machine cannot make us keep ever more names
+                continue  # a node cannot make us keep ever more names
             delta = delta_of(counters, before.get(name))
             if any(delta[k] for k in ("r2", "r3", "r4", "r5", "ro", "dur_count", "bytes_in")):
                 repository.add_bucket(conn, node_id, name, ts, delta, MAX_HIST_KEYS)
@@ -343,7 +343,7 @@ def statistics(conn: Any, node_id: str, range_name: str) -> dict[str, Any]:
 
 
 async def watch_loop(app: Any) -> None:
-    """Every minute, read the metrics of the machines that have them; trim old figures daily."""
+    """Every minute, read the metrics of the nodes that have them; trim old figures daily."""
     await asyncio.sleep(STARTUP_DELAY_SECONDS)
     last_purge = 0.0
     while True:
@@ -360,8 +360,8 @@ async def watch_loop(app: Any) -> None:
                         continue
                 try:
                     await read_node(app, node["id"])
-                except Exception:  # noqa: BLE001  (one machine must not stop the others)
-                    log.exception("could not read the traffic of a machine")
+                except Exception:  # noqa: BLE001  (one node must not stop the others)
+                    log.exception("could not read the traffic of a node")
             if time.monotonic() - last_purge > 86400:
                 last_purge = time.monotonic()
                 conn = app.state.settings.open_db()

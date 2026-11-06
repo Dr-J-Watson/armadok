@@ -58,7 +58,7 @@ Logo (to add once it exists / à ajouter quand il existera) :
 | 🌐 **Publish** · Publier | Traefik sites and middlewares, HTTPS certificates, DNS records, traffic statistics | Sites et middlewares Traefik, certificats HTTPS, enregistrements DNS, statistiques du trafic |
 | 🕸️ **Understand** · Comprendre | An interactive map of what is connected to what | Une carte interactive de ce qui est relié à quoi |
 | 👥 **Share** · Partager | Teams, fine-grained rights, signed audit log | Équipe, droits fins, journal d'audit signé |
-| 🖥️ **Scale** · Étendre | Many machines from one interface, no open port | Plusieurs machines depuis une interface, sans port ouvert |
+| 🖥️ **Scale** · Étendre | Many nodes from one interface, no open port | Plusieurs nœuds depuis une interface, sans port ouvert |
 | 🔌 **Integrate** · Intégrer | One API, API keys and service accounts with fine-grained rights | Une API, clés d'API et comptes de service à droits fins |
 | 📱 **Everywhere** · Partout | Desktop and phone, real time, English and French | Ordinateur et téléphone, temps réel, français et anglais |
 

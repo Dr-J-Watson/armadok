@@ -26,10 +26,10 @@
   "notShared": "Privée : vous seul pouvez lire cette note.",
   "unshare": "Ne plus partager",
   "shareWith": "La montrer à (nom d'utilisateur exact)",
-  "shareHint": "Seules les personnes qui voient cette machine sont proposées. Elles lisent la note sans pouvoir la modifier, et vous pouvez arrêter à tout moment.",
+  "shareHint": "Seules les personnes qui voient ce nœud sont proposées. Elles lisent la note sans pouvoir la modifier, et vous pouvez arrêter à tout moment.",
   "sharedWithMe": "Partagées avec moi",
   "mine": "Mes notes",
   "from": "Partagée par {{author}} (lecture seule)",
   "find": "Chercher",
-  "nobody": "Aucune personne de ce nom ne voit cette machine."
+  "nobody": "Aucune personne de ce nom ne voit ce nœud."
 }

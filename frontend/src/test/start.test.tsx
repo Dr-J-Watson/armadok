@@ -57,7 +57,7 @@ describe('getting started', () => {
     renderPage()
     expect(await screen.findByText('Home')).toBeInTheDocument()
     expect(await screen.findByText(/Behind a reverse proxy/)).toBeInTheDocument()
-    expect(await screen.findByText(/Projects folder: not set up on this machine/)).toBeInTheDocument()
+    expect(await screen.findByText(/Projects folder: not set up on this node/)).toBeInTheDocument()
     expect(screen.getByText(/Docker: ready/)).toBeInTheDocument()
     expect(screen.queryByText(/Certificates file/)).not.toBeInTheDocument() // no right to look: not shown
     expect(await screen.findByText(/without HTTPS/)).toBeInTheDocument()

@@ -69,7 +69,7 @@ describe('members', () => {
     await userEvent.type(pickers[1], 'patricia')
     const go = screen.getByRole('button', { name: 'Hand it over' })
     expect(go).toBeDisabled()
-    await userEvent.type(screen.getByLabelText(/Type the name of the machine/), 'Home')
+    await userEvent.type(screen.getByLabelText(/Type the name of the node/), 'Home')
     await userEvent.type(screen.getByLabelText('Second-factor code'), '123456')
     expect(go).toBeEnabled()
     await userEvent.click(go)
@@ -79,6 +79,6 @@ describe('members', () => {
   it('says so when you may not manage the members', async () => {
     server(false)
     renderTab()
-    expect(await screen.findByText('You cannot manage the members of this machine.')).toBeInTheDocument()
+    expect(await screen.findByText('You cannot manage the members of this node.')).toBeInTheDocument()
   })
 })

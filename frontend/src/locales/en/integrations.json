@@ -4,7 +4,7 @@
   "hooks.explain": "A hook is a private address and a token that do one thing: redeploy one project. Give it to a CI tool that should not hold a full key. It acts as you, and stops working if you lose the right to deploy.",
   "hooks.new": "New hook",
   "hooks.name": "Name",
-  "hooks.node": "Machine",
+  "hooks.node": "Node",
   "hooks.project": "Project",
   "hooks.expires": "Valid until (optional)",
   "hooks.create": "Create the hook",
@@ -18,5 +18,5 @@
   "hooks.lastUsed": "last called {{when}}",
   "actions.project.redeploy": "Redeploy",
   "metrics.title": "Metrics for Prometheus",
-  "metrics.explain": "Create an API key with the right to read metrics and give it to Prometheus. It sees only the machines you can see."
+  "metrics.explain": "Create an API key with the right to read metrics and give it to Prometheus. It sees only the nodes you can see."
 }

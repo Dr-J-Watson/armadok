@@ -1,4 +1,4 @@
-"""Declaration of the `ownership` module: owners of the objects inside a machine."""
+"""Declaration of the `ownership` module: owners of the objects inside a node."""
 
 from armadok.core.module import Module, Right, Signal
 from armadok.modules.ownership import repository, service

@@ -32,7 +32,7 @@ async def watch_loop(app: Any) -> None:
                 jobs = repo.running(conn)
             finally:
                 conn.close()
-            # Together, each with its own limit: one unreachable machine must not hold up the rest.
+            # Together, each with its own limit: one unreachable node must not hold up the rest.
             await asyncio.gather(*(_follow(app, job) for job in jobs))
         except Exception:  # noqa: BLE001  (keep the loop alive whatever happens)
             log.exception("backup follow-up failed")

@@ -1,6 +1,6 @@
 """Deployment endpoints of a project: run an action, follow it, see status and logs.
 
-Running an action is as powerful as running `docker compose` on the machine, so it needs the
+Running an action is as powerful as running `docker compose` on the node, so it needs the
 sensitive `projects.deploy` right (which API keys cannot carry). Every start and every end is
 audited, and people are notified of success or failure.
 """
@@ -233,7 +233,7 @@ async def get_task(
 ) -> dict:
     """Return a task of this node, refreshed while it runs. Needs `projects.logs`.
 
-    The right may come from the whole machine or from owning the task's project.
+    The right may come from the whole node or from owning the task's project.
     """
     authorise(conn, registry, who, node_id, "nodes.read")
     row = tasks.get(conn, node_id, task_id)

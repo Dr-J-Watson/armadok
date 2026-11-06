@@ -1,6 +1,6 @@
 {
   "tab": "Tâches planifiées",
-  "explain": "Des actions que cette machine fait toute seule à heure fixe. Une tâche agit avec les droits de la personne qui l'a créée, revérifiés à chaque exécution. Si elle ne peut pas s'exécuter, vous êtes prévenu.",
+  "explain": "Des actions que ce nœud fait tout seul à heure fixe. Une tâche agit avec les droits de la personne qui l'a créée, revérifiés à chaque exécution. Si elle ne peut pas s'exécuter, vous êtes prévenu.",
   "none": "Aucune tâche planifiée pour l'instant.",
   "new": "Nouvelle tâche planifiée",
   "name": "Nom",

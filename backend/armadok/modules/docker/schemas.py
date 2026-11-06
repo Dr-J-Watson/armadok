@@ -97,7 +97,7 @@ class Done(BaseModel):
 
 
 class Pruned(BaseModel):
-    """The answer of `docker.prune`: only counts come back from the machine."""
+    """The answer of `docker.prune`: only counts come back from the node."""
 
     model_config = _STRICT
     removed: int = Field(ge=0, le=1_000_000)

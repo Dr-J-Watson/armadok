@@ -32,7 +32,7 @@ afterEach(() => {
 })
 
 describe('backups tab', () => {
-  it('says how to turn backups on when the machine has no folder', async () => {
+  it('says how to turn backups on when the node has no folder', async () => {
     renderTab(overview({ configured: false, archives: [] }))
     expect(await screen.findByText(/no backup folder/)).toBeInTheDocument()
     expect(screen.queryByRole('form', { name: 'Back up a volume' })).toBeNull()

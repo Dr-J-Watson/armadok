@@ -2,9 +2,9 @@
 
 An archive is downloaded by a plain browser request, which cannot carry the access token, so
 the person first asks for a ticket (proving who they are, with a fresh second-factor code) and
-then opens the download address with it. A ticket works once, for one archive on one machine,
+then opens the download address with it. A ticket works once, for one archive on one node,
 for a short time; only its hash is kept, in memory. Nothing of the archive is stored on the hub:
-it is read piece by piece from the machine and passed on.
+it is read piece by piece from the node and passed on.
 """
 
 from __future__ import annotations

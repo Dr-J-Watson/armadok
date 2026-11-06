@@ -28,7 +28,7 @@ def _names(project: str, file: str) -> None:
         raise ApiError("projects.invalid_name", 422)
 
 
-@router.get("", summary="Compose projects of the machine")
+@router.get("", summary="Compose projects of the node")
 async def list_projects(
     node_id: str,
     request: Request,
@@ -36,7 +36,7 @@ async def list_projects(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Return the project folders found in the machine's allowed folder, with their files."""
+    """Return the project folders found in the node's allowed folder, with their files."""
     authorise(conn, registry, who, node_id, "projects.read")
     answer = await ask(request, registry, node_id, "projects.list", {}, schemas.ProjectList)
     return answer.model_dump()
@@ -157,7 +157,7 @@ async def create_project(
     """Make a new project folder with a Compose file and, if given, a private `.env`.
 
     Needs `projects.create`. The folder must not exist. Nothing is run: deploying is a separate
-    action with its own right. The `.env` text goes to the machine and nowhere else (it is
+    action with its own right. The `.env` text goes to the node and nowhere else (it is
     never stored here, returned or audited); the audit entry only says whether one was given.
     """
     authorise(conn, registry, who, node_id, "projects.create")

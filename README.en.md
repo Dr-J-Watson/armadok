@@ -61,14 +61,14 @@ Dynamic badges — enable once the repository is public:
 - [How it fits together](#how-it-fits-together)
 - [Applications and Docker Compose projects](#applications-and-docker-compose-projects)
 - [Git and automatic updates](#git-and-automatic-updates)
-- [Docker on your machines](#docker-on-your-machines)
+- [Docker on your nodes](#docker-on-your-nodes)
 - [Traefik](#traefik)
 - [Traffic statistics and logs](#traffic-statistics-and-logs)
 - [Conversions](#conversions)
 - [HTTPS certificates](#https-certificates)
 - [DNS](#dns)
 - [Relationship map](#relationship-map)
-- [Machines and workers](#machines-and-workers)
+- [Nodes and workers](#nodes-and-workers)
 - [Team, rights and security](#team-rights-and-security)
 - [Notes and reminders](#notes-and-reminders)
 - [Notifications](#notifications)
@@ -116,7 +116,7 @@ Teams, roles, fine-grained time-limited rights, private notes, signed audit log.
     <td width="33%" valign="top">
 
 ### 🖥️ Scale
-Many machines driven from one interface, with no port to open.
+Many nodes driven from one interface, with no port to open.
 
   </td>
     <td width="33%" valign="top">
@@ -186,18 +186,18 @@ A project is a plain folder on disk (`docker-compose.yml`, `.env`, Dockerfiles).
 - **Image tracking**: new versions detected by comparing digests with the registry, without downloading anything; notification or scheduled automatic update, service by service; **rollback** available; **private registry credentials** managed in the interface.
 - **Post-deployment check**: does the site answer? If not, an **automatic rollback is offered** (never enabled by default).
 
-## Docker on your machines
+## Docker on your nodes
 
 - All containers (including those outside any project), images, networks and volumes: start, stop, restart, remove, prune, inspect.
 - Which image, network or volume is used by what; sizes; read-only browsing inside a volume.
 - Live logs, statistics and terminal; debug terminal for containers without a shell.
-- **Machine resources**: processor, memory, disks, network, temperature, GPU.
+- **Node resources**: processor, memory, disks, network, temperature, GPU.
 - **Known vulnerabilities (CVEs) in your images**: per image, project and container, with the version that fixes them; containers that are vulnerable **and** published through Traefik are highlighted.
 - **Volume backup and restore** (archive, schedule, retention) and **scheduled tasks**: timed restarts, cleanup, backups.
 
 ## Traefik
 
-Two modes, chosen per platform, machine or application: **dynamic files** or **Docker labels**.
+Two modes, chosen per platform, node or application: **dynamic files** or **Docker labels**.
 
 **Sites**
 - Block-based builder: *When visiting… → Then apply… → Then send to… → HTTPS → DNS*.
@@ -271,7 +271,7 @@ Two modes, chosen per platform, machine or application: **dynamic files** or **D
 ## HTTPS certificates
 
 - Tracking of Traefik's certificates: domains, issuer, expiry, wildcards, sites that did not get a certificate, an HTTPS badge on every site.
-- **Private keys never leave the machine** that holds them; only public information is displayed and stored.
+- **Private keys never leave the node** that holds them; only public information is displayed and stored.
 - Help configuring the DNS challenge for the chosen provider (environment variables and Traefik snippet), wildcard certificate; certificates are obtained by Traefik (ACME, for example Let's Encrypt).
 - Alerts before expiry.
 
@@ -291,7 +291,7 @@ The architecture is designed so more providers can be added.
 
 ## Relationship map
 
-An interactive bubble diagram showing **what is connected to what**: containers, projects, Traefik routers, services and middlewares, domains and DNS records, certificates, networks, volumes, images and machines.
+An interactive bubble diagram showing **what is connected to what**: containers, projects, Traefik routers, services and middlewares, domains and DNS records, certificates, networks, volumes, images and nodes.
 
 ```mermaid
 graph LR
@@ -309,15 +309,15 @@ graph LR
 
 - The state of every element in colour (stopped, in error, DNS missing, certificate close to expiry, update available, critical vulnerability).
 - Orphans spotted (unused volume, container without a site, site without a container…).
-- Hover, click for the details and actions, filters, search, grouping by project or by machine, saved layout, image export.
+- Hover, click for the details and actions, filters, search, grouping by project or by node, saved layout, image export.
 - Live updates; everyone's rights are respected. Phone-friendly version.
 - **Everything is linked**: from a container, jump to its project, the Traefik rules that target it, its DNS domain or its certificate — and back. Every page has a "Relations" panel, and every object named anywhere (log, audit, notification, error) is clickable.
 
-## Machines and workers
+## Nodes and workers
 
-- A machine is a **node**, of type **network** (Traefik, DNS), **Docker**, or **full**. The type determines the menus, the rights and the allowed operations.
-- One **worker** per machine, installed by an assistant: a ready-to-copy command, or a compose stack ready to paste into Portainer. **Remote update**: pull the new image and redeploy from the interface.
-- The worker **connects out to the interface itself**: no port to open, machines behind NAT are fine.
+- A node is a server managed by Armadok, of type **network** (Traefik, DNS), **Docker**, or **full**. The type determines the menus, the rights and the allowed operations.
+- One **worker** per node, installed by an assistant: a ready-to-copy command, or a compose stack ready to paste into Portainer. **Remote update**: pull the new image and redeploy from the interface.
+- The worker **connects out to the interface itself**: no port to open, nodes behind NAT are fine.
 - **Encrypted, authenticated** channel end to end, interface key pinned, single-use 15-minute enrolment token.
 - The worker runs only a **closed list of operations**, only inside its allowed folders.
 - Each node has its owner, its members and its rights; transfer, suspension, worker replacement and revocation; **read-only mode**.
@@ -325,9 +325,9 @@ graph LR
 ## Team, rights and security
 
 > [!IMPORTANT]
-> Armadok drives the Docker daemon, which is equivalent to root access on the machine. Restrict access to the interface (IP allow-list, SSO, VPN) and enable two-factor authentication.
+> Armadok drives the Docker daemon, which is equivalent to root access on the node. Restrict access to the interface (IP allow-list, SSO, VPN) and enable two-factor authentication.
 >
-> The right to deploy combined with the right to edit project files gives the same power on that node. On the machine that runs the hub, it also reaches the hub's own data folder (database and keys). Grant both rights sparingly.
+> The right to deploy combined with the right to edit project files gives the same power on that node. On the node that runs the hub, it also reaches the hub's own data folder (database and keys). Grant both rights sparingly.
 
 **Fine-grained rights**
 - A single rights catalogue covering Docker, Git, Traefik, DNS, traffic, notes and administration.
@@ -357,7 +357,7 @@ graph LR
 
 ## Notes and reminders
 
-- A **note** field on every object: machine, project, container, site, middleware, domain, record, certificate, user…
+- A **note** field on every object: node, project, container, site, middleware, domain, record, certificate, user…
 - **Entirely private** notes, including from administrators.
 - **Reminders** with a due date, snooze, "done" checkbox; a "My notes" page with search.
 - Notes follow renames and appear on the relationship map.
@@ -365,7 +365,7 @@ graph LR
 ## Notifications
 
 - Channels: **browser** (even with the tab closed), Discord, ntfy, signed webhook, e-mail.
-- **Highly customisable**: event by event, scope (machine, project, label, domain), minimum severity, "do not disturb" time ranges, grouping, anti-repeat, displayed content, actions in the notification, fallback channel.
+- **Highly customisable**: event by event, scope (node, project, label, domain), minimum severity, "do not disturb" time ranges, grouping, anti-repeat, displayed content, actions in the notification, fallback channel.
 - Filtered by your rights, in your account's language, with no sensitive data.
 
 <details>

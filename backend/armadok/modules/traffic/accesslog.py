@@ -46,7 +46,7 @@ def mask(address: str) -> str:
     """Return the network an address belongs to (IPv4 /24, IPv6 /48) as text."""
     ip = ipaddress.ip_address(canonical(address))
     if isinstance(ip, ipaddress.IPv6Address) and ip.sixtofour:
-        # A 6to4 prefix IS the client's IPv4 address: a /48 would name one machine exactly.
+        # A 6to4 prefix IS the client's IPv4 address: a /48 would name one node exactly.
         ip = ip.sixtofour
     return str(ipaddress.ip_network(f"{ip}/{24 if ip.version == 4 else 48}", strict=False))
 
@@ -118,7 +118,7 @@ def _store(app: Any, node_id: str, expected: tuple[int, int] | None, chunk: Chun
 
 
 async def collect_node(app: Any, node_id: str) -> str | None:
-    """Read what was added to one machine's access log; return an error code or None.
+    """Read what was added to one node's access log; return an error code or None.
 
     A busy site can write faster than one chunk per tick: while chunks come back full, the next
     one is read at once, within a time budget, so the collector does not fall ever further behind.
@@ -239,7 +239,7 @@ def entries(
 
 
 async def watch_loop(app: Any) -> None:
-    """Every half minute read the access logs of the machines that have one; trim every 10 min."""
+    """Every half minute read the access logs of the nodes that have one; trim every 10 min."""
     await asyncio.sleep(STARTUP_DELAY_SECONDS)
     last_purge = 0.0
     while True:
@@ -258,7 +258,7 @@ async def watch_loop(app: Any) -> None:
                 try:
                     if await collect_node(app, node_id) is not None:
                         _failed_at[node_id] = time.monotonic()
-                except Exception:  # noqa: BLE001  (one machine must not stop the others)
+                except Exception:  # noqa: BLE001  (one node must not stop the others)
                     log.exception("could not read an access log")
             if time.monotonic() - last_purge > PURGE_EVERY_SECONDS:
                 last_purge = time.monotonic()

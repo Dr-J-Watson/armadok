@@ -1,7 +1,7 @@
 """The `armadok` command: `python -m armadok.cli` (or the `armadok` script).
 
 Exit codes: 0 done, 1 the server refused, 2 a usage or setup problem, 3 an action that ran and
-failed (`deploy` reports the outcome of the task). `--json` prints machine-readable output.
+failed (`deploy` reports the outcome of the task). `--json` prints node-readable output.
 """
 
 from __future__ import annotations
@@ -92,7 +92,7 @@ def cmd_whoami(args: argparse.Namespace) -> int:
 
 
 def cmd_nodes(args: argparse.Namespace) -> int:
-    """List the machines you can see."""
+    """List the nodes you can see."""
     nodes = _api("GET", "/nodes")
     _show(
         [[n["id"], n["name"], n["type"]] for n in nodes], ["ID", "NAME", "TYPE"], args.json, nodes
@@ -101,8 +101,8 @@ def cmd_nodes(args: argparse.Namespace) -> int:
 
 
 def cmd_projects(args: argparse.Namespace) -> int:
-    """List the Compose projects of a machine."""
-    node = _check(args.node, _ID, "The machine")
+    """List the Compose projects of a node."""
+    node = _check(args.node, _ID, "The node")
     data = _api("GET", f"/nodes/{node}/projects")
     projects = data.get("projects", [])
     _show([[p["name"]] for p in projects], ["PROJECT"], args.json, projects)
@@ -110,8 +110,8 @@ def cmd_projects(args: argparse.Namespace) -> int:
 
 
 def cmd_containers(args: argparse.Namespace) -> int:
-    """List the containers of a machine."""
-    node = _check(args.node, _ID, "The machine")
+    """List the containers of a node."""
+    node = _check(args.node, _ID, "The node")
     data = _api("GET", f"/nodes/{node}/docker/containers")
     rows = [[(c["names"] or [c["id"][:12]])[0], c["state"], c["image"]] for c in data["containers"]]
     _show(rows, ["NAME", "STATE", "IMAGE"], args.json, data["containers"])
@@ -120,7 +120,7 @@ def cmd_containers(args: argparse.Namespace) -> int:
 
 def cmd_logs(args: argparse.Namespace) -> int:
     """Print the last lines of a container's logs."""
-    node = _check(args.node, _ID, "The machine")
+    node = _check(args.node, _ID, "The node")
     container = _check(
         args.container,
         re.compile(r"[0-9a-f]{12,64}|[A-Za-z0-9][A-Za-z0-9_.-]{0,127}"),
@@ -135,7 +135,7 @@ def cmd_logs(args: argparse.Namespace) -> int:
 
 def cmd_deploy(args: argparse.Namespace) -> int:
     """Run an action on a Compose project and (unless --no-wait) follow it to its end."""
-    node = _check(args.node, _ID, "The machine")
+    node = _check(args.node, _ID, "The node")
     project = _check(args.project, _NAME, "The project")
     body: dict[str, Any] = {"action": args.action}
     if args.action == "up":
@@ -201,10 +201,10 @@ def build_parser() -> argparse.ArgumentParser:
     p = add("login", cmd_login, "remember the server address and an API key")
     p.add_argument("url", help="e.g. https://armadok.example.com")
     add("whoami", cmd_whoami, "show the account behind the key")
-    add("nodes", cmd_nodes, "list machines")
-    p = add("projects", cmd_projects, "list Compose projects of a machine")
+    add("nodes", cmd_nodes, "list nodes")
+    p = add("projects", cmd_projects, "list Compose projects of a node")
     p.add_argument("node")
-    p = add("containers", cmd_containers, "list containers of a machine")
+    p = add("containers", cmd_containers, "list containers of a node")
     p.add_argument("node")
     p = add("logs", cmd_logs, "print a container's recent logs")
     p.add_argument("node")

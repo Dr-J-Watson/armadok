@@ -1,6 +1,6 @@
 {
   "tab": "Failles des images",
-  "explain": "Failles de sécurité connues dans les images que vos conteneurs utilisent. Un scan lit la liste des paquets d'une image sans la démarrer, puis interroge une base publique (OSV) avec les seuls noms et versions des paquets ; rien d'autre ne quitte la machine. Il couvre les images Debian, Ubuntu et Alpine.",
+  "explain": "Failles de sécurité connues dans les images que vos conteneurs utilisent. Un scan lit la liste des paquets d'une image sans la démarrer, puis interroge une base publique (OSV) avec les seuls noms et versions des paquets ; rien d'autre ne quitte le nœud. Il couvre les images Debian, Ubuntu et Alpine.",
   "off": "L'analyse des images est désactivée sur ce serveur (elle envoie des noms de paquets à une base publique). Un administrateur l'active avec ARMADOK_VULN_CHECK=true.",
   "scanAll": "Analyser les images utilisées",
   "scanning": "Analyse…",

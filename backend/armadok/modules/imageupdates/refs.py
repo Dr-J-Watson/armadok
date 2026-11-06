@@ -1,6 +1,6 @@
 """Reading an image reference (`nginx:1.27`, `ghcr.io/org/app:v2`) into registry, repository, tag.
 
-The reference comes from a machine, so it is untrusted: every part is checked against a strict
+The reference comes from a node, so it is untrusted: every part is checked against a strict
 pattern before it is put into a URL, and anything unusual is refused (the image is then simply
 not followed). References pinned by digest (`@sha256:`) never change, so there is nothing to
 follow either.

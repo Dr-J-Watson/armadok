@@ -1,4 +1,4 @@
-"""Endpoints of the image scan, per machine.
+"""Endpoints of the image scan, per node.
 
 Reading needs `imagescan.read`; scanning needs `imagescan.run` and the global switch
 `ARMADOK_VULN_CHECK`, because a scan sends package names and versions to the OSV database.
@@ -26,13 +26,13 @@ _last: dict[str, float] = {}
 
 
 class ScanIn(BaseModel):
-    """One image to scan, or none for every image the machine's containers use."""
+    """One image to scan, or none for every image the node's containers use."""
 
     model_config = ConfigDict(extra="forbid")
     image: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
 
 
-@router.get("", summary="Known flaws in the images of a machine")
+@router.get("", summary="Known flaws in the images of a node")
 def overview(
     node_id: str,
     request: Request,
@@ -60,7 +60,7 @@ async def scan(
 ) -> dict:
     """Scan one image, or the images in use, and return how each went.
 
-    Package names and versions go to the OSV database; nothing else leaves the machine.
+    Package names and versions go to the OSV database; nothing else leaves the node.
     """
     authorise(conn, registry, who, node_id, "imagescan.run")
     if not request.app.state.settings.vuln_check:

@@ -64,7 +64,7 @@ def unpublish(conn: sqlite3.Connection, probe_id: str) -> bool:
 def public_view(conn: sqlite3.Connection, slug: str, bars: int) -> dict[str, Any] | None:
     """Return what the public may see of a page: a title, a state and a few dots. Nothing else.
 
-    No host, no machine, no reason text (a reason can name an internal address).
+    No host, no node, no reason text (a reason can name an internal address).
     """
     page = by_slug(conn, slug)
     if page is None:

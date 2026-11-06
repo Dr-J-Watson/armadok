@@ -1,7 +1,7 @@
 {
   "tab": "Conteneurs",
-  "empty": "Aucun conteneur sur cette machine.",
-  "truncated": "La liste est incomplète : cette machine a plus de conteneurs qu'on ne peut en afficher d'un coup.",
+  "empty": "Aucun conteneur sur ce nœud.",
+  "truncated": "La liste est incomplète : ce nœud a plus de conteneurs qu'on ne peut en afficher d'un coup.",
   "columns.name": "Nom",
   "columns.image": "Image",
   "columns.state": "État",

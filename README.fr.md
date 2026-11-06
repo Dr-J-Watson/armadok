@@ -61,14 +61,14 @@ Badges dynamiques — à activer quand le dépôt sera public :
 - [Comment tout s'articule](#comment-tout-sarticule)
 - [Applications et projets Docker Compose](#applications-et-projets-docker-compose)
 - [Git et mises à jour automatiques](#git-et-mises-à-jour-automatiques)
-- [Docker des machines](#docker-des-machines)
+- [Docker des nœuds](#docker-des-nœuds)
 - [Traefik](#traefik)
 - [Statistiques et journaux du trafic](#statistiques-et-journaux-du-trafic)
 - [Conversions](#conversions)
 - [Certificats HTTPS](#certificats-https)
 - [DNS](#dns)
 - [Carte des relations](#carte-des-relations)
-- [Machines et workers](#machines-et-workers)
+- [Nœuds et workers](#nœuds-et-workers)
 - [Équipe, droits et sécurité](#équipe-droits-et-sécurité)
 - [Notes et pense-bêtes](#notes-et-pense-bêtes)
 - [Notifications](#notifications)
@@ -116,7 +116,7 @@ Une carte interactive de ce qui est relié à quoi : conteneurs, sites, domaines
     <td width="33%" valign="top">
 
 ### 🖥️ Étendre
-Plusieurs machines pilotées depuis une seule interface, sans port à ouvrir.
+Plusieurs nœuds pilotés depuis une seule interface, sans port à ouvrir.
 
   </td>
     <td width="33%" valign="top">
@@ -186,18 +186,18 @@ Un projet est un simple dossier sur disque (`docker-compose.yml`, `.env`, Docker
 - **Suivi des images** : nouvelle version détectée par comparaison de digest avec le registre, sans rien télécharger ; notification ou mise à jour automatique planifiée, service par service ; **retour arrière** possible ; **identifiants de registres privés** gérés dans l'interface.
 - **Vérification après déploiement** : le site répond-il ? sinon, un **retour arrière automatique est proposé** (jamais activé par défaut).
 
-## Docker des machines
+## Docker des nœuds
 
 - Tous les conteneurs (y compris hors projet), images, réseaux et volumes : démarrer, arrêter, redémarrer, supprimer, nettoyer, inspecter.
 - Qui utilise quelle image, quel réseau, quel volume ; tailles ; navigation en lecture seule dans un volume.
 - Logs, statistiques et terminal en direct ; terminal de débogage pour les conteneurs sans shell.
-- **Ressources de la machine** : processeur, mémoire, disques, réseau, température, GPU.
+- **Ressources du nœud** : processeur, mémoire, disques, réseau, température, GPU.
 - **Failles connues (CVE) dans vos images** : par image, projet et conteneur, avec la version qui les corrige ; mise en avant des conteneurs vulnérables **et** publiés par Traefik.
 - **Sauvegarde et restauration de volumes** (archive, planification, rétention) et **tâches planifiées** : redémarrage programmé, nettoyage, sauvegarde.
 
 ## Traefik
 
-Deux modes, au choix par plateforme, machine ou application : **fichiers dynamiques** ou **labels Docker**.
+Deux modes, au choix par plateforme, nœud ou application : **fichiers dynamiques** ou **labels Docker**.
 
 **Sites**
 - Constructeur en blocs : *Quand on visite… → Alors appliquer… → Puis envoyer vers… → HTTPS → DNS*.
@@ -271,7 +271,7 @@ Deux modes, au choix par plateforme, machine ou application : **fichiers dynamiq
 ## Certificats HTTPS
 
 - Suivi des certificats de Traefik : domaines, émetteur, échéance, jokers, sites sans certificat obtenu, pastille HTTPS sur chaque site.
-- **Les clés privées ne quittent jamais la machine** qui les détient ; seules les informations publiques sont affichées et conservées.
+- **Les clés privées ne quittent jamais le nœud** qui les détient ; seules les informations publiques sont affichées et conservées.
 - Aide à la configuration du défi DNS pour le fournisseur choisi (variables d'environnement et extrait Traefik), certificat joker ; les certificats sont obtenus par Traefik (ACME, par exemple Let's Encrypt).
 - Alertes avant expiration.
 
@@ -291,7 +291,7 @@ L'architecture est prévue pour ajouter d'autres fournisseurs.
 
 ## Carte des relations
 
-Un diagramme interactif en bulles qui montre **qui est relié à qui** : conteneurs, projets, routeurs, services et middlewares Traefik, domaines et enregistrements DNS, certificats, réseaux, volumes, images et machines.
+Un diagramme interactif en bulles qui montre **qui est relié à qui** : conteneurs, projets, routeurs, services et middlewares Traefik, domaines et enregistrements DNS, certificats, réseaux, volumes, images et nœuds.
 
 ```mermaid
 graph LR
@@ -309,15 +309,15 @@ graph LR
 
 - État de chaque élément en couleur (arrêté, en erreur, DNS manquant, certificat proche de l'échéance, mise à jour disponible, vulnérabilité critique).
 - Éléments orphelins repérés (volume inutilisé, conteneur sans site, site sans conteneur…).
-- Survol, clic pour la fiche et les actions, filtres, recherche, regroupement par projet ou par machine, mise en page enregistrée, export en image.
+- Survol, clic pour la fiche et les actions, filtres, recherche, regroupement par projet ou par nœud, mise en page enregistrée, export en image.
 - Mise à jour en direct ; respect des droits de chacun. Version adaptée au téléphone.
 - **Tout est relié** : depuis un conteneur, allez à son projet, aux règles Traefik qui le ciblent, à son domaine DNS ou à son certificat — et inversement. Chaque fiche a un panneau « Relations », et chaque objet nommé quelque part (journal, audit, notification, erreur) est cliquable.
 
-## Machines et workers
+## Nœuds et workers
 
-- Une machine = un **nœud**, de type **réseau** (Traefik, DNS), **Docker**, ou **complet**. Le type détermine les menus, les droits et les opérations autorisées.
-- Un seul **worker** par machine, installé par un assistant : commande prête à copier, ou pile compose prête à coller dans Portainer. **Mise à jour à distance** : récupération de la nouvelle image et redéploiement depuis l'interface.
-- Le worker **se connecte lui-même** à l'interface : aucun port à ouvrir, machine possible derrière un NAT.
+- Un nœud est un serveur géré par Armadok, de type **réseau** (Traefik, DNS), **Docker**, ou **complet**. Le type détermine les menus, les droits et les opérations autorisées.
+- Un seul **worker** par nœud, installé par un assistant : commande prête à copier, ou pile compose prête à coller dans Portainer. **Mise à jour à distance** : récupération de la nouvelle image et redéploiement depuis l'interface.
+- Le worker **se connecte lui-même** à l'interface : aucun port à ouvrir, nœud possible derrière un NAT.
 - Canal **chiffré et authentifié** de bout en bout, clé de l'interface épinglée, jeton d'enrôlement à usage unique de 15 minutes.
 - Le worker n'exécute qu'une **liste fermée d'opérations**, uniquement dans ses dossiers autorisés.
 - Chaque nœud a son propriétaire, ses membres et ses droits ; transfert, suspension, remplacement et révocation du worker ; **mode lecture seule**.
@@ -325,9 +325,9 @@ graph LR
 ## Équipe, droits et sécurité
 
 > [!IMPORTANT]
-> Armadok pilote le démon Docker, ce qui équivaut à un accès root sur la machine. Restreignez l'accès à l'interface (liste d'IP, SSO, VPN) et activez la double authentification.
+> Armadok pilote le démon Docker, ce qui équivaut à un accès root sur le nœud. Restreignez l'accès à l'interface (liste d'IP, SSO, VPN) et activez la double authentification.
 >
-> Le droit de déployer, combiné au droit de modifier les fichiers d'un projet, donne le même pouvoir sur ce nœud. Sur la machine qui héberge le hub, il atteint aussi le dossier de données du hub (base et clés). Accordez ces deux droits avec parcimonie.
+> Le droit de déployer, combiné au droit de modifier les fichiers d'un projet, donne le même pouvoir sur ce nœud. Sur le nœud qui héberge le hub, il atteint aussi le dossier de données du hub (base et clés). Accordez ces deux droits avec parcimonie.
 
 **Droits fins**
 - Un catalogue unique de droits couvrant Docker, Git, Traefik, DNS, trafic, notes et administration.
@@ -357,7 +357,7 @@ graph LR
 
 ## Notes et pense-bêtes
 
-- Un champ de **note** sur chaque objet : machine, projet, conteneur, site, middleware, domaine, enregistrement, certificat, utilisateur…
+- Un champ de **note** sur chaque objet : nœud, projet, conteneur, site, middleware, domaine, enregistrement, certificat, utilisateur…
 - Notes **entièrement privées**, y compris pour les administrateurs.
 - **Rappels** avec échéance, report, case « faite » ; page « Mes notes » avec recherche.
 - Les notes suivent les renommages et apparaissent sur la carte des relations.
@@ -365,7 +365,7 @@ graph LR
 ## Notifications
 
 - Canaux : **navigateur** (même onglet fermé), Discord, ntfy, webhook signé, e-mail.
-- **Très personnalisables** : événement par événement, périmètre (machine, projet, étiquette, domaine), gravité minimale, plages « ne pas déranger », regroupement, anti-répétition, contenu affiché, actions dans la notification, canal de repli.
+- **Très personnalisables** : événement par événement, périmètre (nœud, projet, étiquette, domaine), gravité minimale, plages « ne pas déranger », regroupement, anti-répétition, contenu affiché, actions dans la notification, canal de repli.
 - Filtrées par vos droits, dans la langue de votre compte, sans aucune donnée sensible.
 
 <details>

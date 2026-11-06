@@ -1,4 +1,4 @@
-"""Storage of Git logins (per machine, encrypted) and of each project's Git source."""
+"""Storage of Git logins (per node, encrypted) and of each project's Git source."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def _now() -> str:
 
 
 def list_logins(conn: sqlite3.Connection, node_id: str) -> list[dict[str, Any]]:
-    """Return the hosts a machine has a login for (host and user, never the token)."""
+    """Return the hosts a node has a login for (host and user, never the token)."""
     rows = conn.execute(
         "SELECT host, username, created_at FROM git_logins WHERE node_id = ? ORDER BY host",
         (node_id,),
@@ -59,7 +59,7 @@ def sealed_login(conn: sqlite3.Connection, node_id: str, host: str) -> tuple[str
 def save_login(
     conn: sqlite3.Connection, node_id: str, host: str, username: str, sealed: str, by: str
 ) -> bool:
-    """Store or replace a login; False if the machine already holds `MAX_LOGINS` other hosts."""
+    """Store or replace a login; False if the node already holds `MAX_LOGINS` other hosts."""
     known = {
         r["host"] for r in conn.execute("SELECT host FROM git_logins WHERE node_id = ?", (node_id,))
     }

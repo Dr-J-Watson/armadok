@@ -1,1 +1,1 @@
-"""Nodes: the machines Armadok manages, one worker per machine."""
+"""Nodes: the nodes Armadok manages, one worker per node."""

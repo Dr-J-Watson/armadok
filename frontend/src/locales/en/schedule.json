@@ -1,6 +1,6 @@
 {
   "tab": "Scheduled tasks",
-  "explain": "Actions this machine does by itself at set times. A task acts with the rights of the person who created it, checked again at every run. If it cannot run, you are told.",
+  "explain": "Actions this node does by itself at set times. A task acts with the rights of the person who created it, checked again at every run. If it cannot run, you are told.",
   "none": "No scheduled task yet.",
   "new": "New scheduled task",
   "name": "Name",

@@ -1,10 +1,10 @@
-"""A background index of what lives on each machine, so the search can find it.
+"""A background index of what lives on each node, so the search can find it.
 
-Looking for a container, a project, a site or a domain would mean asking every machine at every
-keystroke. Instead a background round asks each machine's relation providers (the same source as
-the map) every few minutes and keeps the names, per machine and per provider. The search then
+Looking for a container, a project, a site or a domain would mean asking every node at every
+keystroke. Instead a background round asks each node's relation providers (the same source as
+the map) every few minutes and keeps the names, per node and per provider. The search then
 reads that table only, and shows a row only to someone who may read that provider's data on that
-machine, exactly as the map does. The index holds names, never content, and a machine that
+node, exactly as the map does. The index holds names, never content, and a node that
 cannot be reached keeps its last known names until it answers again.
 """
 
@@ -41,14 +41,14 @@ CHANGING_SIGNALS = frozenset(
 )
 STARTUP_DELAY_SECONDS = 90
 PROVIDER_TIMEOUT_SECONDS = 25
-MAX_PER_PROVIDER = 3000  # names kept per machine and provider
+MAX_PER_PROVIDER = 3000  # names kept per node and provider
 MAX_SCANNED = 600  # rows looked at for one search
 # Types that are noise in a search box: a probe's state, a bare image digest...
 SKIP_TYPES = frozenset({"probe", "image"})
 
 
 def _indexer(registry: Any, node_id: str) -> Principal:
-    """Build the indexer's own principal: it may read every provider's data, on one machine.
+    """Build the indexer's own principal: it may read every provider's data, on one node.
 
     It lives only in this process and is never given to a request.
     """
@@ -78,7 +78,7 @@ def _replace(conn: sqlite3.Connection, node_id: str, provider: str, rows: list[t
 
 
 async def refresh_node(app: Any, node: dict[str, Any]) -> int:
-    """Re-read one machine's providers into the index; return how many names were kept."""
+    """Re-read one node's providers into the index; return how many names were kept."""
     registry = app.state.registry
     who, kept = _indexer(registry, node["id"]), 0
     for provider in registry.relation_providers():
@@ -88,7 +88,7 @@ async def refresh_node(app: Any, node: dict[str, Any]) -> int:
             data = await asyncio.wait_for(
                 provider.provide(app, node["id"], who), PROVIDER_TIMEOUT_SECONDS
             )
-        except Exception:  # noqa: BLE001  (an unreachable machine keeps its last names)
+        except Exception:  # noqa: BLE001  (an unreachable node keeps its last names)
             continue
         rows = [
             (node["id"], provider.name, o.type, o.id[:500], o.label[:200])
@@ -109,7 +109,7 @@ async def refresh_node(app: Any, node: dict[str, Any]) -> int:
 
 
 async def refresh_all(app: Any) -> int:
-    """One round over every machine; return the number of names indexed."""
+    """One round over every node; return the number of names indexed."""
     from armadok.modules.nodes import repository as nodes_repo
 
     def machines() -> list[dict[str, Any]]:
@@ -125,7 +125,7 @@ async def refresh_all(app: Any) -> int:
     return total
 
 
-# Changes made through Armadok refresh the machine's names a few seconds later (one refresh for a
+# Changes made through Armadok refresh the node's names a few seconds later (one refresh for a
 # burst of changes); what happens outside Armadok is caught by the periodic round.
 REFRESH_AFTER_CHANGE_SECONDS = 3
 _pending: dict[tuple[int, str], asyncio.Task[None]] = {}
@@ -134,7 +134,7 @@ _pending: dict[tuple[int, str], asyncio.Task[None]] = {}
 async def on_signal(
     app: Any, signal: str, node_id: str | None, actor_id: str | None = None
 ) -> None:
-    """Re-index a machine soon after one of its objects changed (listener of change signals)."""
+    """Re-index a node soon after one of its objects changed (listener of change signals)."""
     if node_id is None or signal not in CHANGING_SIGNALS or (id(app), node_id) in _pending:
         return
 

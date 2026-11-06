@@ -1,6 +1,6 @@
 {
   "tab": "Availability",
-  "explain": "Checks, from this machine, that your sites and services answer. After two failed checks in a row a site is called down and you are told; you are told again when it is back.",
+  "explain": "Checks, from this node, that your sites and services answer. After two failed checks in a row a site is called down and you are told; you are told again when it is back.",
   "none": "No probe yet.",
   "new": "New probe",
   "name": "Name",
@@ -9,7 +9,7 @@
   "host": "Host",
   "port": "Port",
   "interval": "Check every (seconds)",
-  "warn": "The check starts from this machine and can reach whatever it reaches. Only the status and the response time are kept.",
+  "warn": "The check starts from this node and can reach whatever it reaches. Only the status and the response time are kept.",
   "create": "Create",
   "checkNow": "Check now",
   "pause": "Pause",

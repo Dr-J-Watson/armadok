@@ -187,7 +187,7 @@ def call(method: str, path: str, body: Any = None, *, url: str, key: str) -> Any
         },
     )
     # Proxies are off unless asked for: the environment's proxy settings would otherwise carry
-    # the key (in clear text, for an http address) to a machine nobody chose.
+    # the key (in clear text, for an http address) to a node nobody chose.
     handlers: list[Any] = [_NoRedirect()]
     if os.environ.get(ENV_PROXY) != "1":
         handlers.insert(0, urllib.request.ProxyHandler({}))

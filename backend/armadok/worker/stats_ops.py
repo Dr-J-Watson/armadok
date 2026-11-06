@@ -1,11 +1,11 @@
-"""Resource figures: the machine's own, and those of its running containers.
+"""Resource figures: the node's own, and those of its running containers.
 
-Everything is read, nothing is changed. The machine figures come from `/proc` and `/sys`
+Everything is read, nothing is changed. The node figures come from `/proc` and `/sys`
 (inside a container these still describe the host's processor, memory and network) and from
 the free space of the folders the worker was given. Seen from a container, the processor and
 memory are the host's, but the network figures are those of the worker's own network
 namespace (the host's only with host networking). Only numbers and fixed labels leave the
-machine: no path, no process name, no interface name.
+node: no path, no process name, no interface name.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ def _read(path: Path) -> str:
 
 
 def _cpu_times() -> tuple[int, int]:
-    """Return `(busy, total)` jiffies of the whole machine."""
+    """Return `(busy, total)` jiffies of the whole node."""
     fields = _read(PROC / "stat").split("\n", 1)[0].split()[1:]
     values = [int(x) for x in fields[:8] if x.isdigit()]
     if len(values) < 4:
@@ -87,7 +87,7 @@ def _network() -> tuple[int, int]:
 
 
 def _temperature() -> float | None:
-    """Return the hottest thermal zone in °C, or None if the machine exposes none."""
+    """Return the hottest thermal zone in °C, or None if the node exposes none."""
     best: float | None = None
     try:
         zones = list((SYS / "class" / "thermal").glob("thermal_zone*/temp"))[:32]

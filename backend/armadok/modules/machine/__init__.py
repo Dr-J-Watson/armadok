@@ -1,1 +1,1 @@
-"""Resource figures of a machine: processor, memory, disks, network, temperature."""
+"""Resource figures of a node: processor, memory, disks, network, temperature."""

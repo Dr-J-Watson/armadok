@@ -19,7 +19,7 @@ def validate(target: dict[str, Any]) -> dict[str, Any]:
 
 
 async def run(app: Any, who: Any, target: dict[str, Any]) -> None:
-    """Check the machine's images, as the creator of the schedule (who still needs the right)."""
+    """Check the node's images, as the creator of the schedule (who still needs the right)."""
     conn = app.state.settings.open_db()
     try:
         authorise(conn, app.state.registry, who, target["node_id"], "imageupdates.check")

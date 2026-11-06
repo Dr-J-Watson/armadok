@@ -20,7 +20,7 @@ module = Module(
     routes=(router,),
     rights=(
         Right("uptime.read", depends_on=("nodes.read",), node_owner=True, level="view"),
-        # Sensitive: a probe makes the machine send a request to an address of the creator's
+        # Sensitive: a probe makes the node send a request to an address of the creator's
         # choice. Not for API keys.
         Right(
             "uptime.manage",

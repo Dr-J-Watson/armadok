@@ -1,4 +1,4 @@
-"""Machine resources endpoint of a node."""
+"""Node resources endpoint of a node."""
 
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ class MachineStats(BaseModel):
         return self
 
 
-@router.get("", summary="Resources of the machine")
+@router.get("", summary="Resources of the node")
 async def machine(
     node_id: str,
     request: Request,
@@ -71,7 +71,7 @@ async def machine(
 ) -> dict:
     """Return processor, memory, load, disks, network counters, uptime and temperature."""
     authorise(conn, registry, who, node_id, "machine.read")
-    # Many viewers polling one machine cost one measurement (the check above ran for each).
+    # Many viewers polling one node cost one measurement (the check above ran for each).
     return await _shared.get(
         node_id,
         lambda: _measure(request, registry, node_id),

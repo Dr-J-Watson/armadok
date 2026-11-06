@@ -4,7 +4,7 @@
   "tabs.roles": "Roles",
   "tabs.groups": "Groups",
   "tabs.assignments": "Assignments",
-  "explain": "A role is a set of rights. Built-in roles cannot be changed, but you can copy one and adjust the copy. Roles can only hold rights given per machine.",
+  "explain": "A role is a set of rights. Built-in roles cannot be changed, but you can copy one and adjust the copy. Roles can only hold rights given per node.",
   "builtin.viewer": "Viewer",
   "builtin.operator": "Operator",
   "builtin.developer": "Developer",
@@ -52,5 +52,5 @@
   "effective.viaRole": "role {{role}}",
   "effective.viaGroup": "role {{role}} through group {{group}}",
   "effective.everywhere": "everywhere",
-  "access.explain": "The rights that work on this machine for each account, whether they come from a role, a group or a direct grant."
+  "access.explain": "The rights that work on this node for each account, whether they come from a role, a group or a direct grant."
 }

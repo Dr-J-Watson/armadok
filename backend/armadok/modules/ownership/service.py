@@ -25,7 +25,7 @@ RELEASE_SECONDS = 60
 
 # What an owner may do with the object itself, on top of the kind's own rights.
 GIVE = "ownership.give"
-# What the machine's owner may do to everything inside it.
+# What the node's owner may do to everything inside it.
 MANAGE = "ownership.manage"
 
 # An id becomes a path segment of a scope ("node:a/project:blog"): no slash, no surprise.
@@ -47,7 +47,7 @@ def grant_source(
 ) -> tuple[Grant, ...]:
     """Grants an account holds because it owns objects (see `Module.registry_grant_sources`).
 
-    Owning an object counts only while the person still sees its machine: a member who was
+    Owning an object counts only while the person still sees its node: a member who was
     removed and invited again later does not find an old object's rights waiting for them.
     Judged from their own and their roles' grants only, so this cannot loop back into itself.
     """
@@ -93,9 +93,9 @@ async def owned_objects(
     """Return every object of a node that `person_id` owns.
 
     Those with a row of their own are read from the database. The node's owner also owns
-    everything without a row, which only the machine can list (that needs its worker): that
+    everything without a row, which only the node can list (that needs its worker): that
     is asked only for a person's own session holding the right to give, never for a key that
-    merely reads the machine.
+    merely reads the node.
     """
     rows = repository.rows_of_node(conn, node["id"])
     found = {k for k, owner in rows.items() if owner == who.id}
@@ -153,7 +153,7 @@ def drop_pending(conn: sqlite3.Connection, node_id: str, items: list[tuple[str, 
 
 
 def _sees(registry: Registry, conn: sqlite3.Connection, user_id: str, node_id: str) -> bool:
-    """Return True if the person's own grants and roles let them read the machine.
+    """Return True if the person's own grants and roles let them read the node.
 
     Whether the account is active is not asked: a disabled owner keeps their objects until they
     lose access for real, and get them back when the account is enabled again.
@@ -163,7 +163,7 @@ def _sees(registry: Registry, conn: sqlite3.Connection, user_id: str, node_id: s
 
 
 def release_lost(registry: Registry, conn: sqlite3.Connection) -> int:
-    """Give back to the machine's owner the objects of people who no longer see the machine.
+    """Give back to the node's owner the objects of people who no longer see the node.
 
     Without this, being invited again later would bring old objects (and their rights) back to
     life. Returns how many objects moved. Runs after a role is removed and, for the other ways
@@ -197,7 +197,7 @@ def release_lost(registry: Registry, conn: sqlite3.Connection) -> int:
 
 
 async def watch_loop(app: Any) -> None:
-    """Every minute, release the objects of people who lost the machine by any other route."""
+    """Every minute, release the objects of people who lost the node by any other route."""
     while True:
         await asyncio.sleep(RELEASE_SECONDS)
         conn = app.state.settings.open_db()
@@ -210,7 +210,7 @@ async def watch_loop(app: Any) -> None:
 
 
 def can_see_node(registry: Registry, conn: sqlite3.Connection, user_id: str, node_id: str) -> bool:
-    """Return True if an active, unblocked person holds `nodes.read` on the machine."""
+    """Return True if an active, unblocked person holds `nodes.read` on the node."""
     if registry.account_blocked(conn, user_id):
         return False
     who: Principal = registry.principal_for(conn, user_id, kind="background")

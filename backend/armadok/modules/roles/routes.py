@@ -357,7 +357,7 @@ def list_assignments(
     """Return assignments, optionally of one person or group. Needs `users.read`."""
     catalogue = registry.rights()
     who.require("users.read", catalogue)
-    # Assignments on machines the caller cannot see stay out of the answer.
+    # Assignments on nodes the caller cannot see stay out of the answer.
     return [
         a
         for a in repo.list_assignments(conn, subject_type, subject_id)

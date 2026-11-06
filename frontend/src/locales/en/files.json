@@ -4,7 +4,7 @@
   "save": "Save",
   "discard": "Discard my changes",
   "editorLabel": "Content of {{file}}",
-  "conflict": "This file was changed on the machine since you opened it. Nothing was overwritten.",
-  "reload": "Reload the file from the machine (lose my changes)",
+  "conflict": "This file was changed on the node since you opened it. Nothing was overwritten.",
+  "reload": "Reload the file from the node (lose my changes)",
   "keepMine": "Keep my version (replace theirs on the next save)"
 }

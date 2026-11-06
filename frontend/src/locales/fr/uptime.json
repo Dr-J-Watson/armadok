@@ -1,6 +1,6 @@
 {
   "tab": "Disponibilité",
-  "explain": "Vérifie, depuis cette machine, que vos sites et services répondent. Après deux échecs de suite, un site est déclaré indisponible et vous êtes prévenu ; vous l'êtes de nouveau à son retour.",
+  "explain": "Vérifie, depuis ce nœud, que vos sites et services répondent. Après deux échecs de suite, un site est déclaré indisponible et vous êtes prévenu ; vous l'êtes de nouveau à son retour.",
   "none": "Aucune sonde pour l'instant.",
   "new": "Nouvelle sonde",
   "name": "Nom",
@@ -9,7 +9,7 @@
   "host": "Hôte",
   "port": "Port",
   "interval": "Vérifier toutes les (secondes)",
-  "warn": "La vérification part de cette machine et peut atteindre tout ce qu'elle atteint. Seuls le statut et le temps de réponse sont conservés.",
+  "warn": "La vérification part de ce nœud et peut atteindre tout ce qu'il atteint. Seuls le statut et le temps de réponse sont conservés.",
   "create": "Créer",
   "checkNow": "Vérifier maintenant",
   "pause": "Mettre en pause",

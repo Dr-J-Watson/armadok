@@ -8,7 +8,7 @@ from armadok.modules.notes.routes import router
 
 module = Module(
     name="notes",
-    # Notes about a machine that was erased for good go with it (their shares follow).
+    # Notes about a node that was erased for good go with it (their shares follow).
     node_tables=(("notes", "delete"),),
     search=(SearchProvider("notes", _search.run),),
     requires=("nodes", "users"),

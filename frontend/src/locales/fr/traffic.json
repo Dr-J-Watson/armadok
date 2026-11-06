@@ -35,5 +35,5 @@
   "visitors.lastSeen": "Dernière visite",
   "visitors.kept": "{{count}} entrées conservées.",
   "visitors.purge": "Supprimer les entrées conservées",
-  "visitors.purgeConfirm": "Supprimer toutes les entrées du journal d'accès conservées pour cette machine ? Cette action est définitive."
+  "visitors.purgeConfirm": "Supprimer toutes les entrées du journal d'accès conservées pour ce nœud ? Cette action est définitive."
 }

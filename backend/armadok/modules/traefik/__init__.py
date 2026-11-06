@@ -1,1 +1,1 @@
-"""Traefik of a machine: its dynamic configuration files, the sites they define, and links."""
+"""Traefik of a node: its dynamic configuration files, the sites they define, and links."""

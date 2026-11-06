@@ -1,7 +1,7 @@
 """Asking a registry which digest a tag points to today (a `HEAD`, nothing is downloaded).
 
 Registries use a token scheme: an unauthenticated request is answered 401 with a pointer to a
-token service; the token is fetched there (with the machine's login for that registry when one
+token service; the token is fetched there (with the node's login for that registry when one
 is stored and the service may receive it, else anonymously) and the request repeated.
 Both hosts go through the outbound guard (public addresses only, unless the operator allowed
 private ones), and the digest is checked against a strict pattern before it is trusted.
@@ -53,7 +53,7 @@ def _may_receive(registry_host: str, realm: str) -> bool:
     host = (parts.hostname or "").lower()
     bare, _, port = registry_host.partition(":")
     if (parts.port or 443) != int(port or 443):
-        return False  # another service on the same machine must not get the login
+        return False  # another service on the same node must not get the login
     return (
         host == bare or host.endswith("." + bare) or host in _TOKEN_PARTNERS.get(registry_host, ())
     )

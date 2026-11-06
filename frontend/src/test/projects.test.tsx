@@ -75,7 +75,7 @@ describe('projects tab', () => {
     renderTab('/nodes/n1?tab=projects&project=blog&file=compose.yaml')
     await userEvent.type(await screen.findByLabelText('Content of compose.yaml'), '# mine')
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-    expect(await screen.findByText(/changed on the machine since you opened it/)).toBeInTheDocument()
+    expect(await screen.findByText(/changed on the node since you opened it/)).toBeInTheDocument()
     expect(screen.getByLabelText('Content of compose.yaml')).toHaveValue('services: {}\n# mine')
     // Keep mine: the next save names the newer version it was shown, and sends my text.
     putStatus = 200
@@ -86,7 +86,7 @@ describe('projects tab', () => {
     expect(puts[1].body.content).toContain('# mine')
   })
 
-  it('explains an unconfigured machine instead of showing a bare error', async () => {
+  it('explains an unconfigured node instead of showing a bare error', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       json({ error: { code: 'worker.projects_not_configured' } }, 409),
     )

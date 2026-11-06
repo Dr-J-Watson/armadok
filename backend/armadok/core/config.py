@@ -34,7 +34,7 @@ class Settings:
     # Who a browser push says it comes from (an https address or `mailto:`), as the standard
     # asks. The default is the project's public page; set your own if you prefer.
     push_contact: str = "https://github.com/Dr-J-Watson/armadok"
-    # Manage the hub's own machine as a node, with no worker: the hub runs the operations itself.
+    # Manage the hub's own node as a node, with no worker: the hub runs the operations itself.
     # Off by default, because it needs the hub to reach Docker and the configuration folders.
     local_node: bool = False
     # Where the hub's own backups go (default: a `backups` folder inside the data folder, which

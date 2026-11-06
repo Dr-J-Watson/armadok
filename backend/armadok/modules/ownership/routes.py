@@ -1,7 +1,7 @@
 """Endpoints to give an object to someone, accept or refuse a gift, and take objects back.
 
 Rules (see the specification): the owner of an object may give it; the receiver must accept;
-the owner of the machine may take back anything inside it, never the other way round. Giving
+the owner of the node may take back anything inside it, never the other way round. Giving
 and taking are sensitive: a person's own session (never an API key), the fresh second-factor
 code when the account has one, and an audit entry. Notes stay private to their author: the giver
 alone decides whether to hand over theirs, and taking never moves any.
@@ -32,7 +32,7 @@ from armadok.modules.workers.access import authorise
 
 router = APIRouter(tags=["ownership"])
 
-# Looking a person up by name: a few tries a minute, so it cannot list who sees a machine.
+# Looking a person up by name: a few tries a minute, so it cannot list who sees a node.
 people_limiter = FailureLimiter({"user": 10})
 
 NodeId = Path(pattern=r"^[A-Za-z0-9_.-]{1,64}$")
@@ -99,7 +99,7 @@ def _refusals(
     """Leave a trace of an ownership action that was refused after the caller was identified.
 
     A flood of rate-limited codes is not recorded (it is already cut short), and neither is a
-    machine the caller may not see: only what an investigator would want to know.
+    node the caller may not see: only what an investigator would want to know.
     """
     try:
         yield
@@ -145,7 +145,7 @@ async def _items(
                 raise NotFound()
         found = [(kind, object_id)]
     catalogue = registry.rights()
-    # Owning is not enough: the right to give must hold too (a machine suspended, say, blocks it).
+    # Owning is not enough: the right to give must hold too (a node suspended, say, blocks it).
     giveable = [
         item
         for item in found
@@ -157,7 +157,7 @@ async def _items(
     return giveable
 
 
-@router.get("/nodes/{node_id}/ownership", summary="Who owns the objects of a machine")
+@router.get("/nodes/{node_id}/ownership", summary="Who owns the objects of a node")
 async def list_owners(
     request: Request,
     node_id: str = NodeId,
@@ -167,7 +167,7 @@ async def list_owners(
 ) -> dict:
     """Return the kinds that can be owned and the caller's own objects.
 
-    The machine's owner also sees who owns each object that is not theirs; others do not.
+    The node's owner also sees who owns each object that is not theirs; others do not.
     """
     node = _visible_node(conn, registry, who, node_id)
     manager = who.has(service.MANAGE, registry.rights(), f"node:{node_id}")
@@ -201,12 +201,12 @@ def find_person(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> list[dict]:
-    """Return the person with exactly this user name, if they can see the machine.
+    """Return the person with exactly this user name, if they can see the node.
 
-    An exact name and a few tries a minute; nothing for someone who cannot see the machine.
+    An exact name and a few tries a minute; nothing for someone who cannot see the node.
     """
     _visible_node(conn, registry, who, node_id)
-    # Only someone who has something to give may look people up (not any reader of the machine).
+    # Only someone who has something to give may look people up (not any reader of the node).
     if who.kind != "session" or not (
         who.has(service.GIVE, registry.rights(), f"node:{node_id}")
         or repository.owned_by(conn, node_id, who.id)
@@ -259,10 +259,10 @@ async def give(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Offer one object, or everything the caller owns on the machine, to another person.
+    """Offer one object, or everything the caller owns on the node, to another person.
 
     Nothing changes until the receiver accepts. The receiver must be an active person who can
-    already see the machine; the giver must own each object and hold the right to give it.
+    already see the node; the giver must own each object and hold the right to give it.
     """
     node = _visible_node(conn, registry, who, node_id)
     with _refusals(conn, registry, who, "ownership.offer", node_id):
@@ -276,7 +276,7 @@ async def give(
             or target["kind"] != "person"
             or not service.can_see_node(registry, conn, target["id"], node_id)
         ):
-            # Same answer for "no such person" and "cannot see the machine": no way to probe.
+            # Same answer for "no such person" and "cannot see the node": no way to probe.
             raise NotFound()
         items = await _items(request, conn, registry, node, who, body)
         with atomic(conn):
@@ -320,7 +320,7 @@ def list_offers(
     conn.commit()
     sent, received = [], []
     for offer in repository.offers_for(conn, who.id):
-        # A machine the person can no longer see is not named to them.
+        # A node the person can no longer see is not named to them.
         shown = {**offer}
         if not service.can_see_node(registry, conn, who.id, offer["node_id"]):
             continue
@@ -371,7 +371,7 @@ def accept(
             or not giver["is_active"]
             or not service.can_see_node(registry, conn, giver["id"], node_id)
         ):
-            # The machine is gone or hidden from you, or the giver can no longer act: void.
+            # The node is gone or hidden from you, or the giver can no longer act: void.
             with atomic(conn):
                 repository.delete_offer(conn, offer_id)
             raise ApiError("ownership.offer_void", 409)
@@ -380,7 +380,7 @@ def accept(
         with atomic(conn):
             if not repository.delete_offer(conn, offer_id):
                 raise NotFound()  # answered by someone else a moment ago
-            # Read again under the lock: a machine handed over meanwhile has another owner.
+            # Read again under the lock: a node handed over meanwhile has another owner.
             node = nodes_repo.get_node(conn, node_id)
             if node is None:
                 raise NotFound()
@@ -407,7 +407,7 @@ def accept(
                 moved=moved,
                 skipped=skipped,
                 notes=offer["with_notes"],
-                # A gift passed on by someone who is not the machine's owner: worth a second look.
+                # A gift passed on by someone who is not the node's owner: worth a second look.
                 regift=giver["id"] != node["owner"],
                 objects=_listing(done),
             )
@@ -467,9 +467,9 @@ async def take(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Give one object, or every object someone else owns on the machine, back to its owner.
+    """Give one object, or every object someone else owns on the node, back to its owner.
 
-    Only the machine's owner can (`ownership.manage`). Notes are never moved. Gifts naming the
+    Only the node's owner can (`ownership.manage`). Notes are never moved. Gifts naming the
     objects are withdrawn, and the former owner's schedules and hooks on them are stopped.
     """
     authorise(conn, registry, who, node_id, service.MANAGE)
@@ -484,7 +484,7 @@ async def take(
         taken: list[tuple[str, str]] = []
         former_owners: list[str] = []
         with atomic(conn):
-            # Read again under the lock: a machine handed over meanwhile has another owner.
+            # Read again under the lock: a node handed over meanwhile has another owner.
             node = nodes_repo.get_node(conn, node_id)
             if node is None or not registry.principal_for(conn, who.id).has(
                 service.MANAGE, registry.rights(), f"node:{node_id}"
@@ -502,7 +502,7 @@ async def take(
             for item in items:
                 former = rows.get(item)
                 if former is None or former == node["owner"]:
-                    continue  # already the machine owner's
+                    continue  # already the node owner's
                 service.move(conn, registry, node, item, former, node["owner"], False)
                 taken.append(item)
                 former_owners.append(former)

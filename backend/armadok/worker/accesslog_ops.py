@@ -1,4 +1,4 @@
-"""Reading Traefik's JSON access log, on the machine that runs it.
+"""Reading Traefik's JSON access log, on the node that runs it.
 
 The log is a file the operator mounts read-only into the worker and names in
 `ARMADOK_TRAEFIK_ACCESSLOG`; the hub never names a path. Each call returns the lines written

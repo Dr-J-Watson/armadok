@@ -187,7 +187,7 @@ def node_status(conn: sqlite3.Connection, node_id: str) -> dict[str, Any] | None
 
 
 def nodes_to_read(conn: sqlite3.Connection) -> list[sqlite3.Row]:
-    """Return the machines that could have Traefik metrics, with how their last try went."""
+    """Return the nodes that could have Traefik metrics, with how their last try went."""
     return conn.execute(
         "SELECT n.id, t.last_try, t.last_error FROM nodes n"
         " LEFT JOIN traffic_node t ON t.node_id = n.id"

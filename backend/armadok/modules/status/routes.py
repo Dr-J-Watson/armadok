@@ -1,6 +1,6 @@
 """Endpoints of public status pages.
 
-Managing a page needs `uptime.manage` on the probe's machine (the same sensitive right as the
+Managing a page needs `uptime.manage` on the probe's node (the same sensitive right as the
 probe itself). Reading one needs nothing but its address: that is the point of the page, so what
 it shows is cut down to a title, up or down, and a few dots. Wrong addresses are slowed down per
 caller, and a page is read from the database at most every few seconds.

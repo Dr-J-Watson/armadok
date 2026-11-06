@@ -2,9 +2,9 @@
 
 `/system/status` says how the hub itself is set up (secure cookies, HTTPS, the key that
 encrypts secrets, trust in the reverse proxy) so an administrator can fix a weak set-up
-before relying on it. `/nodes/{id}/readiness` asks the machine's worker what it is ready for
+before relying on it. `/nodes/{id}/readiness` asks the node's worker what it is ready for
 (Docker, projects folder, Traefik folder, certificates file). Neither changes anything,
-and neither returns a path, a secret or a name from the machine: only a state per capability.
+and neither returns a path, a secret or a name from the node: only a state per capability.
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ EXPECTED_KEYS = {
     "certificates": "certificates",
 }
 CACHE_SECONDS = 5  # a page that is reloaded or hammered asks the worker once, not every time
-MAX_CONCURRENT_CHECKS = 2  # per machine: it must not take every pending-call slot of its worker
+MAX_CONCURRENT_CHECKS = 2  # per node: it must not take every pending-call slot of its worker
 _cache: dict[tuple[str, tuple[str, ...]], tuple[float, dict[str, str]]] = {}
 _locks: dict[str, asyncio.Semaphore] = {}
 
@@ -100,7 +100,7 @@ async def _check(
     return "ok" if isinstance(result, dict) and EXPECTED_KEYS[name] in result else "error"
 
 
-@router.get("/nodes/{node_id}/readiness", summary="What a machine is ready for")
+@router.get("/nodes/{node_id}/readiness", summary="What a node is ready for")
 async def readiness(
     request: Request,
     node_id: str = NodeId,
@@ -108,12 +108,12 @@ async def readiness(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Return a state per capability of the machine.
+    """Return a state per capability of the node.
 
     The states are `ok`, `not_configured`, `unavailable`, `worker_offline`, `not_applicable`,
     `timeout`, `error` and `no_right`. A capability is only looked at if you hold the right to
     read it. The answer is kept a few seconds and the worker is asked by two checks at a time
-    at most, so reloading the page cannot flood the machine.
+    at most, so reloading the page cannot flood the node.
     """
     node = authorise(conn, registry, who, node_id, "nodes.read")
     catalogue = registry.rights()
@@ -123,7 +123,7 @@ async def readiness(
     )
     actor = who.id if who.kind == "session" else ""
     key = (node_id, wanted)
-    async with _locks.setdefault(node_id, asyncio.Semaphore(1)):  # one run per machine at once
+    async with _locks.setdefault(node_id, asyncio.Semaphore(1)):  # one run per node at once
         cached = _cache.get(key)
         if cached and time.monotonic() - cached[0] < CACHE_SECONDS:
             found = cached[1]

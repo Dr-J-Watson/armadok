@@ -23,7 +23,7 @@ MIGRATION = Migration(
         last_seen_at TEXT,
         revoked INTEGER NOT NULL DEFAULT 0
     );
-    -- One active worker per machine (node); a revoked one no longer counts.
+    -- One active worker per node (node); a revoked one no longer counts.
     CREATE UNIQUE INDEX workers_active_node ON workers (node_id) WHERE revoked = 0;
     -- `key` is the PUBLIC half of a key derived from the token secret: enough to verify an
     -- enrolment proof, useless to make one. The secret itself is never stored.
@@ -78,7 +78,7 @@ def enrol_worker(
     """Spend the token and register the worker, all or nothing; return its id.
 
     The token is claimed with one atomic statement, so two workers presenting it at the same
-    moment cannot both enrol. A previous worker of the node is revoked (machine replacement).
+    moment cannot both enrol. A previous worker of the node is revoked (node replacement).
     """
     conn.execute("BEGIN IMMEDIATE")
     try:

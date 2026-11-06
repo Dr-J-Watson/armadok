@@ -1,4 +1,4 @@
-"""Declaration of the `machine` module: resources of the machine a node stands for."""
+"""Declaration of the `machine` module: resources of the node a node stands for."""
 
 from armadok.core.module import Module, Right, WorkerOp
 from armadok.modules.machine.routes import router

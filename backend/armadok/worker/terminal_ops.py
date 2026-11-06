@@ -1,7 +1,7 @@
 """A terminal in a throwaway container that can see one project folder and nothing else.
 
 A real shell cannot be "locked" to a folder without isolation, so the shell is not run on the
-machine: it runs in a new container (`docker run --rm -it`) of a small image with
+node: it runs in a new container (`docker run --rm -it`) of a small image with
 
 - only the project folder mounted, read-only unless writing was allowed, at `/work`;
 - the folder's own owner as user (never root: a root-owned folder is mounted read-only and the
@@ -89,8 +89,8 @@ class _Session:
 def _names_a_registry(image: str) -> bool:
     """Say whether the image names a registry (`host.example/org/app`): only the default is used.
 
-    Pulling from a registry chosen by whoever sets the terminal up would make the machine fetch
-    from anywhere; images of Docker Hub (or already on the machine) are enough for a shell.
+    Pulling from a registry chosen by whoever sets the terminal up would make the node fetch
+    from anywhere; images of Docker Hub (or already on the node) are enough for a shell.
     """
     name = image.rsplit(":", 1)[0] if ":" in image.rsplit("/", 1)[-1] else image
     first, _, rest = name.partition("/")

@@ -1,6 +1,6 @@
 {
   "tab": "Image flaws",
-  "explain": "Known security flaws in the images your containers run. A scan reads an image's package list without starting it, then asks a public database (OSV) about package names and versions only; nothing else leaves the machine. It covers Debian, Ubuntu and Alpine images.",
+  "explain": "Known security flaws in the images your containers run. A scan reads an image's package list without starting it, then asks a public database (OSV) about package names and versions only; nothing else leaves the node. It covers Debian, Ubuntu and Alpine images.",
   "off": "Image scanning is switched off on this server (it sends package names to a public database). An administrator turns it on with ARMADOK_VULN_CHECK=true.",
   "scanAll": "Scan the images in use",
   "scanning": "Scanning…",

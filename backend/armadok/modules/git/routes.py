@@ -2,7 +2,7 @@
 
 Cloning makes a new project from a repository's branch; updating brings it to the branch's
 newest commit. Neither deploys anything: that stays a separate action with its own right. A
-login is stored encrypted, never returned, and travels to the machine only inside the one
+login is stored encrypted, never returned, and travels to the node only inside the one
 command that needs it, scoped to the repository's own address.
 """
 
@@ -70,7 +70,7 @@ def _login_for(request: Request, conn: sqlite3.Connection, node_id: str, url: st
     return service.login_for(request.app.state.settings, conn, node_id, url)
 
 
-@router.get("/logins", summary="Git hosts this machine has a login for")
+@router.get("/logins", summary="Git hosts this node has a login for")
 def list_logins(
     node_id: str,
     conn: sqlite3.Connection = Depends(get_db),
@@ -194,7 +194,7 @@ async def source(
 ) -> dict[str, Any]:
     """Return where the project came from and whether the branch has a newer commit.
 
-    `source` is null for a project that did not come from Git. If the machine cannot be asked,
+    `source` is null for a project that did not come from Git. If the node cannot be asked,
     `error` holds the code and the saved address is still returned.
     """
     _project(project)

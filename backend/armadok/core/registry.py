@@ -122,7 +122,7 @@ class Registry:
         return {o.type: o for m in self.modules for o in m.ownable}
 
     def access_changed(self, conn: Any) -> None:
-        """Tell the modules that someone may have lost access to a machine."""
+        """Tell the modules that someone may have lost access to a node."""
         for m in self.modules:
             for listener in m.access_listeners:
                 listener(self, conn)

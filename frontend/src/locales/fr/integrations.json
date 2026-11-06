@@ -4,7 +4,7 @@
   "hooks.explain": "Un hook est une adresse privée et un jeton qui font une seule chose : redéployer un projet. Donnez-le à un outil de CI qui ne doit pas détenir une clé complète. Il agit en votre nom et cesse de fonctionner si vous perdez le droit de déployer.",
   "hooks.new": "Nouveau hook",
   "hooks.name": "Nom",
-  "hooks.node": "Machine",
+  "hooks.node": "Nœud",
   "hooks.project": "Projet",
   "hooks.expires": "Valable jusqu'au (facultatif)",
   "hooks.create": "Créer le hook",
@@ -18,5 +18,5 @@
   "hooks.lastUsed": "dernier appel {{when}}",
   "actions.project.redeploy": "Redéployer",
   "metrics.title": "Métriques pour Prometheus",
-  "metrics.explain": "Créez une clé d'API avec le droit de lire les métriques et donnez-la à Prometheus. Elle ne voit que les machines que vous voyez."
+  "metrics.explain": "Créez une clé d'API avec le droit de lire les métriques et donnez-la à Prometheus. Elle ne voit que les nœuds que vous voyez."
 }

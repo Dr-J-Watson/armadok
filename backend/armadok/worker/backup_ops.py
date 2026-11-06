@@ -1,4 +1,4 @@
-"""Backing up and restoring Docker volumes, on the machine that holds them.
+"""Backing up and restoring Docker volumes, on the node that holds them.
 
 A volume's files belong to whatever user the containers use, so reading them all needs more
 than the worker's own rights. The work is done by a short-lived helper container, always the
@@ -259,7 +259,7 @@ def _backup_work(task_id: str, volume: str, keep: int) -> None:
         if folder_fd is not None:
             _remove_quietly(folder_fd, part)
         _finish(task_id, "failed", error.code)
-    except Exception:  # noqa: BLE001  (details stay on the machine)
+    except Exception:  # noqa: BLE001  (details stay on the node)
         if folder_fd is not None:
             _remove_quietly(folder_fd, part)
         _finish(task_id, "failed", "worker.op_failed")

@@ -1,7 +1,7 @@
 """Running scheduled tasks: the background loop and the one function that runs a task.
 
 A task acts as the person who made it, exactly like an incoming hook: they must still be an
-active account and still hold the action's right on the machine at every run. A task that
+active account and still hold the action's right on the node at every run. A task that
 cannot run says why (an error code) and stays; nothing is ever retried in a burst.
 """
 
@@ -121,11 +121,11 @@ async def _run(app: Any, task: Any, requested_by: str | None = None) -> str:
     return result
 
 
-INACTIVE = timedelta(days=30)  # a manager unseen this long is replaced by the machine's owner
+INACTIVE = timedelta(days=30)  # a manager unseen this long is replaced by the node's owner
 
 
 def _stand_in(conn, task: Any, now: datetime) -> str | None:
-    """Return the machine owner when the task's manager cannot answer, else None.
+    """Return the node owner when the task's manager cannot answer, else None.
 
     The manager cannot answer if their account is disabled or has not done anything (the audit
     log is the only record of activity) for a month. Nobody is added if the owner is the manager.

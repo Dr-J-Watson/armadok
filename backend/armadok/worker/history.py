@@ -1,4 +1,4 @@
-"""Versions of Traefik configuration files, kept next to them on the machine.
+"""Versions of Traefik configuration files, kept next to them on the node.
 
 Before a file is replaced or removed, its previous text is copied to `.armadok-history/` at the
 root of the Traefik folder, under a name that cannot be mistaken for configuration (`.bak`, and

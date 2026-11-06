@@ -1,6 +1,6 @@
 """Share one slow computation between everyone who asks for it at the same time.
 
-Used for read-only figures that are costly to measure (a machine's resources, the statistics of
+Used for read-only figures that are costly to measure (a node's resources, the statistics of
 its containers): many viewers polling the same node cost one measurement, not one each. The
 answer is also kept for a few seconds. The access check always runs *before* this is asked, so
 sharing an answer never shares it with someone who may not see it.

@@ -109,7 +109,7 @@ def create_hook(
 ) -> dict:
     """Create a hook and return its token, shown only in this answer.
 
-    You must hold, on the target machine, the right the action needs.
+    You must hold, on the target node, the right the action needs.
     """
     catalogue = registry.rights()
     who.require("hooks.manage", catalogue)
@@ -122,7 +122,7 @@ def create_hook(
         raise ApiError("hooks.invalid_target", 422) from None
     node_id = target.get("node_id")
     scope = f"node:{node_id}"
-    # An invisible machine is "not found", as everywhere; then the action's own right.
+    # An invisible node is "not found", as everywhere; then the action's own right.
     if node_id is None or nodes_repo.get_node(conn, node_id) is None:
         raise NotFound()
     if not who.has("nodes.read", catalogue, scope):

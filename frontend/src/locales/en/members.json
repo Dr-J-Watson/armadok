@@ -5,14 +5,14 @@
   "role": "Role",
   "add": "Add a member",
   "invite": "Invite",
-  "none": "Nobody else works on this machine yet.",
+  "none": "Nobody else works on this node yet.",
   "remove": "Remove",
   "changeRole": "Role of {{name}}",
   "until": "until {{date}}",
-  "notAllowed": "You cannot manage the members of this machine.",
-  "transfer.title": "Hand the machine over",
+  "notAllowed": "You cannot manage the members of this node.",
+  "transfer.title": "Hand the node over",
   "transfer.explain": "The person you choose becomes its owner. You stay on as an administrator. Only the owner can do this.",
-  "transfer.confirm": "Type the name of the machine ({{name}}) to confirm",
+  "transfer.confirm": "Type the name of the node ({{name}}) to confirm",
   "transfer.go": "Hand it over",
   "transfer.code": "Second-factor code"
 }

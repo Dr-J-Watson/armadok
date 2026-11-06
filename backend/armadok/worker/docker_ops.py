@@ -3,7 +3,7 @@
 Talks to the Docker daemon over its Unix socket with plain HTTP. Every operation here only
 reads (GET): nothing can start, stop or change anything (see `docker_control` for that).
 Answers are reduced to a fixed set of fields (no environment variables, no command line), so
-secrets passed to containers stay on the machine.
+secrets passed to containers stay on the node.
 """
 
 from __future__ import annotations
@@ -98,7 +98,7 @@ def docker_raw(
 
 
 def docker_info(args: dict[str, Any]) -> dict[str, Any]:
-    """Return the Docker version of this machine."""
+    """Return the Docker version of this node."""
     data = docker_get("/version")
     return {"version": str(data.get("Version", "")), "api_version": str(data.get("ApiVersion", ""))}
 

@@ -1,10 +1,10 @@
 """The other quick actions of a platform administrator: cut the worker, delete, purge, take over.
 
-Same rules as the first ones (see `routes`): a real session, `nodes.admin`, the machine's name
+Same rules as the first ones (see `routes`): a real session, `nodes.admin`, the node's name
 typed and a fresh second-factor code, every attempt audited. Each action that changes who can
-reach a machine also asks for a reason, which is kept in the audit log. None of them reads or
-changes what is on the machine; taking ownership is the one that gives somebody access, so it
-names the new owner explicitly and leaves the former one without any right on the machine.
+reach a node also asks for a reason, which is kept in the audit log. None of them reads or
+changes what is on the node; taking ownership is the one that gives somebody access, so it
+names the new owner explicitly and leaves the former one without any right on the node.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ search_limiter = FailureLimiter({"user": 30})
 
 
 class ReasonIn(Confirm):
-    """An action that changes who can reach a machine says why."""
+    """An action that changes who can reach a node says why."""
 
     reason: str = Field(min_length=10, max_length=300)
 
@@ -54,7 +54,7 @@ class TakeOverIn(ReasonIn):
 
 
 def _owner(conn: sqlite3.Connection, node: dict) -> dict:
-    """Return the owner's account, or raise 404 when the machine has none."""
+    """Return the owner's account, or raise 404 when the node has none."""
     owner = users_repo.get_user(conn, node["owner"]) if node["owner"] else None
     if owner is None:
         raise NotFound()
@@ -83,7 +83,7 @@ async def _tell_people(request: Request, event: str, people: list[str], **params
 def _platform_outranks(conn, who: Principal, user_id: str, registry: Registry) -> bool:
     """Tell whether `who` could have given every platform-wide grant of the target.
 
-    Rights on the target's own machines are left out: an administrator holds none of them (no
+    Rights on the target's own nodes are left out: an administrator holds none of them (no
     implicit access), which must not stop them from acting on the account.
     """
     catalogue = registry.rights()
@@ -136,7 +136,7 @@ async def disconnect(
     if node["is_local"]:
         raise ApiError("nodeadmin.local_not_suspendable", 409)  # it is the hub itself
     _record(conn, registry, who, "node.disconnect", node_id, reason=body.reason)
-    # The same effect as a deletion on the machine's side, without touching the machine record.
+    # The same effect as a deletion on the node's side, without touching the node record.
     await on_node_deleted(request.app, node_id)
     await _tell(request, node_id)
     if node["owner"]:
@@ -153,7 +153,7 @@ async def delete(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Hide the node and cut its worker. Nothing is changed on the machine itself."""
+    """Hide the node and cut its worker. Nothing is changed on the node itself."""
     _admin(who, registry)
     node = _checked(request, conn, registry, who, node_id, body, "node.admin_delete")
     if node["deleted_at"]:
@@ -210,11 +210,11 @@ async def take_over(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Take the machine from its owner (who loses every right on it) and name the new one.
+    """Take the node from its owner (who loses every right on it) and name the new one.
 
     For an owner who cannot or must not keep it (banned, gone). The new owner is another active
     person, never the administrator who does this: an administrator has no implicit access to
-    machines, and this must not be a way to get it. The machine's worker is revoked, so the new
+    nodes, and this must not be a way to get it. The node's worker is revoked, so the new
     owner enrols one on purpose, and both owners are told.
     """
     _admin(who, registry)
@@ -244,7 +244,7 @@ async def take_over(
         for right in owner_rights:
             grants.add_grant(conn, target["id"], Grant(right, scope), who.id, commit=False)
         if former:
-            # The former owner keeps nothing on this machine, nor do the accounts they run.
+            # The former owner keeps nothing on this node, nor do the accounts they run.
             holders = [former, *(a["id"] for a in service_accounts.list_for(conn, former))]
             for holder in holders:
                 conn.execute(
@@ -256,7 +256,7 @@ async def take_over(
                     (holder, scope),
                 )
         nodes_repo.set_owner(conn, node_id, target["id"])
-    # No worker carries over: the new owner decides what runs on their machine.
+    # No worker carries over: the new owner decides what runs on their node.
     await on_node_deleted(request.app, node_id)
     await _tell(request, node_id)
     people = [target["id"], *([former] if former else [])]
@@ -273,7 +273,7 @@ async def ban_owner(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Disable the owner's account and end its sessions. Their machines are not touched.
+    """Disable the owner's account and end its sessions. Their nodes are not touched.
 
     The same rules as disabling an account from the account screen apply (`users.update`, and
     only accounts whose rights you could grant), and an account that holds any sensitive right is
@@ -310,7 +310,7 @@ async def strip_creation(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Remove the owner's right to create nodes (the machines they already own are kept)."""
+    """Remove the owner's right to create nodes (the nodes they already own are kept)."""
     _admin(who, registry)
     node = _checked(request, conn, registry, who, node_id, body, "node.creation_removed")
     owner = _owner(conn, node)

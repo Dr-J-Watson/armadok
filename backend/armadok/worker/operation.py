@@ -11,7 +11,7 @@ Operation = Callable[[dict[str, Any]], dict[str, Any]]
 class OperationError(Exception):
     """A failure the hub may be told about, as a stable `worker.<name>` code.
 
-    Any other exception is reported as a generic failure: its details stay on the machine.
+    Any other exception is reported as a generic failure: its details stay on the node.
     """
 
     def __init__(self, code: str) -> None:

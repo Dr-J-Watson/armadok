@@ -25,7 +25,7 @@ def login_for(settings: Any, conn: sqlite3.Connection, node_id: str, url: str) -
 
 
 async def _ask(app: Any, node_id: str, op: str, args: dict, model: type[BaseModel]) -> Any:
-    """Run a Git operation on the machine and validate the (untrusted) answer."""
+    """Run a Git operation on the node and validate the (untrusted) answer."""
     result = await call_operation(app, app.state.registry, node_id, op, args)
     try:
         return model.model_validate(result)
@@ -45,7 +45,7 @@ async def pull_if_behind(
 
     Returns False for a project with no Git source or already up to date. Needs
     `projects.files.write` on the project (the caller holds `projects.deploy`, which does not
-    imply it). A refusal by the machine (files edited by hand, repository unreachable) raises
+    imply it). A refusal by the node (files edited by hand, repository unreachable) raises
     `ApiError` with its code and is audited as a failure.
     """
     saved = repository.get_source(conn, node_id, project)

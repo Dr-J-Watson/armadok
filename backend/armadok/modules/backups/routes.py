@@ -1,7 +1,7 @@
 """Endpoints of volume backups, per node.
 
 Reading needs `backups.read`, starting a backup `backups.create`. Restoring over a volume and
-deleting an archive need `backups.manage` (sensitive). Archives never leave the machine: the
+deleting an archive need `backups.manage` (sensitive). Archives never leave the node: the
 hub lists them, names them and asks the worker to delete or restore them.
 """
 
@@ -78,7 +78,7 @@ def _audit(conn, registry, who, event, node_id, **details):
     )
 
 
-MAX_DOWNLOADS_PER_NODE = 3  # streams at once: each piece is a call to the machine's worker
+MAX_DOWNLOADS_PER_NODE = 3  # streams at once: each piece is a call to the node's worker
 MAX_DOWNLOAD_BYTES = 2**40  # 1 TiB
 MAX_DOWNLOAD_SECONDS = 6 * 3600
 RECHECK_EVERY = 64  # pieces (24 MiB): the right is looked at again this often during a download
@@ -106,7 +106,7 @@ async def overview(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Return the archives in the machine's backup folder and the latest jobs.
+    """Return the archives in the node's backup folder and the latest jobs.
 
     `configured` is False when the worker has no backup folder: nothing else is then offered.
     """
@@ -231,7 +231,7 @@ async def download_ticket(
     """Give an address that downloads this archive once, for a minute.
 
     Needs `backups.download`, your own session (never a key) and a fresh second-factor code.
-    The archive is not copied to the hub: it is read from the machine as it is downloaded.
+    The archive is not copied to the hub: it is read from the node as it is downloaded.
     """
     authorise(conn, registry, who, node_id, "backups.download")
     if who.kind != "session":
@@ -260,7 +260,7 @@ async def download(
     conn: sqlite3.Connection = Depends(get_db),
     registry: Registry = Depends(get_registry),
 ) -> StreamingResponse:
-    """Stream the archive from the machine to the browser; nothing is stored on the hub.
+    """Stream the archive from the node to the browser; nothing is stored on the hub.
 
     The ticket stands for the person who asked for it. Their right to download is checked
     again now, so a right removed in the last minute stops the download.
@@ -317,7 +317,7 @@ async def download(
                 data = base64.b64decode(chunk.data, validate=True)
             except ValueError:
                 return
-            # The machine answers whatever it likes: a piece that is empty before the end, or a
+            # The node answers whatever it likes: a piece that is empty before the end, or a
             # size that changes along the way, ends the download instead of being passed on.
             if chunk.size != first.size or (not data and offset < first.size):
                 return
@@ -361,7 +361,7 @@ async def delete_archive(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> None:
-    """Delete one archive from the machine's backup folder."""
+    """Delete one archive from the node's backup folder."""
     authorise(conn, registry, who, node_id, "backups.manage")
     try:
         await service.ask(

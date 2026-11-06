@@ -1,4 +1,4 @@
-"""Storage of access-log entries (short retention) and of the read position per machine."""
+"""Storage of access-log entries (short retention) and of the read position per node."""
 
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ def store(
 
     `expected` is the position the entries were read from. If it is no longer the stored one
     (the entries were purged while the worker was reading), nothing is kept and False comes
-    back: a purge is never partly undone. The per-machine cap is enforced here.
+    back: a purge is never partly undone. The per-node cap is enforced here.
     """
     if get_cursor(conn, node_id) != expected:
         return False
@@ -83,7 +83,7 @@ def store(
 
 
 def _enforce_cap(conn: sqlite3.Connection, node_id: str) -> None:
-    """Drop the oldest entries of a machine beyond the cap."""
+    """Drop the oldest entries of a node beyond the cap."""
     conn.execute(
         "DELETE FROM access_events WHERE node_id = ? AND id <= ("
         " SELECT id FROM access_events WHERE node_id = ? ORDER BY id DESC LIMIT 1 OFFSET ?)",
@@ -102,7 +102,7 @@ def purge(conn: sqlite3.Connection) -> None:
 
 
 def forget_node(conn: sqlite3.Connection, node_id: str) -> int:
-    """Delete every kept entry of a machine and its position; return how many (caller commits)."""
+    """Delete every kept entry of a node and its position; return how many (caller commits)."""
     done = conn.execute("DELETE FROM access_events WHERE node_id = ?", (node_id,)).rowcount
     conn.execute("DELETE FROM access_cursor WHERE node_id = ?", (node_id,))
     return done

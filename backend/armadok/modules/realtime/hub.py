@@ -1,7 +1,7 @@
 """The connected screens, and who gets which signal.
 
-Each connection is one logged-in person. A signal about a machine is passed on only to people
-who can see that machine *now* (their rights are read again at each delivery, so a right
+Each connection is one logged-in person. A signal about a node is passed on only to people
+who can see that node *now* (their rights are read again at each delivery, so a right
 taken away stops the signals at once). Signals are gathered for a moment and sent together,
 so a burst of changes becomes one message per kind.
 """
@@ -69,7 +69,7 @@ class RealtimeHub:
         self.clients.discard(client)
 
     def publish(self, signal: str, node_id: str | None, actor_id: str | None, shared: bool) -> None:
-        """Queue a signal. One that names no machine and is not shared goes to its author only."""
+        """Queue a signal. One that names no node and is not shared goes to its author only."""
         for client in self.clients:
             if node_id is None and not shared and client.user_id != actor_id:
                 continue
@@ -101,7 +101,7 @@ class RealtimeHub:
 
 
 def may_hear(person: Principal, definition: Signal, node_id: str | None, catalogue: dict) -> bool:
-    """Whether this person may be told: the signal's right on the machine, or anywhere."""
+    """Whether this person may be told: the signal's right on the node, or anywhere."""
     if node_id is not None:
         return person.has(definition.right, catalogue, f"node:{node_id}")
     return any(person.has(definition.right, catalogue, g.scope) for g in person.grants)

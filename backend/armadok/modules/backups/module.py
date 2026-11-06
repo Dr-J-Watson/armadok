@@ -22,7 +22,7 @@ module = Module(
             node_owner=True,
             level="admin",
         ),
-        # Sensitive: it hands the whole content of a volume out of the machine. Not for API keys.
+        # Sensitive: it hands the whole content of a volume out of the node. Not for API keys.
         Right(
             "backups.download",
             depends_on=("backups.read",),

@@ -4,7 +4,7 @@ The file holds what Traefik reads only at start: entry points, certificate resol
 the access log and the metrics. A mistake here stops the proxy, and it can expose the API, so
 changing it takes its own sensitive right (never for API keys). Reading it takes the same right
 as reading any configuration file (it can hold tokens). Every version replaced is kept on the
-machine. Armadok writes the file; Traefik is restarted afterwards, which the person confirms.
+node. Armadok writes the file; Traefik is restarted afterwards, which the person confirms.
 """
 
 from __future__ import annotations
@@ -87,7 +87,7 @@ async def read_static(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Return the file, or `configured: false` when the machine has no static folder set up.
+    """Return the file, or `configured: false` when the node has no static folder set up.
 
     Needs the right to read configuration files. Reads are audited (the file can hold tokens).
     """
@@ -146,7 +146,7 @@ async def static_history(
     registry: Registry = Depends(get_registry),
     who: Principal = Depends(get_principal),
 ) -> dict:
-    """Return the versions kept on the machine, newest first."""
+    """Return the versions kept on the node, newest first."""
     authorise(conn, registry, who, node_id, "traefik.files.read")
     answer = await ask(
         request, registry, node_id, "traefik.static.history.list", {}, schemas.Versions

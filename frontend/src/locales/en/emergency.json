@@ -1,10 +1,10 @@
 {
   "tab": "Emergency",
   "banner": "Emergency access to {{node}}: {{time}} left",
-  "open": "Open the machine",
+  "open": "Open the node",
   "end": "End the session",
-  "ownerOnly": "Only the owner of this machine sees the emergency accesses.",
-  "none": "No administrator has used an emergency access on this machine.",
+  "ownerOnly": "Only the owner of this node sees the emergency accesses.",
+  "none": "No administrator has used an emergency access on this node.",
   "explain": "An administrator came in through an emergency access. You can acknowledge a notice, but it stays.",
   "open_now": "in progress",
   "over": "over",

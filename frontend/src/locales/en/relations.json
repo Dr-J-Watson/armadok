@@ -1,7 +1,7 @@
 {
   "tab": "Map",
   "canvasLabel": "Map of the objects and their links. A text list with the same choices follows.",
-  "empty": "Nothing to show yet. Connect a worker to a Docker machine to see its containers and what they are linked to.",
+  "empty": "Nothing to show yet. Connect a worker to a Docker node to see its containers and what they are linked to.",
   "show": "Show",
   "list": "Text list of objects",
   "search": "Search an object",

@@ -41,8 +41,8 @@ class Right:
 class Signal:
     """A kind of change signal a module announces (see `core/signals.py`).
 
-    `right` is what a person needs to be told: on the machine when the signal names one,
-    otherwise anywhere. A signal that names no machine is, unless `shared`, sent only to the
+    `right` is what a person needs to be told: on the node when the signal names one,
+    otherwise anywhere. A signal that names no node is, unless `shared`, sent only to the
     person who made the change (their notes, their keys): others learn nothing about it.
     """
 
@@ -56,7 +56,7 @@ class HookAction:
     """One thing an incoming hook may trigger (see the `hooks` module).
 
     A hook is a dedicated URL with its own token that does exactly one action on exactly one
-    object. `right` is what the hook's creator must hold on the target machine, now and at
+    object. `right` is what the hook's creator must hold on the target node, now and at
     each call. `validate(target)` checks and normalises the target a creator gave (it raises
     `ValueError`); `run(app, who, target)` does the work as `who` and may raise `ApiError`.
     """
@@ -69,10 +69,10 @@ class HookAction:
     # on a schedule (the `schedule` module), or both.
     hookable: bool = True
     schedulable: bool = True
-    # What the target needs besides the machine, for forms: `(field, choices)`; no choices
+    # What the target needs besides the node, for forms: `(field, choices)`; no choices
     # means free text.
     fields: tuple[tuple[str, tuple[str, ...]], ...] = ()
-    # Extra checks when a schedule is created, beyond `right` on the machine: `check(conn,
+    # Extra checks when a schedule is created, beyond `right` on the node: `check(conn,
     # registry, who, target)` raises `ApiError` (for the object's own rights, duplicates...).
     check: Callable[[Any, Any, Any, dict[str, Any]], None] | None = None
 
@@ -82,7 +82,7 @@ class SearchContext:
     """What a search provider may use: the database, the catalogue, who asks and the settings.
 
     Providers read only what `who` may see; nothing here talks to a worker (a search must be
-    quick and must not fan out to every machine).
+    quick and must not fan out to every node).
     """
 
     conn: Any
@@ -148,7 +148,7 @@ class RelationProvider:
     `provide(app, node_id, viewer)` is async and receives the `Principal` looking at the map, so
     a provider that enriches its answer with another module's data can check the viewer's
     right to that data. `right` is what the viewer needs on the node to see this provider's
-    objects; `node_types` limits it to the machines it applies to.
+    objects; `node_types` limits it to the nodes it applies to.
     """
 
     name: str
@@ -193,7 +193,7 @@ class Ownable:
 
     `rights` is what the owner holds on that one object, dependencies included (the `ownership`
     module adds its own rights on top). `list_ids(request, registry, node_id)` returns the ids
-    of the objects that exist, for the cascade ("everything of mine on this machine"). Its
+    of the objects that exist, for the cascade ("everything of mine on this node"). Its
     answer comes from a worker, so the caller checks the ids it gets.
     """
 
@@ -274,7 +274,7 @@ class Module:
     # change's transaction (it must not commit).
     ownable: tuple[Ownable, ...] = ()
     # Told, as `listener(registry, conn)`, right after a role was taken away from someone: they
-    # may no longer see a machine, so whatever was theirs there can be tidied up at once.
+    # may no longer see a node, so whatever was theirs there can be tidied up at once.
     access_listeners: tuple[Callable[[Any, Any], None], ...] = ()
     ownership_listeners: tuple[Callable[[Any, OwnershipChange], None], ...] = ()
     # Where the global search (Ctrl+K) finds this module's objects.

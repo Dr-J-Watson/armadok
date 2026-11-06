@@ -14,7 +14,7 @@ log = logging.getLogger("armadok.uptime")
 TICK_SECONDS = 10
 STARTUP_DELAY_SECONDS = 45  # let the workers connect before the first round
 MAX_IN_FLIGHT = 24  # probes running at once on the whole platform
-MAX_PER_NODE = 3  # at once on one machine: a slow machine must not hold up the others
+MAX_PER_NODE = 3  # at once on one node: a slow node must not hold up the others
 _tasks: set[asyncio.Task] = set()
 _per_node: dict[str, asyncio.Semaphore] = {}
 
@@ -22,7 +22,7 @@ _per_node: dict[str, asyncio.Semaphore] = {}
 async def run_due(app: Any) -> int:
     """Start the probes that are due, without waiting for them; return how many were started.
 
-    Each check is its own task, so a slow machine only delays its own probes. A probe still
+    Each check is its own task, so a slow node only delays its own probes. A probe still
     running is not started twice.
     """
     room = MAX_IN_FLIGHT - len(_tasks)

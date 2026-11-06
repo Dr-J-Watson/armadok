@@ -1,7 +1,7 @@
 {
   "tab": "Sauvegardes",
-  "explain": "Des archives de volumes Docker, faites et gardées sur la machine elle-même. Seuls leurs noms et leurs tailles arrivent ici : les fichiers ne quittent jamais la machine. Planifiez une sauvegarde depuis l'onglet Tâches planifiées.",
-  "notConfigured": "Cette machine n'a pas de dossier de sauvegarde. Définissez ARMADOK_BACKUP_DIR sur son worker (voir l'exemple de worker) pour activer les sauvegardes.",
+  "explain": "Des archives de volumes Docker, faites et gardées sur le nœud lui-même. Seuls leurs noms et leurs tailles arrivent ici : les fichiers ne quittent jamais le nœud. Planifiez une sauvegarde depuis l'onglet Tâches planifiées.",
+  "notConfigured": "Ce nœud n'a pas de dossier de sauvegarde. Définissez ARMADOK_BACKUP_DIR sur son worker (voir l'exemple de worker) pour activer les sauvegardes.",
   "new": "Sauvegarder un volume",
   "volume": "Volume",
   "keep": "Archives à garder pour ce volume",
@@ -25,7 +25,7 @@
   "truncated": "Le dossier contient plus d'archives qu'on ne peut en lister : les plus anciennes ne sont pas affichées.",
   "download": "Télécharger",
   "downloadTitle": "Télécharger une archive",
-  "downloadWarn": "{{archive}} contient tous les fichiers du volume, mots de passe et clés compris. Elle va de la machine à votre navigateur en passant par ce serveur, qui ne garde rien. Seules les archives faites depuis l'existence de cette option sont téléchargeables.",
+  "downloadWarn": "{{archive}} contient tous les fichiers du volume, mots de passe et clés compris. Elle va du nœud à votre navigateur en passant par ce serveur, qui ne garde rien. Seules les archives faites depuis l'existence de cette option sont téléchargeables.",
   "code": "Code de double authentification",
   "clearFirst": "Vider le volume avant",
   "clearWarn": "Tout le contenu du volume est supprimé avant la restauration : il sera exactement comme l'archive. L'archive est vérifiée d'abord ; si elle est abîmée, rien n'est supprimé."

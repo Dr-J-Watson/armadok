@@ -1,7 +1,7 @@
 {
   "publish": "Page publique",
   "published": "Page publique (ouverte)",
-  "hint": "Toute personne qui a l'adresse voit ce titre, si le site répond, et les derniers résultats. Rien d'autre : ni adresse, ni machine, ni raison.",
+  "hint": "Toute personne qui a l'adresse voit ce titre, si le site répond, et les derniers résultats. Rien d'autre : ni adresse, ni nœud, ni raison.",
   "title": "Titre montré au public",
   "open": "Ouvrir la page",
   "retitle": "Changer le titre",

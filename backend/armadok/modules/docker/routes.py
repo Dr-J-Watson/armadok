@@ -19,7 +19,7 @@ router = APIRouter(prefix="/nodes/{node_id}/docker", tags=["docker"])
 _stats_shared = Shared(4.0)
 
 
-@router.get("/info", summary="Docker version of the machine")
+@router.get("/info", summary="Docker version of the node")
 async def docker_info(
     node_id: str,
     request: Request,
@@ -33,7 +33,7 @@ async def docker_info(
     return info.model_dump()
 
 
-@router.get("/containers", summary="Containers of the machine")
+@router.get("/containers", summary="Containers of the node")
 async def list_containers(
     node_id: str,
     request: Request,
@@ -68,7 +68,7 @@ async def container_stats(
         answer = await ask(request, registry, node_id, "docker.stats", {}, schemas.ContainerStats)
         return answer.model_dump()
 
-    # Many viewers polling one machine cost one measurement (the check above ran for each).
+    # Many viewers polling one node cost one measurement (the check above ran for each).
     return await _stats_shared.get(node_id, measure)
 
 
@@ -87,7 +87,7 @@ def _listing(path: str, op: str, model: type) -> None:
 
     handler.__doc__ = f"Return the {path} of the machine. Needs `docker.read`."
     router.add_api_route(
-        f"/{path}", handler, methods=["GET"], summary=f"{path.title()} of the machine"
+        f"/{path}", handler, methods=["GET"], summary=f"{path.title()} of the node"
     )
 
 
@@ -187,7 +187,7 @@ async def prune_now(
 ) -> dict:
     """Clean up one kind of leftover right now. Needs `docker.remove` (never for a key).
 
-    The machine applies the same protections as a scheduled clean-up: nothing labelled
+    The node applies the same protections as a scheduled clean-up: nothing labelled
     `armadok.protect=true`, no network a stopped container still belongs to, and volumes are
     never touched. Only counts come back. Every attempt is audited.
     """

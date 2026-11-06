@@ -1,4 +1,4 @@
-"""Storage of the latest comparison for each image of a machine."""
+"""Storage of the latest comparison for each image of a node."""
 
 from __future__ import annotations
 
@@ -94,7 +94,7 @@ def save(
 
 
 def forget_others(conn: sqlite3.Connection, node_id: str, present: set[str]) -> None:
-    """Drop the images that are no longer on the machine (the caller commits)."""
+    """Drop the images that are no longer on the node (the caller commits)."""
     for row in conn.execute(
         "SELECT ref FROM image_updates WHERE node_id = ?", (node_id,)
     ).fetchall():
@@ -105,7 +105,7 @@ def forget_others(conn: sqlite3.Connection, node_id: str, present: set[str]) -> 
 
 
 def list_logins(conn: sqlite3.Connection, node_id: str) -> list[dict[str, Any]]:
-    """Return the registries a machine has a login for (host and user, never the secret)."""
+    """Return the registries a node has a login for (host and user, never the secret)."""
     rows = conn.execute(
         "SELECT host, username, created_at FROM registry_logins WHERE node_id = ? ORDER BY host",
         (node_id,),
@@ -114,7 +114,7 @@ def list_logins(conn: sqlite3.Connection, node_id: str) -> list[dict[str, Any]]:
 
 
 def sealed_logins(conn: sqlite3.Connection, node_id: str) -> dict[str, tuple[str, str]]:
-    """Return `{host: (username, encrypted secret)}` for a machine."""
+    """Return `{host: (username, encrypted secret)}` for a node."""
     rows = conn.execute(
         "SELECT host, username, secret FROM registry_logins WHERE node_id = ?", (node_id,)
     )
@@ -124,7 +124,7 @@ def sealed_logins(conn: sqlite3.Connection, node_id: str) -> dict[str, tuple[str
 def save_login(
     conn: sqlite3.Connection, node_id: str, host: str, username: str, sealed: str, by: str
 ) -> bool:
-    """Store or replace a login; False if the machine already holds `MAX_LOGINS` other hosts."""
+    """Store or replace a login; False if the node already holds `MAX_LOGINS` other hosts."""
     known = {
         r["host"]
         for r in conn.execute("SELECT host FROM registry_logins WHERE node_id = ?", (node_id,))

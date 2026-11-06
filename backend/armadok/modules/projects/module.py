@@ -33,7 +33,7 @@ module = Module(
             node_owner=True,
             level="develop",
         ),
-        # Running `docker compose` is as powerful as being root on the machine: sensitive, so
+        # Running `docker compose` is as powerful as being root on the node: sensitive, so
         # it is never carried by an API key unless explicitly confirmed, and flagged everywhere.
         Right(
             "projects.deploy",
