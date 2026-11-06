@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from armadok.worker import history, safefs
+from armadok.worker import history, nodeconfig, safefs
 from armadok.worker.operation import Operation, OperationError
 
 DIR_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
@@ -33,7 +33,7 @@ RELOAD_FILE = "reload.txt"
 
 
 def _root_path() -> Path:
-    configured = os.environ.get("ARMADOK_TRAEFIK_DIR")
+    configured = nodeconfig.effective("traefik_dir")
     if not configured:
         raise OperationError("worker.traefik_not_configured")
     root = Path(configured)
@@ -282,7 +282,7 @@ STATIC_NAME = re.compile(r"traefik\.ya?ml")
 
 
 def _static_dir() -> str | None:
-    configured = os.environ.get("ARMADOK_TRAEFIK_STATIC_DIR")
+    configured = nodeconfig.effective("traefik_static_dir")
     if not configured:
         return None
     if not os.path.isabs(configured) or configured == "/":

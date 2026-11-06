@@ -22,7 +22,7 @@ from typing import Any
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 
-from armadok.worker import safefs
+from armadok.worker import nodeconfig, safefs
 from armadok.worker.operation import Operation, OperationError
 
 MAX_ACME_BYTES = 4 * 1024 * 1024  # a real acme.json with hundreds of certificates is far smaller
@@ -33,7 +33,7 @@ _FILE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}")
 
 def _location() -> tuple[str, str]:
     """Return `(folder, file name)` of acme.json, or fail if it is not configured."""
-    configured = os.environ.get("ARMADOK_ACME_FILE")
+    configured = nodeconfig.effective("acme_file")
     if not configured:
         raise OperationError("worker.acme_not_configured")
     path = Path(configured)

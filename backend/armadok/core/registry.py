@@ -105,6 +105,14 @@ class Registry:
         """Return what incoming hooks can trigger, by name."""
         return {a.name: a for m in self.modules for a in m.hook_actions}
 
+    def worker_context(self, conn: Any, node_id: str) -> dict[str, str]:
+        """Return the settings of a node that every call to its worker carries (merged)."""
+        merged: dict[str, str] = {}
+        for module in self.modules:
+            for provider in module.worker_context:
+                merged.update(provider(conn, node_id))
+        return merged
+
     def search_providers(self) -> tuple[SearchProvider, ...]:
         """Return every module's search provider, in module order."""
         return tuple(p for m in self.modules for p in m.search)

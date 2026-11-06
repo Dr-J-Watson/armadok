@@ -53,6 +53,10 @@ services:
     volumes:
       # The worker's identity key lives here: keep this volume.
       - armadok-worker-data:/data
+      # The folder, file and address variables below are the ROOTS the worker may touch: set by
+      # whoever installs it, never by the interface. In the node's Configuration tab, a person with
+      # the right can only pick a sub-folder INSIDE a root (or another file name next to a file
+      # root); the worker refuses anything that leads out.
       # Your Compose projects, one sub-folder each. Armadok edits only the Compose files in it.
       - ${PROJECTS_DIR:?set it in .env}:/stacks
       # - ${TRAEFIK_DYNAMIC_DIR:?set it in .env}:/traefik-dynamic

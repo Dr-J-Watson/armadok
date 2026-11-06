@@ -189,5 +189,6 @@
   "form.addMiddleware": "Add a block…",
   "form.moveUp": "Move {{name}} up",
   "form.moveDown": "Move {{name}} down",
-  "form.removeMiddleware": "Remove {{name}}"
+  "form.removeMiddleware": "Remove {{name}}",
+  "form.entrypoints": "Entry points (empty = the node's default)"
 }

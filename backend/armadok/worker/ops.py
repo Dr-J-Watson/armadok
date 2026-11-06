@@ -19,6 +19,7 @@ from armadok.worker import (
     git_ops,
     image_ops,
     inspect_ops,
+    nodeconfig,
     projects_ops,
     sites_ops,
     stats_ops,
@@ -55,4 +56,8 @@ OPERATIONS: dict[str, Operation] = {
     **terminal_ops.OPERATIONS,
     **traffic_ops.OPERATIONS,
     **accesslog_ops.OPERATIONS,
+    **nodeconfig.OPERATIONS,
 }
+
+# Every operation runs with the node's settings that the hub sent along (see `nodeconfig`).
+OPERATIONS = {name: nodeconfig.scoped(operation) for name, operation in OPERATIONS.items()}

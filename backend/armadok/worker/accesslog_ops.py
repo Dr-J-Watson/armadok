@@ -21,6 +21,7 @@ import stat
 from datetime import UTC, datetime
 from typing import Any
 
+from armadok.worker import nodeconfig
 from armadok.worker.operation import Operation, OperationError
 
 MAX_READ_BYTES = 1024 * 1024
@@ -30,7 +31,7 @@ _FRACTION = re.compile(r"\.\d+")
 
 
 def _path() -> str:
-    configured = os.environ.get("ARMADOK_TRAEFIK_ACCESSLOG", "")
+    configured = nodeconfig.effective("accesslog_file") or ""
     if not configured or "\0" in configured:
         raise OperationError("worker.accesslog_not_configured")
     return configured

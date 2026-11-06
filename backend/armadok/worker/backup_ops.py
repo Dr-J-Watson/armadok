@@ -32,7 +32,7 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
 
-from armadok.worker import safefs
+from armadok.worker import nodeconfig, safefs
 from armadok.worker.docker_control import PROTECT_LABEL, own_container_id
 from armadok.worker.docker_ops import docker_get, docker_raw
 from armadok.worker.operation import Operation, OperationError
@@ -72,7 +72,7 @@ _tasks: dict[str, dict[str, Any]] = {}
 
 
 def _folder() -> str:
-    configured = os.environ.get("ARMADOK_BACKUP_DIR")
+    configured = nodeconfig.effective("backup_dir")
     if not configured or not os.path.isabs(configured):
         raise OperationError("worker.backups_not_configured")
     return configured
@@ -350,7 +350,7 @@ def _start(target: Any, *args: Any, volume: str) -> dict[str, Any]:
         for old in sorted(_tasks, key=lambda k: _tasks[k]["started"])[:-MAX_TASKS_KEPT]:
             if _tasks[old]["state"] != "running":
                 del _tasks[old]
-    threading.Thread(target=target, args=(task_id, *args), daemon=True).start()
+    nodeconfig.start_thread(target, task_id, *args)
     return {"task": task_id}
 
 

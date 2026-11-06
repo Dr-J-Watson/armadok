@@ -21,6 +21,7 @@ function server(sites: unknown[]) {
     const path = String(input).replace('/api/v1', '')
     const method = (init?.method ?? 'GET').toUpperCase()
     if (method !== 'GET') calls.push({ method, path, body: init?.body ? JSON.parse(String(init.body)) : null })
+    if (path.endsWith('/settings')) return json({ traefik_entrypoints: ['websecure'], traefik_resolver: 'lehttp' })
     if (path.endsWith('/dns/report')) return json({ hosts: [{ host: 'blog.example.com', status: dnsStatus }] })
     if (path.endsWith('/dns/fix')) { dnsStatus = 'present'; return json({}, 201) }
     if (path.endsWith('/certs')) return json({ hosts: [{ host: 'blog.example.com', state: 'missing' }] })
@@ -69,7 +70,7 @@ describe('site builder', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Done' }))
     expect(await screen.findByRole('button', { name: 'New site' })).toBeInTheDocument()
     expect(calls[0].path).toBe('/nodes/n1/traefik/sites')
-    expect(calls[0].body).toMatchObject({ spec: { name: 'blog', hosts: ['blog.example.com'], container: 'blog-web', port: 8080, https: true, url: null } })
+    expect(calls[0].body).toMatchObject({ spec: { name: 'blog', hosts: ['blog.example.com'], container: 'blog-web', port: 8080, https: true, url: null, entrypoints: ['websecure'], cert_resolver: 'lehttp' } })
   })
 
   it('pauses, asks twice before deleting, and offers older versions', async () => {

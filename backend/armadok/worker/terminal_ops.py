@@ -33,7 +33,7 @@ import threading
 import time
 from typing import Any
 
-from armadok.worker import compose_ops
+from armadok.worker import compose_ops, nodeconfig
 from armadok.worker.operation import Operation, OperationError
 from armadok.worker.projects_ops import PROJECT_NAME, _root_path
 
@@ -230,7 +230,8 @@ def _host_root() -> str:
         or ".." in configured.split("/")
     ):
         raise OperationError("worker.terminal_not_configured")
-    return configured.rstrip("/")
+    narrowed = nodeconfig.relative("projects_dir")
+    return configured.rstrip("/") + (f"/{narrowed}" if narrowed else "")
 
 
 def _folder(project: str) -> tuple[str, int, int]:

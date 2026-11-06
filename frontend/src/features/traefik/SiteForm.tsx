@@ -59,6 +59,7 @@ export function SiteForm({
   const [spec, setSpec] = useState<SiteSpec>(initial ?? EMPTY)
   // One row per address; there is always at least one row to type in.
   const [hosts, setHosts] = useState<string[]>(initial?.hosts?.length ? initial.hosts : [''])
+  const [entrypointsText, setEntrypointsText] = useState((initial?.entrypoints ?? []).join(', '))
   const [byAddress, setByAddress] = useState(initial?.url != null)
   const [preview, setPreview] = useState<{ yaml: string; name_taken: boolean } | null>(null)
 
@@ -68,11 +69,21 @@ export function SiteForm({
     queryFn: () => api.get<{ containers: DockerContainer[] }>(`/nodes/${nodeId}/docker/containers`),
     retry: false,
   })
+  // The node's defaults for new sites (entry points, certificate resolver). Optional: a person
+  // who may not read them, or a hub without the module, simply gets no suggestion.
+  const defaults = useQuery({
+    queryKey: ['node-settings', nodeId],
+    queryFn: () => api.get<{ traefik_entrypoints: string[]; traefik_resolver: string }>(`/nodes/${nodeId}/settings`),
+    retry: false,
+  })
+  const defaultEntrypoints = defaults.data?.traefik_entrypoints ?? []
+  const defaultResolver = defaults.data?.traefik_resolver ?? ''
   const known = useQuery({
     queryKey: ['traefik-sites', nodeId],
     queryFn: () => api.get<{ middlewares: { id: string }[] }>(`/nodes/${nodeId}/traefik/sites`),
   })
 
+  const entered = entrypointsText.split(/[\s,]+/).filter(Boolean)
   const body = () => ({
     spec: {
       ...spec,
@@ -81,7 +92,8 @@ export function SiteForm({
       container: byAddress ? null : spec.container,
       url: byAddress ? spec.url : null,
       port: byAddress ? null : spec.port,
-      cert_resolver: spec.https ? spec.cert_resolver || null : null,
+      cert_resolver: spec.https ? spec.cert_resolver || (editing ? null : defaultResolver || null) : null,
+      entrypoints: entered.length > 0 ? entered : editing ? null : defaultEntrypoints.length > 0 ? defaultEntrypoints : null,
     },
   })
 
@@ -268,10 +280,22 @@ export function SiteForm({
             <input type="checkbox" checked={spec.https} onChange={(e) => setSpec({ ...spec, https: e.target.checked })} />
             {t('traefik:form.https')}
           </label>
+          <label>
+            {t('traefik:form.entrypoints')}
+            <input
+              value={entrypointsText}
+              placeholder={defaultEntrypoints.join(', ')}
+              onChange={(e) => setEntrypointsText(e.target.value)}
+            />
+          </label>
           {spec.https && (
             <label>
               {t('traefik:form.resolver')}
-              <input value={spec.cert_resolver ?? ''} onChange={(e) => setSpec({ ...spec, cert_resolver: e.target.value })} />
+              <input
+                value={spec.cert_resolver ?? ''}
+                placeholder={defaultResolver}
+                onChange={(e) => setSpec({ ...spec, cert_resolver: e.target.value })}
+              />
             </label>
           )}
         </Block>

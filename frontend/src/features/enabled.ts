@@ -28,6 +28,7 @@ import { convertFeature } from './convert/feature'
 import { templatesFeature } from './templates/feature'
 import { gitFeature } from './git/feature'
 import { terminalFeature } from './terminal/feature'
+import { nodeconfigFeature } from './nodeconfig/feature'
 import { dashboardFeature } from './dashboard/feature'
 import { helpFeature } from './help/feature'
 import { trafficFeature } from './traffic/feature'
@@ -66,6 +67,7 @@ export const features: Feature[] = [
   templatesFeature,
   gitFeature,
   terminalFeature,
+  nodeconfigFeature,
   certsFeature,
   uptimeFeature,
   scheduleFeature,

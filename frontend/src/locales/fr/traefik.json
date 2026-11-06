@@ -189,5 +189,6 @@
   "form.addMiddleware": "Ajouter un bloc…",
   "form.moveUp": "Monter {{name}}",
   "form.moveDown": "Descendre {{name}}",
-  "form.removeMiddleware": "Retirer {{name}}"
+  "form.removeMiddleware": "Retirer {{name}}",
+  "form.entrypoints": "Points d'entrée (vide = celui du nœud)"
 }

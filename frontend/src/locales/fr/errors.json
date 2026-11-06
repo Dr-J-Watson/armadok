@@ -258,5 +258,9 @@
   "terminal.not_with_key": "Un terminal ne peut être ouvert que par une personne, pas avec une clé d'API.",
   "worker.accesslog_not_configured": "Ce nœud n'a pas de journal d'accès configuré.",
   "worker.accesslog_unreadable": "Le journal d'accès n'a pas pu être lu.",
-  "traffic.invalid_address": "Ce n'est pas une adresse IP."
+  "traffic.invalid_address": "Ce n'est pas une adresse IP.",
+  "nodeconfig.invalid_place": "Un dossier a été refusé : il n'existe pas ou sort de ce que le worker autorise.",
+  "nodeconfig.not_for_node_type": "Ce type de nœud n'a pas ce réglage.",
+  "nodeconfig.not_with_key": "Seule une personne peut changer ces réglages, pas une clé d'API.",
+  "worker.config_invalid": "Le worker a refusé un réglage de ce nœud."
 }

@@ -43,4 +43,5 @@ ENABLED_MODULES: tuple[str, ...] = (
     "git",
     "terminal",
     "autoupdate",
+    "nodeconfig",
 )

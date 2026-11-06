@@ -18,7 +18,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from armadok.worker import safefs
+from armadok.worker import nodeconfig, safefs
 from armadok.worker.operation import Operation, OperationError
 
 log = logging.getLogger("armadok.worker.projects")
@@ -35,7 +35,7 @@ LIST_BUDGET_BYTES = 800 * 1024
 
 def _root_path() -> Path:
     """Return the allowed folder (absolute, not `/`), or fail if none is configured."""
-    configured = os.environ.get("ARMADOK_PROJECTS_DIR")
+    configured = nodeconfig.effective("projects_dir")
     if not configured:
         raise OperationError("worker.projects_not_configured")
     root = Path(configured)

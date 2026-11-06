@@ -64,6 +64,7 @@ WORKER_ERROR_STATUS = {
     "worker.metrics_not_configured": 409,
     "worker.metrics_unreachable": 502,
     "worker.accesslog_not_configured": 409,
+    "worker.config_invalid": 422,
     "worker.accesslog_unreadable": 502,
     "worker.projects_not_configured": 409,
     "worker.traefik_not_configured": 409,
@@ -251,6 +252,7 @@ async def call_operation(
     try:
         node = nodes_repo.get_node(conn, node_id)
         allowed = registry.unblocked_for(conn, actor_id) if actor_id else frozenset()
+        context = registry.worker_context(conn, node_id)
     finally:
         conn.close()
     if node is None:
@@ -259,6 +261,11 @@ async def call_operation(
         raise ApiError("node.suspended", 423)
     if node["type"] not in declared.node_types:
         raise ApiError("worker.op_not_for_node_type", 409)
+    # The node's own settings travel with the call; one a caller slipped into the arguments is
+    # dropped, so only what is stored for the node can narrow its worker.
+    args = {k: v for k, v in args.items() if k != "_config"}
+    if context:
+        args["_config"] = context
     if node["local"]:
         return await _run_locally(op, args)
     session = get_hub(app).get(node_id)

@@ -258,5 +258,9 @@
   "terminal.not_with_key": "A terminal can only be opened by a person, not with an API key.",
   "worker.accesslog_not_configured": "This node has no access log set up.",
   "worker.accesslog_unreadable": "The access log could not be read.",
-  "traffic.invalid_address": "That is not an IP address."
+  "traffic.invalid_address": "That is not an IP address.",
+  "nodeconfig.invalid_place": "A folder was refused: it does not exist or leads outside what the worker allows.",
+  "nodeconfig.not_for_node_type": "This node type has no such setting.",
+  "nodeconfig.not_with_key": "Only a person can change these settings, not an API key.",
+  "worker.config_invalid": "The worker refused a setting of this node."
 }

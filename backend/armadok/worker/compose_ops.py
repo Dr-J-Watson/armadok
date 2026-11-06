@@ -29,6 +29,7 @@ import threading
 import time
 from typing import Any
 
+from armadok.worker import nodeconfig
 from armadok.worker.operation import Operation, OperationError
 from armadok.worker.projects_ops import COMPOSE_FILE, PROJECT_NAME, _Project
 
@@ -255,7 +256,7 @@ def compose_start(args: dict[str, Any]) -> dict[str, Any]:
         for old in sorted(_tasks, key=lambda k: _tasks[k]["started"])[:-MAX_TASKS_KEPT]:
             if _tasks[old]["state"] != "running":
                 del _tasks[old]
-    threading.Thread(target=_work, args=(task_id, argv, project, files), daemon=True).start()
+    nodeconfig.start_thread(_work, task_id, argv, project, files)
     return {"task": task_id}
 
 

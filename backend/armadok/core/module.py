@@ -251,6 +251,9 @@ class Module:
     audit_events: tuple[str, ...] = ()
     signals: tuple[Signal, ...] = ()
     hook_actions: tuple[HookAction, ...] = ()
+    # What to send a node's worker along with every call: `provider(conn, node_id)` returns a
+    # small dict of that node's settings (the worker applies what it knows and ignores the rest).
+    worker_context: tuple[Callable[[Any, str], dict[str, str]], ...] = ()
     # Rights an account holds because of another account (a service account that follows the
     # person who made it): `source(conn, account_id)` returns the extra grants.
     grant_sources: tuple[Callable[[Any, str], tuple[Any, ...]], ...] = ()
