@@ -14,6 +14,7 @@ from armadok.modules.git import repository as git_repo
 from armadok.modules.git import schemas as git_schemas
 from armadok.modules.git import service as git_service
 from armadok.modules.imageupdates import service as image_service
+from armadok.modules.projects import states as project_states
 
 
 def sync(test):
@@ -39,7 +40,12 @@ class FakeSettings:
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(
             "CREATE TABLE nodes (id TEXT PRIMARY KEY);"
-            "INSERT INTO nodes VALUES ('n1');" + git_repo.MIGRATION.sql + state_repo.MIGRATION.sql
+            "INSERT INTO nodes VALUES ('n1');"
+            + git_repo.MIGRATION.sql
+            + state_repo.MIGRATION.sql
+            + project_states.MIGRATION.sql
+            + "INSERT INTO project_states VALUES ('n1', 'blog', 'managed', '', 'now');"
+            + "INSERT INTO project_states VALUES ('n1', 'api', 'managed', '', 'now');"
         )
 
     def open_db(self):
@@ -53,6 +59,7 @@ class FakeSettings:
 @pytest.fixture
 def world(monkeypatch):
     """A fake hub: records what was started and what was audited, answers come from `state`."""
+
     state = SimpleNamespace(
         images=["nginx:1"],
         moved=False,

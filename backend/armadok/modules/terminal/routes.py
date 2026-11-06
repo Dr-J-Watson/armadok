@@ -33,6 +33,7 @@ from armadok.core.errors import ApiError, MissingRight
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.projects import schemas as project_schemas
+from armadok.modules.projects import states
 from armadok.modules.terminal import repository
 from armadok.modules.users import repository as users_repo
 from armadok.modules.users import second_factor
@@ -153,6 +154,7 @@ def read_settings(
     """Return the project's terminal settings and whether the caller may open one."""
     _project(project)
     authorise(conn, registry, who, node_id, "projects.read", ("project", project))
+    states.require_managed(conn, node_id, project)
     scope = f"node:{node_id}/project:{project}"
     return {
         **repository.get(conn, node_id, project),
@@ -181,6 +183,7 @@ def write_settings(
     """
     _project(project)
     authorise(conn, registry, who, node_id, "projects.terminal", ("project", project))
+    states.require_managed(conn, node_id, project)
     _fresh_code(request, conn, registry, who, body.code, "terminal.settings", node_id)
     settings = body.model_dump(exclude={"code"})
     repository.save(conn, node_id, project, settings, who.actor)
@@ -210,6 +213,7 @@ async def open_terminal(
     """Start the project's terminal and return the one-time `ticket` for the WebSocket."""
     _project(project)
     authorise(conn, registry, who, node_id, "projects.terminal", ("project", project))
+    states.require_managed(conn, node_id, project)
     settings = repository.get(conn, node_id, project)
     if not settings["enabled"]:
         raise ApiError("terminal.disabled", 409)

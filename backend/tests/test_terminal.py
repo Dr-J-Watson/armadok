@@ -232,7 +232,15 @@ def box(tmp_path, caplog, monkeypatch, fake):
         client.post(
             "/api/v1/setup", json={"install_code": code, "username": "admin", "password": PASSWORD}
         )
-        yield client, login(client, "admin"), app, log
+        admin = login(client, "admin")
+        # The folders of the fake projects directory are imported, as an owner would have done.
+        from armadok.modules.projects import states
+
+        conn = app.state.settings.open_db()
+        for node in client.get("/api/v1/nodes", headers=admin).json():
+            states.set_state(conn, node["id"], ["blog"], "managed")
+        conn.close()
+        yield client, admin, app, log
 
 
 def local_node(client, headers):
@@ -332,6 +340,11 @@ def test_a_ticket_nobody_used_expires_and_a_late_one_is_refused(box, monkeypatch
 def test_rights_keys_and_second_factor(box):
     client, admin, app, log = box
     _, olga, node = owner_with_node(client, admin)
+    from armadok.modules.projects import states
+
+    conn = app.state.settings.open_db()
+    states.set_state(conn, node, ["blog"], "managed")
+    conn.close()
     base = f"/api/v1/nodes/{node}/projects/blog/terminal"
     pat_id, pat = person(client, admin, "pat")
     client.post(

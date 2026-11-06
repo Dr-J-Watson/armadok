@@ -15,7 +15,7 @@ from typing import Any
 from armadok.core.errors import ApiError
 from armadok.core.module import RelationData, RelationLink, RelationObject
 from armadok.modules.docker import schemas
-from armadok.modules.projects import schemas as project_schemas
+from armadok.modules.projects import states
 from armadok.modules.workers.routes import call_operation
 
 _ROUTER_RULE = re.compile(r"traefik\.http\.routers\.([A-Za-z0-9_.-]+)\.rule")
@@ -32,7 +32,7 @@ async def provide(app: Any, node_id: str, viewer: Any) -> RelationData:
     except Exception:
         raise ApiError("worker.invalid_answer", 502) from None
 
-    managed = await _managed_projects(app, node_id)
+    managed = _managed_projects(app, node_id)
     objects: dict[tuple[str, str], RelationObject] = {}
     links: list[RelationLink] = []
 
@@ -70,14 +70,10 @@ async def provide(app: Any, node_id: str, viewer: Any) -> RelationData:
     return RelationData(tuple(objects.values()), tuple(links))
 
 
-async def _managed_projects(app: Any, node_id: str) -> set[str]:
-    """Names of the folders Armadok manages on the node; empty when it cannot tell.
-
-    A node with no projects folder, or one whose worker cannot answer, simply has no managed
-    project: the map must not fail for that.
-    """
+def _managed_projects(app: Any, node_id: str) -> set[str]:
+    """Names of the projects Armadok manages on the node (imported or created here)."""
+    conn = app.state.settings.open_db()
     try:
-        answer = await call_operation(app, app.state.registry, node_id, "projects.list", {})
-        return {p.name for p in project_schemas.ProjectList.model_validate(answer).projects}
-    except Exception:
-        return set()
+        return states.managed_names(conn, node_id)
+    finally:
+        conn.close()

@@ -262,5 +262,7 @@
   "nodeconfig.invalid_place": "A folder was refused: it does not exist or leads outside what the worker allows.",
   "nodeconfig.not_for_node_type": "This node type has no such setting.",
   "nodeconfig.not_with_key": "Only a person can change these settings, not an API key.",
-  "worker.config_invalid": "The worker refused a setting of this node."
+  "worker.config_invalid": "The worker refused a setting of this node.",
+  "projects.already_managed": "A managed project cannot be set aside: stop managing it first.",
+  "projects.not_found": "This folder is not a project on the node."
 }

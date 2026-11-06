@@ -37,10 +37,17 @@ def code_of(call, *args):
 
 def test_list_shows_projects_with_compose_files_only(root):
     out = ops.projects_list({})
-    assert out == {
-        "projects": [{"name": "blog", "files": ["compose.yaml", "docker-compose.prod.yml"]}],
-        "truncated": False,
-    }
+    assert out["truncated"] is False and len(out["projects"]) == 1
+    blog = out["projects"][0]
+    assert blog["name"] == "blog" and blog["files"] == ["compose.yaml", "docker-compose.prod.yml"]
+    # What the import screen shows: the services of the main file, `.env` and `.git`, no error.
+    assert blog["services"] == ["web"] and blog["has_env"] is True and blog["has_git"] is False
+    assert blog["error"] is None
+
+
+def test_a_broken_compose_file_is_reported_by_a_code_not_a_failure(root):
+    (root / "blog" / "compose.yaml").write_text("services: [unclosed\n")
+    assert ops.projects_list({})["projects"][0]["error"] == "invalid_yaml"
 
 
 def test_read_returns_text_and_version_hash_but_never_the_env_file(root):
@@ -160,6 +167,11 @@ def test_hub_lists_reads_saves_and_audits_without_logging_content(live, root):  
     client, headers, port, tmp_path = live
     node, stop = connect_worker(client, headers, port, tmp_path, "docker")
     base = f"/api/v1/nodes/{node}/projects"
+    assert client.get(base, headers=headers).json()["projects"] == []  # not imported yet
+    assert (
+        client.post(f"{base}/import", headers=headers, json={"projects": ["blog"]}).status_code
+        == 200
+    )
     assert client.get(base, headers=headers).json()["projects"][0]["name"] == "blog"
     read = client.get(f"{base}/blog/files/compose.yaml", headers=headers).json()
     assert read["content"] == COMPOSE
@@ -183,14 +195,19 @@ def test_hub_lists_reads_saves_and_audits_without_logging_content(live, root):  
         .fetchall()
     )
     # The refused (conflicting) save is recorded too, with its outcome and code but no content.
-    assert [r[0] for r in rows] == ["project.file_read", "project.file_write", "project.file_write"]
+    assert [r[0] for r in rows] == [
+        "project.import",
+        "project.file_read",
+        "project.file_write",
+        "project.file_write",
+    ]
     outcomes = (
         sqlite3.connect(tmp_path / "armadok.db")
         .execute("SELECT outcome FROM audit_log WHERE event = 'project.file_write' ORDER BY id")
         .fetchall()
     )
     assert [o[0] for o in outcomes] == ["success", "failure"]
-    assert "worker.conflict" in rows[2][1]
+    assert "worker.conflict" in rows[3][1]
     assert "services" not in str(rows) and "nginx" not in str(rows)
     stop.set()
 
@@ -452,3 +469,98 @@ def test_a_failed_creation_leaves_no_folder_and_env_temps_are_swept(root, monkey
     assert not (root / "half").exists()
     assert ops.TEMP_FILE.fullmatch("..env.armadok-0123456789abcdef.tmp")
     assert ops.TEMP_FILE.fullmatch(".compose.yaml.armadok-0123456789abcdef.tmp")
+
+
+def test_importing_ignoring_and_unmanaging_change_only_what_armadok_shows(live, root):  # noqa: F811
+    client, headers, port, tmp_path = live
+    node, stop = connect_worker(client, headers, port, tmp_path, "docker")
+    base = f"/api/v1/nodes/{node}/projects"
+    found = client.get(f"{base}/discovered", headers=headers).json()["projects"]
+    assert [(p["name"], p["state"]) for p in found] == [("blog", "discovered")]
+    assert found[0]["services"] == ["web"] and found[0]["has_env"] is True
+    # Nothing can be read or run on a project that was not imported: it is simply not there.
+    assert client.get(f"{base}/blog/files/compose.yaml", headers=headers).status_code == 404
+    assert (
+        client.post(f"{base}/blog/actions", headers=headers, json={"action": "up"}).status_code
+        == 404
+    )
+    assert (
+        client.post(f"{base}/import", headers=headers, json={"projects": ["nope"]}).status_code
+        == 404
+    )
+    assert (
+        client.post(f"{base}/ignore", headers=headers, json={"projects": ["blog"]}).status_code
+        == 200
+    )
+    assert (
+        client.get(f"{base}/discovered", headers=headers).json()["projects"][0]["state"]
+        == "ignored"
+    )
+    done = client.post(
+        f"{base}/import",
+        headers=headers,
+        json={"projects": ["blog"], "labels": [" web ", "web", "a,b"]},
+    )
+    assert done.status_code == 200
+    listed = client.get(base, headers=headers).json()["projects"]
+    assert listed[0]["name"] == "blog" and listed[0]["labels"] == ["web", "a b"]
+    # A managed project cannot be ignored; stopping to manage it brings it back as discovered.
+    assert (
+        client.post(f"{base}/ignore", headers=headers, json={"projects": ["blog"]}).status_code
+        == 409
+    )
+    assert client.post(f"{base}/blog/unmanage", headers=headers).status_code == 204
+    assert client.get(base, headers=headers).json()["projects"] == []
+    assert (
+        client.get(f"{base}/discovered", headers=headers).json()["projects"][0]["state"]
+        == "discovered"
+    )
+    assert (root / "blog" / "compose.yaml").is_file()  # the disk was never touched
+    import sqlite3
+
+    events = [
+        r[0]
+        for r in sqlite3.connect(tmp_path / "armadok.db").execute(
+            "SELECT event FROM audit_log WHERE event LIKE 'project.%' ORDER BY id"
+        )
+    ]
+    client.post(
+        f"/api/v1/nodes/{node}/projects/import", headers=headers, json={"projects": ["blog"]}
+    )
+    assert events == [
+        "project.import",
+        "project.ignore",
+        "project.import",
+        "project.ignore",
+        "project.unmanage",
+    ]
+    stop.set()
+
+
+def test_a_deeply_nested_compose_file_does_not_break_the_listing(root):
+    (root / "blog" / "compose.yaml").write_text("[" * 20000)
+    out = ops.projects_list({})
+    assert out["projects"][0]["name"] == "blog" and out["projects"][0]["error"] == "invalid_yaml"
+
+
+def test_a_big_compose_file_is_listed_without_being_read(root):
+    big = "services:\n  web:\n    image: x\n" + "# padding\n" * 5000
+    (root / "blog" / "compose.yaml").write_text(big)
+    blog = ops.projects_list({})["projects"][0]
+    assert blog["services"] == [] and blog["error"] is None
+
+
+def test_a_hook_cannot_be_made_for_a_project_that_is_not_imported(live, root):  # noqa: F811
+    client, headers, port, tmp_path = live
+    node, stop = connect_worker(client, headers, port, tmp_path, "docker")
+    hook = {
+        "name": "ci",
+        "action": "project.redeploy",
+        "target": {"node_id": node, "project": "blog"},
+    }
+    assert client.post("/api/v1/hooks", headers=headers, json=hook).status_code == 404
+    client.post(
+        f"/api/v1/nodes/{node}/projects/import", headers=headers, json={"projects": ["blog"]}
+    )
+    assert client.post("/api/v1/hooks", headers=headers, json=hook).status_code == 201
+    stop.set()

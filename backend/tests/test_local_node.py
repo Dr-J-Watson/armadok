@@ -87,10 +87,12 @@ def test_docker_and_projects_work_on_the_local_node_without_any_worker(machine, 
         "version": "27.0",
         "api_version": "1.46",
     }
-    assert (
-        client.get(f"/api/v1/nodes/{node}/projects", headers=admin).json()["projects"][0]["name"]
-        == "blog"
-    )
+    # A folder is only discovered until it is imported.
+    base = f"/api/v1/nodes/{node}/projects"
+    assert client.get(base, headers=admin).json()["projects"] == []
+    assert client.get(f"{base}/discovered", headers=admin).json()["projects"][0]["name"] == "blog"
+    client.post(f"{base}/import", headers=admin, json={"projects": ["blog"]})
+    assert client.get(base, headers=admin).json()["projects"][0]["name"] == "blog"
     assert client.post(f"/api/v1/nodes/{node}/worker/ping", headers=admin).json() == {"pong": True}
     graph = client.get(f"/api/v1/nodes/{node}/relations", headers=admin).json()
     assert graph["unavailable"] == {}
@@ -100,6 +102,7 @@ def test_local_operations_keep_the_same_confinement_and_error_codes(machine, cap
     client, admin = start(machine, caplog)
     node = client.get("/api/v1/nodes", headers=admin).json()[0]["id"]
     base = f"/api/v1/nodes/{node}/projects"
+    client.post(f"{base}/import", headers=admin, json={"projects": ["blog"]})
     assert (
         client.get(f"{base}/blog/files/compose.yaml", headers=admin).json()["content"]
         == "services: {}\n"

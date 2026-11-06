@@ -168,6 +168,7 @@ flowchart LR
 Un projet est un simple dossier sur disque (`docker-compose.yml`, `.env`, Dockerfiles). Le disque reste la source de vérité : Armadok lance `docker compose` dessus, rien n'est réécrit tant que vous ne l'importez pas.
 
 - **Découverte** des fichiers compose dans vos dossiers, import en un clic (géré / ignoré), reprise des conteneurs déjà lancés.
+- **Découverte et import** : Armadok liste les dossiers du nœud qui contiennent un fichier Compose comme *à importer* ; vous les importez (avec des étiquettes), en mettez certains de côté (*ignorés*), ou cessez de gérer l'un d'eux à tout moment. Rien de cela ne touche au dossier ni aux conteneurs : les conteneurs en marche sont repris tels quels, et seuls les projets importés peuvent être lus, modifiés ou lancés.
 - **Actions** : démarrer, arrêter, redémarrer, recréer, `pull`, `build` (avec ou sans cache), `down`, par projet ou par service, avec la sortie **en direct** et l'historique des opérations.
 - **Éditeur** (Monaco) pour compose, `.env`, Dockerfiles et fichiers de contexte : validation `docker compose config`, comparaison avant enregistrement, historique et restauration, détection d'une modification faite ailleurs.
 - **Analyse des builds** : `ARG` manquants, `COPY` vers un fichier absent, contexte hors sources, builds périmés.

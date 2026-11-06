@@ -6,7 +6,7 @@ import re
 from typing import Any
 
 from armadok.core.module import HookAction
-from armadok.modules.projects import schemas
+from armadok.modules.projects import schemas, states
 from armadok.modules.projects.deploy import start_action
 from armadok.modules.workers.access import authorise
 
@@ -26,6 +26,11 @@ def validate(target: dict[str, Any]) -> dict[str, Any]:
     ):
         raise ValueError("target must be a node and a project")
     return {"node_id": node_id, "project": project}
+
+
+def check(conn: Any, registry: Any, who: Any, target: dict[str, Any]) -> None:
+    """Refuse a hook or schedule on a project that was not imported (it would be run unseen)."""
+    states.require_managed(conn, target["node_id"], target["project"])
 
 
 def _runner(body: schemas.ActionIn):
@@ -58,6 +63,7 @@ ACTION = HookAction(
     validate,
     _runner(schemas.ActionIn(action="up", pull=True)),
     fields=_FIELDS,
+    check=check,
 )
 # A scheduled restart: no reason to let a token trigger it, so not for hooks.
 RESTART = HookAction(
@@ -67,4 +73,5 @@ RESTART = HookAction(
     _runner(schemas.ActionIn(action="restart")),
     hookable=False,
     fields=_FIELDS,
+    check=check,
 )

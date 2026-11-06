@@ -22,6 +22,7 @@ from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.git import repository, schemas, service
 from armadok.modules.projects import schemas as project_schemas
+from armadok.modules.projects import states
 from armadok.modules.workers.access import ask, audit_failure, authorise
 
 router = APIRouter(prefix="/nodes/{node_id}/git", tags=["git"])
@@ -152,6 +153,9 @@ async def clone(
     """
     authorise(conn, registry, who, node_id, "projects.create")
     details = {"project": body.name, "url": body.url, "branch": body.branch}
+    claimed = states.claim(
+        conn, node_id, body.name
+    )  # managed from the start, like one created here
     try:
         answer = await ask(
             request,
@@ -167,6 +171,8 @@ async def clone(
             schemas.Commit,
         )
     except ApiError as error:
+        if claimed:
+            states.forget(conn, node_id, body.name)
         audit_failure(conn, registry, who, "git.clone", node_id, details, error)
         raise
     repository.set_source(conn, node_id, body.name, body.url, body.branch, who.actor)
@@ -199,6 +205,7 @@ async def source(
     """
     _project(project)
     authorise(conn, registry, who, node_id, "projects.read", ("project", project))
+    states.require_managed(conn, node_id, project)
     saved = repository.get_source(conn, node_id, project)
     if saved is None:
         return {"source": None, "status": None, "error": None}
@@ -236,6 +243,7 @@ async def update(
     """
     _project(project)
     authorise(conn, registry, who, node_id, "projects.files.write", ("project", project))
+    states.require_managed(conn, node_id, project)
     saved = repository.get_source(conn, node_id, project)
     if saved is None:
         raise ApiError("git.no_source", 404)
@@ -280,6 +288,7 @@ def forget(
     """Stop following the repository. The files stay where they are."""
     _project(project)
     authorise(conn, registry, who, node_id, "projects.files.write", ("project", project))
+    states.require_managed(conn, node_id, project)
     if not repository.delete_source(conn, node_id, project):
         raise ApiError("git.no_source", 404)
     audit.record(

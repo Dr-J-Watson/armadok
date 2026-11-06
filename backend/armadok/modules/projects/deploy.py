@@ -23,7 +23,7 @@ from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.core.signals import announce
 from armadok.modules.nodes import repository as nodes_repo
-from armadok.modules.projects import schemas, tasks
+from armadok.modules.projects import schemas, states, tasks
 from armadok.modules.workers.access import ask, audit_failure, authorise
 from armadok.modules.workers.routes import call_operation
 
@@ -178,6 +178,7 @@ async def run_action(
     `GET /nodes/{id}/tasks/{task_id}`.
     """
     authorise(conn, registry, who, node_id, "projects.deploy", ("project", project))
+    states.require_managed(conn, node_id, project)
     task_id = await start_action(request.app, conn, registry, who, node_id, project, body)
     return {"task_id": task_id, "state": "running"}
 
@@ -194,8 +195,10 @@ async def start_action(
     """Start an action on the worker, record and audit it, and follow it; return the task id.
 
     The caller has already checked `projects.deploy` on the node (an endpoint for a person, the
-    hook runner for a hook): this function never decides who may.
+    hook runner for a hook): this function never decides who may. It does refuse a project that
+    is not managed, whoever asks: a hook or a schedule outlives the import it was made under.
     """
+    states.require_managed(conn, node_id, project)
     details = {
         "project": project,
         "action": body.action,
@@ -241,6 +244,7 @@ async def get_task(
         authorise(conn, registry, who, node_id, "projects.logs")
         raise NotFound()
     authorise(conn, registry, who, node_id, "projects.logs", ("project", row["project"]))
+    states.require_managed(conn, node_id, row["project"])
     row = await sync_task(request.app, node_id, row)
     audit.record(
         conn,
@@ -267,8 +271,13 @@ def list_tasks(
     authorise(
         conn, registry, who, node_id, "projects.logs", ("project", project) if project else None
     )
+    if project:
+        states.require_managed(conn, node_id, project)
+    managed = states.managed_names(conn, node_id)
     shown = []
     for row in tasks.recent(conn, node_id, project):
+        if row["project"] not in managed:
+            continue  # output of a project that is no longer (or never was) managed stays unseen
         item = tasks.view(request.app.state.settings, row)
         item.pop("output")
         shown.append(item)
@@ -286,6 +295,7 @@ async def project_status(
 ) -> dict:
     """Return each container of the project with its state. Needs `projects.read`."""
     authorise(conn, registry, who, node_id, "projects.read", ("project", project))
+    states.require_managed(conn, node_id, project)
     answer = await ask(
         request, registry, node_id, "compose.ps", _args(project), schemas.ProjectStatus
     )
@@ -305,6 +315,7 @@ async def project_logs(
 ) -> dict:
     """Return the last log lines. Needs `projects.logs`. Reads are audited."""
     authorise(conn, registry, who, node_id, "projects.logs", ("project", project))
+    states.require_managed(conn, node_id, project)
     args = {**_args(project), "service": service, "tail": tail}
     try:
         answer = await ask(request, registry, node_id, "compose.logs", args, schemas.ProjectLogs)
@@ -339,6 +350,7 @@ async def check_project(
     Compose error messages can quote file content, so this is as sensitive as logs.
     """
     authorise(conn, registry, who, node_id, "projects.logs", ("project", project))
+    states.require_managed(conn, node_id, project)
     answer = await ask(
         request, registry, node_id, "compose.check", _args(project), schemas.ComposeCheck
     )

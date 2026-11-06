@@ -128,6 +128,8 @@ def create_hook(
     if not who.has("nodes.read", catalogue, scope):
         raise NotFound()
     who.require(action.right, catalogue, scope)
+    if action.check is not None:
+        action.check(conn, registry, who, target)
     if body.expires_at is not None and body.expires_at <= datetime.now(UTC):
         raise ApiError("hooks.invalid_expiry", 422)
     hook_id, token = repo.create(

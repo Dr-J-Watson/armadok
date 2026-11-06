@@ -111,10 +111,15 @@ def test_a_compose_group_becomes_a_project_once_its_folder_is_managed(live, monk
     (stacks / "idle" / "compose.yaml").write_text("services: {}\n")
     monkeypatch.setenv("ARMADOK_PROJECTS_DIR", str(stacks))
     node_id, stop = connect_worker(client, headers, port, tmp_path, "docker")
+    client.post(
+        f"/api/v1/nodes/{node_id}/projects/import",
+        headers=headers,
+        json={"projects": ["demo", "idle"]},
+    )
     graph = graph_of(client, headers, node_id)
     kinds = {(o["type"], o["label"]) for o in graph["objects"]}
-    # The running group whose folder exists is a project; so is a managed folder with nothing
-    # running.
+    # The running group whose folder is managed is a project; so is a managed folder with
+    # nothing running.
     assert ("project", "demo") in kinds and ("project", "idle") in kinds
     assert ("compose", "demo") not in kinds
     stop.set()

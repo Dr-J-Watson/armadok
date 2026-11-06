@@ -12,6 +12,7 @@ from armadok.core.errors import ApiError
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
 from armadok.modules.git import repository, schemas
+from armadok.modules.projects import states
 from armadok.modules.workers.access import audit_failure, authorise
 from armadok.modules.workers.routes import call_operation
 
@@ -52,6 +53,7 @@ async def pull_if_behind(
     if saved is None:
         return False
     authorise(conn, registry, who, node_id, "projects.files.write", ("project", project))
+    states.require_managed(conn, node_id, project)
     args = {
         "project": project,
         "url": saved["url"],

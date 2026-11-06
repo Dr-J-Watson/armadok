@@ -19,7 +19,7 @@ from armadok.modules.docker import schemas as docker_schemas
 from armadok.modules.git import repository as git_repo
 from armadok.modules.git import service as git_service
 from armadok.modules.imageupdates import service as image_service
-from armadok.modules.projects import schemas, tasks
+from armadok.modules.projects import schemas, states, tasks
 from armadok.modules.projects.deploy import start_action
 from armadok.modules.schedule import repository as schedule_repo
 from armadok.modules.workers.access import authorise
@@ -67,8 +67,10 @@ def check(conn: Any, registry: Any, who: Any, target: dict[str, Any]) -> None:
     """
     node_id, project = target["node_id"], target["project"]
     authorise(conn, registry, who, node_id, "projects.deploy", ("project", project))
+    states.require_managed(conn, node_id, project)
     if git_repo.get_source(conn, node_id, project) is not None:
         authorise(conn, registry, who, node_id, "projects.files.write", ("project", project))
+        states.require_managed(conn, node_id, project)
     for row in schedule_repo.list_for_node(conn, node_id):
         if row["action"] == ACTION_NAME and json.loads(row["target"]).get("project") == project:
             raise ApiError("autoupdate.already_scheduled", 409)
@@ -88,6 +90,7 @@ async def run(app: Any, who: Any, target: dict[str, Any]) -> None:
     conn = app.state.settings.open_db()
     try:
         authorise(conn, registry, who, node_id, "projects.deploy", ("project", project))
+        states.require_managed(conn, node_id, project)
         if any(r["state"] == "running" for r in tasks.recent(conn, node_id, project)):
             return  # a deployment is under way: this run would pile onto it
         images = await _running_images(app, node_id, project)

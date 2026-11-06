@@ -53,6 +53,11 @@ def box(tmp_path, caplog, monkeypatch):
         )
         admin = login(client, "admin")
         node = client.get("/api/v1/nodes", headers=admin).json()[0]["id"]
+        from armadok.modules.projects import states
+
+        conn = app.state.settings.open_db()
+        states.set_state(conn, node, ["blog"], "managed")  # imported, as an owner would have done
+        conn.close()
         yield client, admin, node, tmp_path
     compose_ops._tasks.clear()
 

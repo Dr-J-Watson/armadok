@@ -15,8 +15,11 @@ import json
 import logging
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 from armadok.worker import nodeconfig, safefs
 from armadok.worker.operation import Operation, OperationError
@@ -69,6 +72,55 @@ def _file_name(name: Any) -> str:
     return name
 
 
+_ENV_FILE = re.compile(r"\.env")
+_SERVICE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
+MAX_SERVICES = 100
+# Reading a Compose file to name its services is a courtesy, not a duty: a bigger file is listed
+# without them, and a whole listing never spends more than this reading folders.
+INSPECT_BYTES = 32 * 1024
+INSPECT_SECONDS = 2.0
+
+
+def _inspect(project_fd: int, names: list[str], read_files: bool = True) -> dict[str, Any]:
+    """Say what a project folder holds, for the import screen: `.env`, `.git`, services.
+
+    Only the main Compose file is read (the one Compose itself would pick first), within the
+    usual size limit; a file that cannot be read or parsed is reported by a code, not fatal.
+    """
+    info: dict[str, Any] = {
+        "has_env": any(True for _ in safefs.regular_names(project_fd, _ENV_FILE)),
+        "has_git": False,
+        "services": [],
+        "error": None,
+    }
+    try:
+        os.stat(".git", dir_fd=project_fd, follow_symlinks=False)
+        info["has_git"] = True
+    except OSError:
+        pass
+    if not read_files:
+        return info
+    order = ("compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml")
+    main = next((n for n in order if n in names), names[0])
+    try:
+        data, _ = safefs.read_regular(project_fd, main, MAX_FILE_BYTES)
+        if len(data) > INSPECT_BYTES:
+            return info  # too big to look into here; the project itself is still listed
+        document = yaml.safe_load(data.decode("utf-8"))
+    except OperationError:
+        info["error"] = "too_large"
+        return info
+    except (yaml.YAMLError, UnicodeDecodeError, ValueError, RecursionError, MemoryError):
+        info["error"] = "invalid_yaml"
+        return info
+    services = document.get("services") if isinstance(document, dict) else None
+    if isinstance(services, dict):
+        info["services"] = [
+            name for name in services if isinstance(name, str) and _SERVICE.fullmatch(name)
+        ][:MAX_SERVICES]
+    return info
+
+
 def projects_list(args: dict[str, Any]) -> dict[str, Any]:
     """List the projects (sub-folders holding at least one Compose file) and their files.
 
@@ -76,6 +128,7 @@ def projects_list(args: dict[str, Any]) -> dict[str, Any]:
     budget; `truncated` says when projects were left out.
     """
     root_fd = safefs.open_dir(str(_root_path()))
+    started = time.monotonic()
     projects: list[dict[str, Any]] = []
     truncated = False
     used = 0
@@ -98,7 +151,15 @@ def projects_list(args: dict[str, Any]) -> dict[str, Any]:
                     os.close(project_fd)
                 if not names:
                     continue
-                item = {"name": entry.name, "files": names}
+                with_info = safefs.open_dir(entry.name, root_fd)
+                try:
+                    item = {
+                        "name": entry.name,
+                        "files": names,
+                        **_inspect(with_info, names, time.monotonic() - started < INSPECT_SECONDS),
+                    }
+                finally:
+                    os.close(with_info)
                 used += len(json.dumps(item))
                 if len(projects) >= MAX_PROJECTS or used > LIST_BUDGET_BYTES:
                     truncated = True

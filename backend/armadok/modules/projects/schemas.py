@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
@@ -24,6 +24,13 @@ class Project(BaseModel):
     files: list[Annotated[str, StringConstraints(pattern=FILE_PATTERN, max_length=64)]] = Field(
         max_length=50
     )
+    has_env: bool = False
+    has_git: bool = False
+    # Names of the services of the main Compose file, and why it could not be read, if so.
+    services: list[Annotated[str, StringConstraints(pattern=PROJECT_PATTERN)]] = Field(
+        default_factory=list, max_length=100
+    )
+    error: Literal["invalid_yaml", "too_large"] | None = None
 
 
 class ProjectList(BaseModel):
@@ -175,3 +182,24 @@ class Created(BaseModel):
     project: str = Field(pattern=PROJECT_PATTERN)
     file: str = Field(pattern=FILE_PATTERN)
     env: bool
+
+
+class ImportIn(BaseModel):
+    """Body of an import or an ignore: the folders concerned, and labels for an import."""
+
+    model_config = ConfigDict(extra="forbid")
+    projects: list[str] = Field(min_length=1, max_length=200)
+    labels: list[Annotated[str, StringConstraints(max_length=60)]] = Field(
+        default_factory=list, max_length=20
+    )
+
+    @model_validator(mode="after")
+    def names_are_valid(self) -> ImportIn:
+        """Refuse a malformed folder name before it goes anywhere near a worker."""
+        import re
+
+        pattern = re.compile(PROJECT_PATTERN)
+        if not all(pattern.fullmatch(p) for p in self.projects):
+            raise ValueError("invalid project name")
+        self.projects = list(dict.fromkeys(self.projects))
+        return self

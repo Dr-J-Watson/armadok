@@ -1,7 +1,7 @@
 """Declaration of the `projects` module."""
 
 from armadok.core.module import Module, NotificationEvent, Ownable, Right, Signal, WorkerOp
-from armadok.modules.projects import hook, tasks
+from armadok.modules.projects import hook, states, tasks
 from armadok.modules.projects.deploy import resume_watchers
 from armadok.modules.projects.deploy import router as deploy_router
 from armadok.modules.projects.owned import project_ids
@@ -27,6 +27,9 @@ module = Module(
         ),
         # Makes a new folder with a Compose file (and a private .env) in the projects folder.
         # Not sensitive, like `projects.files.write`: it plants text, deploying it is `deploy`.
+        # Choosing which folders of the node Armadok manages. It changes what Armadok shows and
+        # allows, never the node's disk or containers, so it is not sensitive.
+        Right("projects.import", depends_on=("projects.read",), node_owner=True, level="develop"),
         Right(
             "projects.create",
             depends_on=("projects.files.write",),
@@ -68,6 +71,10 @@ module = Module(
         "project.file_read",
         "project.file_write",
         "project.create",
+        "project.import",
+        "project.ignore",
+        "project.unmanage",
+        "project.restore",
         "project.action",
         "project.action_done",
         "project.logs_read",
@@ -93,7 +100,7 @@ module = Module(
         ),
     ),
     tasks=(resume_watchers,),
-    migrations=(tasks.MIGRATION,),
+    migrations=(tasks.MIGRATION, states.MIGRATION),
     worker_ops=(
         WorkerOp("projects.list", _DOCKER),
         WorkerOp("projects.file.read", _DOCKER),

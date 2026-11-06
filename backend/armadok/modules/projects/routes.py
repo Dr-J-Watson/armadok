@@ -13,7 +13,7 @@ from armadok.core.deps import get_db, get_principal, get_registry
 from armadok.core.errors import ApiError
 from armadok.core.registry import Registry
 from armadok.core.rights import Principal
-from armadok.modules.projects import schemas
+from armadok.modules.projects import schemas, states
 from armadok.modules.workers.access import ask, audit_failure, authorise
 
 router = APIRouter(prefix="/nodes/{node_id}/projects", tags=["projects"])
@@ -39,7 +39,149 @@ async def list_projects(
     """Return the project folders found in the node's allowed folder, with their files."""
     authorise(conn, registry, who, node_id, "projects.read")
     answer = await ask(request, registry, node_id, "projects.list", {}, schemas.ProjectList)
-    return answer.model_dump()
+    if not answer.truncated:
+        states.prune(conn, node_id, {p.name for p in answer.projects})
+    known = states.all_states(conn, node_id)
+    managed = [
+        {**p.model_dump(), "state": "managed", "labels": known[p.name][1]}
+        for p in answer.projects
+        if p.name in known and known[p.name][0] == "managed"
+    ]
+    return {"projects": managed, "truncated": answer.truncated}
+
+
+@router.get("/discovered", summary="Folders with a Compose file that are not imported")
+async def discovered_projects(
+    node_id: str,
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """List what could be imported (discovered) and what was set aside (ignored).
+
+    Needs `projects.import`. Read only: the folders are not opened beyond the first Compose file
+    needed to name their services.
+    """
+    authorise(conn, registry, who, node_id, "projects.import")
+    answer = await ask(request, registry, node_id, "projects.list", {}, schemas.ProjectList)
+    if not answer.truncated:
+        states.prune(conn, node_id, {p.name for p in answer.projects})
+    known = states.all_states(conn, node_id)
+    found = [
+        {**p.model_dump(), "state": known[p.name][0] if p.name in known else "discovered"}
+        for p in answer.projects
+        if p.name not in known or known[p.name][0] != "managed"
+    ]
+    return {"projects": found, "truncated": answer.truncated}
+
+
+async def _existing(request: Request, registry: Registry, node_id: str, names: list[str]) -> None:
+    """Refuse names that are not folders with a Compose file on the node right now."""
+    answer = await ask(request, registry, node_id, "projects.list", {}, schemas.ProjectList)
+    present = {p.name for p in answer.projects}
+    if any(name not in present for name in names):
+        raise ApiError("projects.not_found", 404)
+
+
+async def _existing_audited(
+    conn: sqlite3.Connection,
+    registry: Registry,
+    who: Principal,
+    event: str,
+    request: Request,
+    node_id: str,
+    names: list[str],
+) -> None:
+    """`_existing`, recording a refusal in the audit log (with how many, never a guess at names)."""
+    try:
+        await _existing(request, registry, node_id, names)
+    except ApiError as error:
+        audit_failure(conn, registry, who, event, node_id, {"projects": len(names)}, error)
+        raise
+
+
+def _record(conn, registry, who, event: str, node_id: str, names: list[str], **extra) -> None:
+    """Write one audit entry per project (names and labels, never content)."""
+    for name in names:
+        audit.record(
+            conn,
+            registry.audit_events(),
+            who.actor,
+            event,
+            object_type="node",
+            object_id=node_id,
+            details={"project": name, **extra},
+        )
+
+
+@router.post("/import", summary="Manage discovered projects")
+async def import_projects(
+    node_id: str,
+    body: schemas.ImportIn,
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Make the folders managed projects (with labels). Disk and containers are not touched."""
+    authorise(conn, registry, who, node_id, "projects.import")
+    await _existing_audited(conn, registry, who, "project.import", request, node_id, body.projects)
+    labels = states.clean_labels(body.labels)
+    states.set_state(conn, node_id, body.projects, "managed", labels)
+    _record(conn, registry, who, "project.import", node_id, body.projects, labels=labels)
+    return {"imported": body.projects}
+
+
+@router.post("/ignore", summary="Set discovered projects aside")
+async def ignore_projects(
+    node_id: str,
+    body: schemas.ImportIn,
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Hide the folders from the import list. A managed project is never ignored this way."""
+    authorise(conn, registry, who, node_id, "projects.import")
+    await _existing_audited(conn, registry, who, "project.ignore", request, node_id, body.projects)
+    known = states.all_states(conn, node_id)
+    if any(known.get(name, ("", []))[0] == "managed" for name in body.projects):
+        error = ApiError("projects.already_managed", 409)
+        audit_failure(
+            conn, registry, who, "project.ignore", node_id, {"projects": len(body.projects)}, error
+        )
+        raise error
+    states.set_state(conn, node_id, body.projects, "ignored")
+    _record(conn, registry, who, "project.ignore", node_id, body.projects)
+    return {"ignored": body.projects}
+
+
+@router.post("/{project}/unmanage", status_code=204, summary="Stop managing a project")
+async def unmanage_project(
+    node_id: str,
+    project: str,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> None:
+    """Take a project out of Armadok, or bring an ignored one back to the discovered list.
+
+    Neither the folder nor its containers are touched: it only stops being shown and usable here.
+    """
+    authorise(conn, registry, who, node_id, "projects.import")
+    _names(project, "compose.yaml")
+    previous = states.forget(conn, node_id, project)
+    if previous is None:
+        raise ApiError("projects.not_found", 404)
+    _record(
+        conn,
+        registry,
+        who,
+        "project.unmanage" if previous == "managed" else "project.restore",
+        node_id,
+        [project],
+    )
 
 
 @router.get("/{project}/files/{file}", summary="Read a Compose file")
@@ -55,6 +197,7 @@ async def read_file(
     """Return the file's text and its version hash. Reads are audited (files can hold secrets)."""
     _names(project, file)
     authorise(conn, registry, who, node_id, "projects.files.read", ("project", project))
+    states.require_managed(conn, node_id, project)
     try:
         answer = await ask(
             request,
@@ -104,6 +247,7 @@ async def write_file(
     """
     _names(project, file)
     authorise(conn, registry, who, node_id, "projects.files.write", ("project", project))
+    states.require_managed(conn, node_id, project)
     sent = body.content.encode()
     try:
         answer = await ask(
@@ -162,6 +306,9 @@ async def create_project(
     """
     authorise(conn, registry, who, node_id, "projects.create")
     details = {"project": body.name, "env": body.env is not None}
+    claimed = states.claim(
+        conn, node_id, body.name
+    )  # a project made here is managed from the start
     try:
         answer = await ask(
             request,
@@ -178,6 +325,8 @@ async def create_project(
         ):
             raise ApiError("worker.invalid_answer", 502)
     except ApiError as error:
+        if claimed:
+            states.forget(conn, node_id, body.name)
         audit_failure(conn, registry, who, "project.create", node_id, details, error)
         raise
     audit.record(

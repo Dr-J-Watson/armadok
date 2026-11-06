@@ -11,12 +11,24 @@ const SHA1 = 'a'.repeat(64)
 const SHA2 = 'b'.repeat(64)
 const puts: { path: string; body: { content: string; expected_sha256: string | null } }[] = []
 let putStatus = 200
+const imports: Record<string, unknown>[] = []
 
 function server(opts: { projects?: unknown; fileSha?: () => string } = {}) {
   puts.length = 0
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const path = String(input).replace('/api/v1', '')
     const method = (init?.method ?? 'GET').toUpperCase()
+    if (path === '/nodes/n1/projects/discovered')
+      return json({
+        projects: [
+          { name: 'wiki', files: ['compose.yaml'], has_env: true, has_git: false, services: ['app', 'db'], error: null, state: 'discovered' },
+          { name: 'old', files: ['compose.yaml'], has_env: false, has_git: false, services: [], error: null, state: 'ignored' },
+        ],
+      })
+    if (path === '/nodes/n1/projects/import' && method === 'POST') {
+      imports.push(JSON.parse(String(init?.body)))
+      return json({ imported: [] })
+    }
     if (path === '/nodes/n1/projects')
       return json(opts.projects ?? { projects: [{ name: 'blog', files: ['compose.yaml'] }] })
     if (path === '/nodes/n1/projects/blog/files/compose.yaml') {
@@ -97,7 +109,7 @@ describe('projects tab', () => {
   it('shows an empty state when the folder has no Compose project', async () => {
     server({ projects: { projects: [] } })
     renderTab()
-    expect(await screen.findByText(/No Compose project found/)).toBeInTheDocument()
+    expect(await screen.findByText(/No project is managed yet/)).toBeInTheDocument()
   })
 })
 
@@ -141,5 +153,20 @@ describe('running a project', () => {
     renderTab('/nodes/n1?tab=projects&project=blog&file=compose.yaml')
     await userEvent.click(await screen.findByRole('button', { name: 'Restart' }))
     expect(await screen.findByText('An action is already running for this project.')).toBeInTheDocument()
+  })
+
+  it('offers the folders that are not imported, and imports the selection with labels', async () => {
+    imports.length = 0
+    server()
+    renderTab()
+    await userEvent.click(await screen.findByRole('button', { name: 'To import (1)' }))
+    expect(await screen.findByText('app, db')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('checkbox', { name: 'wiki' }))
+    await userEvent.type(screen.getByLabelText(/^Labels/), 'web, prod')
+    await userEvent.click(screen.getByRole('button', { name: 'Import the selection (1)' }))
+    expect(imports).toEqual([{ projects: ['wiki'], labels: ['web', 'prod'] }])
+    // The ignored folders are kept apart.
+    await userEvent.click(screen.getByRole('button', { name: 'Ignored (1)' }))
+    expect(await screen.findByRole('button', { name: 'Restore' })).toBeInTheDocument()
   })
 })

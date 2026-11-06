@@ -188,7 +188,7 @@ def test_a_place_is_tested_kept_and_then_applies_to_every_call_of_the_node(box):
     after = client.get(url, headers=admin).json()["places"]["projects_dir"]
     assert after["value"] == "prod" and after["valid"] is True
     # The real projects listing now only sees what is inside the sub-folder.
-    listed = client.get(f"/api/v1/nodes/{node}/projects", headers=admin).json()
+    listed = client.get(f"/api/v1/nodes/{node}/projects/discovered", headers=admin).json()
     assert [p["name"] for p in listed["projects"]] == ["deep"]
     # Putting it back to the default.
     client.put(url, headers=admin, json={"places": {"projects_dir": ""}})
