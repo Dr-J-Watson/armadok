@@ -335,7 +335,8 @@ a.menu-item { display: flex; align-items: center; gap: .5rem; padding: .35rem 1r
 .swatch[data-type='middleware'] { background: var(--t-middleware); } .swatch[data-type='container'] { background: var(--t-container); }
 .swatch[data-type='project'] { background: var(--t-project); } .swatch[data-type='image'] { background: var(--t-image); }
 .swatch[data-type='network'] { background: var(--t-network); } .swatch[data-type='volume'] { background: var(--t-volume); }
-.map-layout { display: grid; gap: var(--gap); grid-template-columns: 1fr; }
+.map-layout { display: grid; gap: var(--gap); grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 72rem) { .map-layout:not(.map-layout-graph) { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } .map-side { position: sticky; top: 1rem; } }
 .map-canvas { height: 62vh; min-height: 22rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
 .object-list { margin-top: var(--gap); }
 .object-list ul { list-style: none; padding: 0; max-height: 18rem; overflow: auto; }
@@ -654,3 +655,31 @@ ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
 .map-tools .icon-button { color: var(--text); }
 .map-tools .icon-button:hover { background: var(--accent-soft); color: var(--accent); }
 .map-hint { margin: .35rem .25rem 0; }
+
+/* Map overview: one card per project. */
+.map-bar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: .75rem; }
+.map-bar input[type='search'] { flex: 1; min-width: 12rem; }
+.legend-fold { margin-bottom: 1rem; }
+.legend-fold summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+.map-side { display: grid; gap: var(--gap); }
+.overview { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); }
+.proj-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 1rem 1.1rem; display: grid; gap: .75rem; align-content: start; }
+.proj-card header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.proj-card h3 { margin: 0; font-size: 1.05rem; }
+.proj-card h4 { margin: 0 0 .4rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.proj-loose { border-style: dashed; grid-column: 1 / -1; }
+.flow, .container-row, .chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin-bottom: .45rem; }
+.flow-arrow { color: var(--muted); flex: none; }
+.container-row { padding: .45rem .55rem; background: var(--surface-2); border-radius: var(--radius); }
+.uses { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
+.chip { display: inline-flex; align-items: center; gap: .4rem; min-height: 0; padding: .18rem .65rem .18rem .5rem; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-size: .86rem; font-weight: 550; box-shadow: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip::before { content: ''; width: .6rem; height: .6rem; border-radius: 50%; flex: none; background: var(--t-other); }
+.chip[data-type='domain']::before { background: var(--t-domain); } .chip[data-type='router']::before { background: var(--t-router); }
+.chip[data-type='middleware']::before { background: var(--t-middleware); } .chip[data-type='container']::before { background: var(--t-container); }
+.chip[data-type='project']::before { background: var(--t-project); } .chip[data-type='image']::before { background: var(--t-image); }
+.chip[data-type='network']::before { background: var(--t-network); } .chip[data-type='volume']::before { background: var(--t-volume); }
+.chip-quiet { font-weight: 450; font-size: .8rem; color: var(--muted); border-color: var(--border); background: transparent; }
+.chip:hover { border-color: var(--accent-line); color: var(--text); }
+.chip[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.chip[data-linked='true'] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.segmented button { white-space: nowrap; }

@@ -5,7 +5,7 @@
   "show": "Afficher",
   "list": "Liste textuelle des objets",
   "search": "Chercher un objet",
-  "pickOne": "Choisissez un objet sur la carte ou dans la liste pour voir à quoi il est lié.",
+  "pickOne": "Cliquez sur un nom pour voir à quoi il est relié.",
   "noLinks": "Rien n'est lié à cet objet.",
   "openContainers": "Ouvrir dans Conteneurs",
   "unavailable": "Certaines relations n'ont pas pu être chargées ({{provider}}).",
@@ -39,5 +39,16 @@
   "fit": "Tout afficher",
   "enlarge": "Plein écran",
   "shrink": "Quitter le plein écran",
-  "hint": "De gauche à droite : de l'adresse que tapent les visiteurs à ce qui la fait tourner. Cliquez sur un objet pour suivre ses liens ; molette pour zoomer, glisser pour déplacer."
+  "hint": "De gauche à droite : de l'adresse que tapent les visiteurs à ce qui la fait tourner. Molette pour zoomer, glisser pour déplacer.",
+  "view.title": "Affichage",
+  "view.cards": "Vue d'ensemble",
+  "view.graph": "Graphe complet",
+  "overview.noProject": "Sans projet",
+  "overview.containers": "{{count}} conteneur(s)",
+  "overview.containersTitle": "Conteneurs",
+  "overview.sites": "Adresses",
+  "overview.noDomain": "aucun domaine",
+  "overview.loose": "Utilisés par rien",
+  "overview.looseHint": "Images, réseaux et volumes qu'aucun conteneur n'utilise.",
+  "around": "Autour de {{name}}"
 }

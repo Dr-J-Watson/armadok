@@ -5,7 +5,7 @@
   "show": "Show",
   "list": "Text list of objects",
   "search": "Search an object",
-  "pickOne": "Choose an object on the map or in the list to see what it is linked to.",
+  "pickOne": "Click a name to see what it is linked to.",
   "noLinks": "Nothing is linked to this object.",
   "openContainers": "Open in Containers",
   "unavailable": "Some relations could not be loaded ({{provider}}).",
@@ -39,5 +39,16 @@
   "fit": "Show everything",
   "enlarge": "Full screen",
   "shrink": "Leave full screen",
-  "hint": "Left to right: from the address visitors type to what runs it. Click an object to follow its links; scroll to zoom, drag to move."
+  "hint": "Left to right: from the address visitors type to what runs it. Scroll to zoom, drag to move.",
+  "view.title": "View",
+  "view.cards": "Overview",
+  "view.graph": "Full graph",
+  "overview.noProject": "Without a project",
+  "overview.containers": "{{count}} container(s)",
+  "overview.containersTitle": "Containers",
+  "overview.sites": "Addresses",
+  "overview.noDomain": "no domain",
+  "overview.loose": "Not used by anything",
+  "overview.looseHint": "Images, networks and volumes no container uses.",
+  "around": "Around {{name}}"
 }

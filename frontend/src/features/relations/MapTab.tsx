@@ -7,7 +7,8 @@ import { codeMessage } from '../../core/errors'
 import { readPref, writePref } from '../../core/storage'
 import { GraphView } from './GraphView'
 import { RelationsPanel } from './RelationsPanel'
-import { buildElements, matchesSearch, objectKey, typesOf } from './graph'
+import { Overview } from './Overview'
+import { buildElements, buildOverview, matchesSearch, objectKey, typesOf } from './graph'
 import type { RelationsMap } from './graph'
 import { Problem } from '../../components/Problem'
 
@@ -41,6 +42,7 @@ export function MapTab({ nodeId }: { nodeId: string }) {
   const [params, setParams] = useSearchParams()
   const [hidden, setHidden] = useState(() => loadHidden(nodeId))
   const [search, setSearch] = useState('')
+  const [view, setView] = useState<'cards' | 'graph'>('cards')
   const [selected, setSelected] = useState<string | null>(params.get('focus'))
 
   const map = useQuery({
@@ -87,6 +89,10 @@ export function MapTab({ nodeId }: { nodeId: string }) {
   }
 
   const unavailable = Object.entries(map.data.unavailable)
+  const data = answer ?? map.data
+  const overview = buildOverview(data, visible)
+  const linked = new Set(selected ? [...data.links.flatMap((l) => (objectKey(l.source) === selected ? [objectKey(l.target)] : objectKey(l.target) === selected ? [objectKey(l.source)] : []))] : [])
+  const matching = search.trim() ? new Set(matches.map(objectKey)) : null
   return (
     <>
       {unavailable.map(([provider, code]) => (
@@ -99,64 +105,58 @@ export function MapTab({ nodeId }: { nodeId: string }) {
         <p className="empty">{t('relations:empty')}</p>
       ) : (
         <>
-          <fieldset className="legend">
-            <legend>{t('relations:show')}</legend>
-            {types.map((type) => (
-              <label key={type} className="legend-item">
-                <input type="checkbox" checked={!hidden.has(type)} onChange={() => toggle(type)} />
-                <span className="swatch" data-type={type} aria-hidden="true" />
-                {t(`relations:types.${type}`, { defaultValue: type })}
-              </label>
-            ))}
-          </fieldset>
-
-          <div className="map-layout">
-            <div>
-              <GraphView elements={elements} selected={selected} onSelect={select} themeKey={themeKey} />
-              <details className="object-list">
-                <summary>{t('relations:list')}</summary>
-                <label htmlFor="map-search" className="visually-hidden">
-                  {t('relations:search')}
+          <div className="map-bar">
+            <div className="segmented" role="group" aria-label={t('relations:view.title')}>
+              {(['cards', 'graph'] as const).map((v) => (
+                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>
+                  {t(`relations:view.${v}`)}
+                </button>
+              ))}
+            </div>
+            <label htmlFor="map-search" className="visually-hidden">
+              {t('relations:search')}
+            </label>
+            <input id="map-search" type="search" placeholder={t('relations:search')} value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <details className="legend-fold">
+            <summary>{t('relations:show')}</summary>
+            <fieldset className="legend">
+              <legend className="visually-hidden">{t('relations:show')}</legend>
+              {types.map((type) => (
+                <label key={type} className="legend-item">
+                  <input type="checkbox" checked={!hidden.has(type)} onChange={() => toggle(type)} />
+                  <span className="swatch" data-type={type} aria-hidden="true" />
+                  {t(`relations:types.${type}`, { defaultValue: type })}
                 </label>
-                <input
-                  id="map-search"
-                  type="search"
-                  placeholder={t('relations:search')}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <ul>
-                  {matches.map((o) => (
-                    <li key={objectKey(o)}>
-                      <button
-                        type="button"
-                        className="link-button"
-                        aria-pressed={selected === objectKey(o)}
-                        onClick={() => select(objectKey(o))}
-                      >
-                        {o.label}
-                      </button>{' '}
-                      <span className="badge">{t(`relations:types.${o.type}`, { defaultValue: o.type })}</span>
-                    </li>
-                  ))}
-                </ul>
-              </details>
+              ))}
+            </fieldset>
+          </details>
+
+          <div className={`map-layout${view === 'graph' ? ' map-layout-graph' : ''}`}>
+            <div>
+              {view === 'cards' ? (
+                <Overview data={overview} selected={selected} onSelect={select} matching={matching} linked={linked} />
+              ) : (
+                <GraphView elements={elements} selected={selected} onSelect={select} themeKey={themeKey} />
+              )}
             </div>
 
-            <div>
+            <div className="map-side">
               {selectedObject ? (
-                <RelationsPanel
-                  nodeId={nodeId}
-                  object={selectedObject}
-                  onSelect={select}
-                  extra={
-                    selectedObject.type === 'container' && (
-                      <p>
-                        <Link to={`/nodes/${nodeId}?tab=containers`}>{t('relations:openContainers')}</Link>
-                      </p>
-                    )
-                  }
-                />
+                <>
+                  <RelationsPanel
+                    nodeId={nodeId}
+                    object={selectedObject}
+                    onSelect={select}
+                    extra={
+                      selectedObject.type === 'container' && (
+                        <p>
+                          <Link to={`/nodes/${nodeId}?tab=containers`}>{t('relations:openContainers')}</Link>
+                        </p>
+                      )
+                    }
+                  />
+                </>
               ) : (
                 <p className="hint">{t('relations:pickOne')}</p>
               )}

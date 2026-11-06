@@ -138,18 +138,27 @@ export function GraphView({ elements, selected, onSelect, themeKey }: Props) {
     return [...heads, ...placed]
   }, [elements, t])
 
-  // Build the drawing again when the data or the theme changes (not at every refresh: the parent
-  // hands over the same elements while nothing changed).
+  // The drawing is rebuilt only when what it shows really changes (not at every refresh or
+  // render), and the zoom and position the person chose are put back afterwards.
+  const signature = JSON.stringify(drawn)
+  const drawnRef = useRef(drawn)
+  useEffect(() => {
+    drawnRef.current = drawn
+  })
+  const scope = 'all'
+  const view = useRef<{ scope: string; zoom: number; pan: { x: number; y: number } } | null>(null)
   useEffect(() => {
     if (!container.current) return
+    const keep = view.current && view.current.scope === scope ? view.current : null
     const instance = cytoscape({
       container: container.current,
-      elements: drawn,
+      elements: drawnRef.current,
       style: stylesheet(),
-      layout: { name: 'preset', fit: true, padding: 30 },
+      layout: { name: 'preset', fit: !keep, padding: 30 },
       wheelSensitivity: 0.25,
       minZoom: 0.15,
       maxZoom: 2.5,
+      ...(keep ? { zoom: keep.zoom, pan: keep.pan } : {}),
     })
     instance.on('tap', 'node', (event) => onSelectRef.current(event.target.id()))
     instance.on('tap', (event) => {
@@ -166,10 +175,11 @@ export function GraphView({ elements, selected, onSelect, themeKey }: Props) {
     })
     cy.current = instance
     return () => {
+      view.current = { scope, zoom: instance.zoom(), pan: instance.pan() }
       instance.destroy()
       cy.current = null
     }
-  }, [drawn, themeKey])
+  }, [signature, themeKey, scope])
 
   // The canvas keeps its size by itself only if told when its box changes.
   useEffect(() => {
@@ -194,9 +204,15 @@ export function GraphView({ elements, selected, onSelect, themeKey }: Props) {
     })
     if (selected) {
       const node = instance.getElementById(selected)
-      if (!node.empty()) instance.animate({ center: { eles: node }, duration: 200 })
+      // Only move the view when the object is out of sight; never rescale it.
+      if (!node.empty()) {
+        const box = node.boundingBox()
+        const seen = instance.extent()
+        const inside = box.x1 >= seen.x1 && box.x2 <= seen.x2 && box.y1 >= seen.y1 && box.y2 <= seen.y2
+        if (!inside) instance.animate({ center: { eles: node }, duration: 200 })
+      }
     }
-  }, [selected, drawn, themeKey])
+  }, [selected, signature, themeKey])
 
   const zoom = (factor: number) => {
     const instance = cy.current

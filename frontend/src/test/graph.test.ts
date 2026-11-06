@@ -1,4 +1,4 @@
-import { buildElements, layoutMap, matchesSearch, objectKey, typesOf } from '../features/relations/graph'
+import { buildElements, buildOverview, layoutMap, matchesSearch, objectKey, typesOf } from '../features/relations/graph'
 import type { RelationsMap } from '../features/relations/graph'
 
 const map: RelationsMap = {
@@ -69,5 +69,37 @@ describe('relations map layout', () => {
   it('gives the same layout for the same data', () => {
     const nodes = [{ id: 'a', type: 'container' }, { id: 'b', type: 'container' }]
     expect(layoutMap(nodes, [])).toEqual(layoutMap([...nodes].reverse(), []))
+  })
+})
+
+describe('relations overview', () => {
+  const m: RelationsMap = {
+    objects: [
+      { type: 'project', id: 'app', label: 'app' },
+      { type: 'container', id: 'c1', label: 'app-web-1' },
+      { type: 'image', id: 'i1', label: 'nginx' },
+      { type: 'image', id: 'i2', label: 'unused' },
+      { type: 'router', id: 'r', label: 'app' },
+      { type: 'domain', id: 'd', label: 'app.example.com' },
+      { type: 'container', id: 'c2', label: 'traefik' },
+    ],
+    links: [
+      { source: { type: 'container', id: 'c1' }, target: { type: 'project', id: 'app' }, kind: 'part_of' },
+      { source: { type: 'container', id: 'c1' }, target: { type: 'image', id: 'i1' }, kind: 'runs' },
+      { source: { type: 'router', id: 'r' }, target: { type: 'container', id: 'c1' }, kind: 'routes_to' },
+      { source: { type: 'domain', id: 'd' }, target: { type: 'router', id: 'r' }, kind: 'serves' },
+    ],
+    unavailable: {},
+  }
+  const all = new Set(typesOf(m.objects))
+
+  it('groups a project with its containers, their image and the addresses that reach them', () => {
+    const { projects, loose } = buildOverview(m, all)
+    expect(projects[0].project?.id).toBe('app')
+    expect(projects[0].containers[0].images.map((i) => i.label)).toEqual(['nginx'])
+    expect(projects[0].sites[0].domains.map((d) => d.label)).toEqual(['app.example.com'])
+    // A container outside any project gets a card of its own; an unused image is listed apart.
+    expect(projects[1].project).toBeNull()
+    expect(loose).toEqual([{ type: 'image', objects: [m.objects[3]] }])
   })
 })
