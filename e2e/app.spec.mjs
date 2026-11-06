@@ -78,6 +78,18 @@ test('the search opens with Ctrl+K, finds a node and goes to it', async ({ page 
   await expect(page.getByRole('heading', { name: /Garage server/ })).toBeVisible()
 })
 
+test('the live connection is opened once and stays open while moving around', async ({ page }) => {
+  // A connection that restarted at every redraw made the status light blink and every screen
+  // reload: count the sockets the browser opens.
+  let sockets = 0
+  page.on('websocket', () => sockets++)
+  await signIn(page)
+  await page.getByRole('link', { name: 'Nodes', exact: true }).first().click()
+  await page.getByRole('link', { name: 'DNS', exact: true }).first().click()
+  await page.waitForTimeout(3000)
+  expect(sockets).toBe(1)
+})
+
 test('an unknown address says so kindly and links back', async ({ page }) => {
   await signIn(page)
   await page.goto('/nothing-here')
