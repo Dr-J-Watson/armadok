@@ -60,5 +60,8 @@
   "depth2": "2 links away",
   "depth3": "3 links away",
   "close": "Close the details",
-  "resetLayout": "Put everything back in place"
+  "resetLayout": "Put everything back in place",
+  "types.compose": "Compose group (not imported)",
+  "notImported": "Docker runs this group, but Armadok does not manage it: its folder is not one of your projects.",
+  "importIt": "Import it from Projects (New project, From running containers)"
 }

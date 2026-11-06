@@ -318,22 +318,22 @@ a.menu-item { display: flex; align-items: center; gap: .5rem; padding: .35rem 1r
 .legend legend { padding: 0 .25rem; color: var(--muted); font-size: .85rem; }
 :root {
   --t-domain: #c05a9b; --t-router: #d98a1f; --t-middleware: #b0a02a; --t-container: #3b6fe0;
-  --t-project: #6b4fc9; --t-image: #3a9a8a; --t-network: #4aa14a; --t-volume: #a06a3a; --t-other: #7a828f;
+  --t-project: #6b4fc9; --t-compose: #8e86b8; --t-image: #3a9a8a; --t-network: #4aa14a; --t-volume: #a06a3a; --t-other: #7a828f;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --t-domain: #e58ac3; --t-router: #f0a840; --t-middleware: #d6c64a; --t-container: #7ea6ff;
-    --t-project: #a28cf0; --t-image: #5fc7b5; --t-network: #6fcf6f; --t-volume: #d29a62; --t-other: #9aa5b4;
+    --t-project: #a28cf0; --t-compose: #b8b0d8; --t-image: #5fc7b5; --t-network: #6fcf6f; --t-volume: #d29a62; --t-other: #9aa5b4;
   }
 }
 :root[data-theme='dark'] {
   --t-domain: #e58ac3; --t-router: #f0a840; --t-middleware: #d6c64a; --t-container: #7ea6ff;
-  --t-project: #a28cf0; --t-image: #5fc7b5; --t-network: #6fcf6f; --t-volume: #d29a62; --t-other: #9aa5b4;
+  --t-project: #a28cf0; --t-compose: #b8b0d8; --t-image: #5fc7b5; --t-network: #6fcf6f; --t-volume: #d29a62; --t-other: #9aa5b4;
 }
 .swatch { width: .9rem; height: .9rem; border-radius: 50%; background: var(--t-other); border: 1px solid var(--border); }
 .swatch[data-type='domain'] { background: var(--t-domain); } .swatch[data-type='router'] { background: var(--t-router); }
 .swatch[data-type='middleware'] { background: var(--t-middleware); } .swatch[data-type='container'] { background: var(--t-container); }
-.swatch[data-type='project'] { background: var(--t-project); } .swatch[data-type='image'] { background: var(--t-image); }
+.swatch[data-type='project'] { background: var(--t-project); } .swatch[data-type='compose'] { background: var(--t-compose); } .swatch[data-type='image'] { background: var(--t-image); }
 .swatch[data-type='network'] { background: var(--t-network); } .swatch[data-type='volume'] { background: var(--t-volume); }
 .map-layout { display: grid; gap: var(--gap); grid-template-columns: 1fr; align-items: start; }
 @media (min-width: 72rem) { .map-layout:not(.map-layout-graph) { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } .map-side { position: sticky; top: 1rem; } }

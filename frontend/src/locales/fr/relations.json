@@ -60,5 +60,8 @@
   "depth2": "À 2 liens",
   "depth3": "À 3 liens",
   "close": "Fermer les détails",
-  "resetLayout": "Tout remettre en place"
+  "resetLayout": "Tout remettre en place",
+  "types.compose": "Groupe Compose (non importé)",
+  "notImported": "Docker fait tourner ce groupe, mais Armadok ne le gère pas : son dossier n'est pas l'un de vos projets.",
+  "importIt": "L'importer depuis Projets (Nouveau projet, À partir de conteneurs en marche)"
 }

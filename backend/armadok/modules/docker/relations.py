@@ -1,7 +1,10 @@
 """Relations the Docker module knows about: containers and what they touch.
 
-Objects: container, image, project (Compose), network, volume, and, from the Traefik labels
-on containers, router, domain and middleware. Links are stored once and read both ways.
+Objects: container, image, network, volume, and, from the Traefik labels on containers, router,
+domain and middleware. A Compose group is a `project` when its folder is one Armadok manages (a
+folder of the node's projects directory) and a `compose` group otherwise: a container is not a
+project just because Docker labels it, it becomes one when its folder is imported. Links are
+stored once and read both ways.
 """
 
 from __future__ import annotations
@@ -12,6 +15,7 @@ from typing import Any
 from armadok.core.errors import ApiError
 from armadok.core.module import RelationData, RelationLink, RelationObject
 from armadok.modules.docker import schemas
+from armadok.modules.projects import schemas as project_schemas
 from armadok.modules.workers.routes import call_operation
 
 _ROUTER_RULE = re.compile(r"traefik\.http\.routers\.([A-Za-z0-9_.-]+)\.rule")
@@ -28,6 +32,7 @@ async def provide(app: Any, node_id: str, viewer: Any) -> RelationData:
     except Exception:
         raise ApiError("worker.invalid_answer", 502) from None
 
+    managed = await _managed_projects(app, node_id)
     objects: dict[tuple[str, str], RelationObject] = {}
     links: list[RelationLink] = []
 
@@ -40,7 +45,8 @@ async def provide(app: Any, node_id: str, viewer: Any) -> RelationData:
         container = add("container", c.id, c.names[0] if c.names else c.id[:12])
         links.append(RelationLink(container, add("image", c.image), "runs"))
         if project := c.labels.get("com.docker.compose.project"):
-            links.append(RelationLink(container, add("project", project), "part_of"))
+            kind = "project" if project in managed else "compose"
+            links.append(RelationLink(container, add(kind, project), "part_of"))
         for network in c.networks:
             links.append(RelationLink(container, add("network", network), "attached_to"))
         for mount in c.mounts:
@@ -58,4 +64,20 @@ async def provide(app: Any, node_id: str, viewer: Any) -> RelationData:
                     # A name without a provider belongs to the same one as the router.
                     full = name if "@" in name else f"{name}@docker"
                     links.append(RelationLink(router, add("middleware", full), "uses"))
+    # A managed project with nothing running is still on the map.
+    for name in sorted(managed):
+        add("project", name)
     return RelationData(tuple(objects.values()), tuple(links))
+
+
+async def _managed_projects(app: Any, node_id: str) -> set[str]:
+    """Names of the folders Armadok manages on the node; empty when it cannot tell.
+
+    A node with no projects folder, or one whose worker cannot answer, simply has no managed
+    project: the map must not fail for that.
+    """
+    try:
+        answer = await call_operation(app, app.state.registry, node_id, "projects.list", {})
+        return {p.name for p in project_schemas.ProjectList.model_validate(answer).projects}
+    except Exception:
+        return set()

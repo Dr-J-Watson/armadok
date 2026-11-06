@@ -18,7 +18,7 @@ def test_map_links_container_network_volume_image_project_router_domain(live):  
     assert {
         ("container", "web"),
         ("image", "nginx:1.27"),
-        ("project", "demo"),
+        ("compose", "demo"),  # Docker labels it, but no folder of that name is managed
         ("network", "demo_default"),
         ("volume", "data"),
         ("router", "web@docker"),
@@ -28,7 +28,7 @@ def test_map_links_container_network_volume_image_project_router_domain(live):  
     links = {(k["source"]["type"], k["kind"], k["target"]["type"]) for k in graph["links"]}
     assert {
         ("container", "runs", "image"),
-        ("container", "part_of", "project"),
+        ("container", "part_of", "compose"),
         ("container", "attached_to", "network"),
         ("container", "mounts", "volume"),
         ("router", "routes_to", "container"),
@@ -100,3 +100,21 @@ def test_offline_worker_is_reported_not_fatal(live):  # noqa: F811
     ).json()["id"]
     graph = graph_of(client, headers, node_id)
     assert graph["objects"] == [] and graph["unavailable"] == {"docker": "worker.not_connected"}
+
+
+def test_a_compose_group_becomes_a_project_once_its_folder_is_managed(live, monkeypatch):  # noqa: F811
+    client, headers, port, tmp_path = live
+    stacks = tmp_path / "stacks"
+    (stacks / "demo").mkdir(parents=True)
+    (stacks / "demo" / "compose.yaml").write_text("services: {}\n")
+    (stacks / "idle").mkdir()
+    (stacks / "idle" / "compose.yaml").write_text("services: {}\n")
+    monkeypatch.setenv("ARMADOK_PROJECTS_DIR", str(stacks))
+    node_id, stop = connect_worker(client, headers, port, tmp_path, "docker")
+    graph = graph_of(client, headers, node_id)
+    kinds = {(o["type"], o["label"]) for o in graph["objects"]}
+    # The running group whose folder exists is a project; so is a managed folder with nothing
+    # running.
+    assert ("project", "demo") in kinds and ("project", "idle") in kinds
+    assert ("compose", "demo") not in kinds
+    stop.set()

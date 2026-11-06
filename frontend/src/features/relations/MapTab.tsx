@@ -179,10 +179,16 @@ export function MapTab({ nodeId }: { nodeId: string }) {
                   object={selectedObject}
                   onSelect={select}
                   extra={
-                    selectedObject.type === 'container' && (
-                      <p>
-                        <Link to={`/nodes/${nodeId}?tab=containers`}>{t('relations:openContainers')}</Link>
+                    selectedObject.type === 'compose' ? (
+                      <p className="notice">
+                        {t('relations:notImported')} <Link to={`/nodes/${nodeId}?tab=projects`}>{t('relations:importIt')}</Link>
                       </p>
+                    ) : (
+                      selectedObject.type === 'container' && (
+                        <p>
+                          <Link to={`/nodes/${nodeId}?tab=containers`}>{t('relations:openContainers')}</Link>
+                        </p>
+                      )
                     )
                   }
                 />
