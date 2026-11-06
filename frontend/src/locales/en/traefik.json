@@ -317,5 +317,21 @@
   "schema.help.middlewares": "In the order they are applied.",
   "schema.group.browser": "Browser security",
   "schema.group.cors": "CORS",
-  "schema.group.hosts": "Hosts and proxy"
+  "schema.group.hosts": "Hosts and proxy",
+  "form.targetService": "An existing service",
+  "form.service": "Service",
+  "form.priority": "Priority",
+  "form.priorityAuto": "Empty = automatic",
+  "form.addCondition": "Condition (AND)…",
+  "form.conditionType": "Kind of condition",
+  "form.conditionName": "Name",
+  "form.conditionValue": "Value",
+  "form.removeCondition": "Remove the condition",
+  "form.addServer": "Another server (load sharing)",
+  "form.extraServer": "Another server address",
+  "form.removeServer": "Remove this server",
+  "form.extraServerTip": "Requests are shared between all the servers of the site.",
+  "block.dns": "DNS",
+  "block.dnsHelp": "Whether each address already has a DNS record leading to this server.",
+  "form.dnsLater": "not checked"
 }

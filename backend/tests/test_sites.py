@@ -667,3 +667,71 @@ def test_a_lying_worker_answer_is_refused(hub, monkeypatch):
     )
     bad = client.post(url(node, "sites"), headers=admin, json=body())
     assert bad.status_code == 502 and bad.json()["error"]["code"] == "worker.invalid_answer"
+
+
+# --- later additions: priority, more servers, an existing service, extra conditions ---------------
+
+
+def _spec(**more):
+    base = {"name": "blog", "hosts": ["blog.example.com"], "container": "blog-web", "port": 80}
+    return sitebuilder.SiteSpec.model_validate({**base, **more})
+
+
+def test_a_site_written_before_the_additions_is_still_recognised_as_untouched():
+    old = sitebuilder.render(_spec())
+    assert "priority" not in old.splitlines()[1] and "conditions" not in old
+    assert sitebuilder.untouched(old) is not None
+
+
+def test_priority_conditions_and_extra_servers_are_rendered_in_the_router_and_service():
+    spec = _spec(
+        priority=50,
+        servers=["http://192.0.2.7:8080"],
+        conditions=[
+            {"type": "PathPrefix", "value": "/api"},
+            {"type": "Method", "value": "POST"},
+            {"type": "Header", "name": "X-Token", "value": "abc"},
+        ],
+        hosts=["a.example.com", "b.example.com"],
+    )
+    doc = yaml.safe_load(sitebuilder.render(spec))["http"]
+    router = doc["routers"]["blog"]
+    assert router["priority"] == 50
+    assert router["rule"] == (
+        "(Host(`a.example.com`) || Host(`b.example.com`)) && PathPrefix(`/api`)"
+        " && Method(`POST`) && Header(`X-Token`, `abc`)"
+    )
+    assert [s["url"] for s in doc["services"]["blog"]["loadBalancer"]["servers"]] == [
+        "http://blog-web:80",
+        "http://192.0.2.7:8080",
+    ]
+    assert sitebuilder.untouched(sitebuilder.render(spec)) == spec  # the form can open it again
+
+
+def test_an_existing_service_replaces_the_target_and_no_service_is_written():
+    spec = sitebuilder.SiteSpec.model_validate(
+        {"name": "blog", "hosts": ["blog.example.com"], "service": "shared@file"}
+    )
+    doc = yaml.safe_load(sitebuilder.render(spec))["http"]
+    assert doc["routers"]["blog"]["service"] == "shared@file" and "services" not in doc
+    for bad in (
+        {"container": "x", "port": 80},
+        {"url": "http://192.0.2.1"},
+        {"servers": ["http://192.0.2.1"]},
+    ):
+        with pytest.raises(ValueError):
+            _spec(service="shared@file", **{k: v for k, v in bad.items()})
+
+
+def test_a_condition_cannot_end_its_value_or_add_a_rule():
+    for bad in (
+        {"type": "PathPrefix", "value": "/a`) || Host(`evil.example.com"},
+        {"type": "Method", "value": "GET\nPOST"},
+        {"type": "Path", "value": "no-slash"},
+        {"type": "Header", "value": "x"},  # a header needs its name
+        {"type": "Method", "value": "GET", "name": "X"},  # a method has none
+    ):
+        with pytest.raises(ValueError):
+            _spec(conditions=[bad])
+    with pytest.raises(ValueError):
+        _spec(servers=["http://user:pw@192.0.2.1"])

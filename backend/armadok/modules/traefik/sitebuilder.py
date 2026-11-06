@@ -34,9 +34,51 @@ HEADER = "# Managed by Armadok. Change it with the site form: a manual edit bloc
 SPEC_PREFIX = "# armadok-site: "
 MAX_SPEC_LINE = 4096  # a real description is a few hundred characters
 
+# A value in a rule sits between backticks: anything but a backtick or a control character is plain
+# text there (that is how Traefik reads it), so a value can never end the string and add a rule.
+RULE_VALUE = re.compile(r"[^`\x00-\x1f\x7f]{1,200}")
+
 SiteName = Annotated[str, StringConstraints(pattern=SITE_NAME_PATTERN)]
 TraefikName = Annotated[str, StringConstraints(pattern=rf"^{NAME}$")]
 MiddlewareRef = Annotated[str, StringConstraints(pattern=rf"^{NAME}(@[a-z]{{1,20}})?$")]
+
+
+class Condition(BaseModel):
+    """One more condition a request must meet (joined with the hosts by AND)."""
+
+    model_config = ConfigDict(extra="forbid")
+    type: Literal[
+        "PathPrefix", "Path", "PathRegexp", "Method", "Header", "HeaderRegexp", "Query",
+        "QueryRegexp", "ClientIP",
+    ]  # fmt: skip
+    value: str
+    # The header or parameter a Header / Query condition looks at.
+    name: str | None = None
+
+    @model_validator(mode="after")
+    def well_formed(self) -> Condition:
+        """Check the value, and that only the conditions that take a name have one."""
+        if not RULE_VALUE.fullmatch(self.value):
+            raise ValueError("invalid value")
+        takes_name = self.type in ("Header", "HeaderRegexp", "Query", "QueryRegexp")
+        if takes_name != (self.name is not None) or (
+            self.name is not None and not RULE_VALUE.fullmatch(self.name)
+        ):
+            raise ValueError("invalid name")
+        if self.type in ("Path", "PathPrefix") and not self.value.startswith("/"):
+            raise ValueError("a path starts with /")
+        return self
+
+    def render(self) -> str:
+        """Return the matcher as Traefik writes it."""
+        if self.name is not None:
+            return f"{self.type}(`{self.name}`, `{self.value}`)"
+        return f"{self.type}(`{self.value}`)"
+
+
+# Fields added after the first release: left out of the stored description while they hold their
+# default, so a file written before them is still recognised as untouched.
+_LATER_DEFAULTS: dict = {"priority": None, "servers": [], "service": None, "conditions": []}
 
 
 class SiteSpec(BaseModel):
@@ -54,6 +96,14 @@ class SiteSpec(BaseModel):
     https: bool = True
     cert_resolver: TraefikName | None = None
     entrypoints: list[TraefikName] | None = Field(default=None, max_length=5)
+    priority: int | None = Field(default=None, ge=1, le=1_000_000)
+    # More upstreams for the same site (the load is shared between them).
+    servers: list[Annotated[str, StringConstraints(max_length=300)]] = Field(
+        default_factory=list, max_length=10
+    )
+    # An existing service to send to, instead of making one.
+    service: MiddlewareRef | None = None
+    conditions: list[Condition] = Field(default_factory=list, max_length=10)
 
     @field_validator("hosts")
     @classmethod
@@ -76,14 +126,19 @@ class SiteSpec(BaseModel):
 
     @model_validator(mode="after")
     def one_target(self) -> SiteSpec:
-        """Exactly one target: a container with a port, or a plain server address."""
-        if (self.container is None) == (self.url is None):
-            raise ValueError("give a container or an address")
-        if self.container is not None:
+        """Exactly one target: a container with a port, a plain server address, or a service."""
+        if self.service is not None:
+            if self.container or self.url or self.port or self.servers:
+                raise ValueError("a service replaces the other targets")
+        elif (self.container is None) == (self.url is None):
+            raise ValueError("give a container, an address or a service")
+        elif self.container is not None:
             if not CONTAINER.fullmatch(self.container) or self.port is None:
                 raise ValueError("invalid container target")
         else:
             self.server_address()  # raises when unusable
+        for extra in self.servers:
+            _upstream(extra)
         if self.cert_resolver and not self.https:
             raise ValueError("a certificate resolver needs HTTPS")
         return self
@@ -93,30 +148,38 @@ class SiteSpec(BaseModel):
         if self.container is not None:
             return f"{self.scheme}://{self.container}:{self.port}"
         assert self.url is not None
-        try:
-            parts = urlsplit(self.url)
-            port = parts.port
-        except ValueError:
-            raise ValueError("invalid address") from None
-        if (
-            parts.scheme not in ("http", "https")
-            or not parts.hostname
-            or not SERVER_HOST.fullmatch(parts.hostname)
-            or parts.username
-            or parts.password
-            or parts.path not in ("", "/")
-            or parts.query
-            or parts.fragment
-        ):
-            raise ValueError("invalid address")
-        return f"{parts.scheme}://{parts.hostname}" + (f":{port}" if port else "")
+        return _upstream(self.url)
 
     def rule(self) -> str:
-        """Return the Traefik rule: any of the hosts, below the path prefix if there is one."""
+        """Return the Traefik rule: any of the hosts, and every extra condition."""
         hosts = " || ".join(f"Host(`{h}`)" for h in self.hosts)
-        if len(self.hosts) > 1 and self.path_prefix:
+        more = ([f"PathPrefix(`{self.path_prefix}`)"] if self.path_prefix else []) + [
+            c.render() for c in self.conditions
+        ]
+        if len(self.hosts) > 1 and more:
             hosts = f"({hosts})"
-        return hosts + (f" && PathPrefix(`{self.path_prefix}`)" if self.path_prefix else "")
+        return " && ".join([hosts, *more])
+
+
+def _upstream(url: str) -> str:
+    """Reduce an address to `scheme://host[:port]`, or raise when it is not a plain server."""
+    try:
+        parts = urlsplit(url)
+        port = parts.port
+    except ValueError:
+        raise ValueError("invalid address") from None
+    if (
+        parts.scheme not in ("http", "https")
+        or not parts.hostname
+        or not SERVER_HOST.fullmatch(parts.hostname)
+        or parts.username
+        or parts.password
+        or parts.path not in ("", "/")
+        or parts.query
+        or parts.fragment
+    ):
+        raise ValueError("invalid address")
+    return f"{parts.scheme}://{parts.hostname}" + (f":{port}" if port else "")
 
 
 def render(spec: SiteSpec) -> str:
@@ -124,22 +187,24 @@ def render(spec: SiteSpec) -> str:
     router: dict = {
         "rule": spec.rule(),
         "entryPoints": spec.entrypoints or (["websecure"] if spec.https else ["web"]),
-        "service": spec.name,
+        "service": spec.service or spec.name,
     }
+    if spec.priority is not None:
+        router["priority"] = spec.priority
     if spec.middlewares:
         router["middlewares"] = list(spec.middlewares)
     if spec.https:
         router["tls"] = {"certResolver": spec.cert_resolver} if spec.cert_resolver else {}
-    document = {
-        "http": {
-            "routers": {spec.name: router},
-            "services": {
-                spec.name: {"loadBalancer": {"servers": [{"url": spec.server_address()}]}}
-            },
+    http: dict = {"routers": {spec.name: router}}
+    if spec.service is None:
+        upstreams = [spec.server_address(), *(_upstream(u) for u in spec.servers)]
+        http["services"] = {
+            spec.name: {"loadBalancer": {"servers": [{"url": u} for u in upstreams]}}
         }
-    }
+    document = {"http": http}
     body = yaml.safe_dump(document, sort_keys=False, default_flow_style=False, allow_unicode=False)
-    line = json.dumps(spec.model_dump(), sort_keys=True, separators=(",", ":"))
+    stored = {k: v for k, v in spec.model_dump().items() if _LATER_DEFAULTS.get(k, object()) != v}
+    line = json.dumps(stored, sort_keys=True, separators=(",", ":"))
     return f"{HEADER}{SPEC_PREFIX}{line}\n{body}"
 
 

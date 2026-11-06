@@ -581,6 +581,7 @@ ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
   --tone-apply: #d4560c;
   --tone-send: #1b9a52;
   --tone-https: #6d4ce0;
+  --tone-dns: #0b7285;
 }
 :root:not([data-theme='light']) {
   --tone-when: #4a90f0; --tone-apply: #f0752b; --tone-send: #34b36c; --tone-https: #8f73f5;
@@ -794,3 +795,8 @@ ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
 .mw-card header .switch { margin-left: auto; margin-top: .15rem; }
 a.icon-button { display: inline-flex; align-items: center; justify-content: center; padding: .3rem; color: var(--muted); border-radius: var(--radius); text-decoration: none; }
 a.icon-button:hover { color: var(--text); background: var(--surface-2); }
+.block-dns { --tone: var(--tone-dns); }
+.block-row .badge { margin-left: 0; }
+.block-conditions { display: grid; gap: .4rem; }
+.block-cond { display: grid; grid-template-columns: 9rem 1fr 1fr auto; gap: .4rem; align-items: center; }
+@media (max-width: 40rem) { .block-cond { grid-template-columns: 1fr; } }

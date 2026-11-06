@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { errorMessage } from '../../core/errors'
 import { Block } from '../../components/Block'
-import { ArrowDown, ArrowUp, Globe, Lock, Pencil, Plus, Route, Send, Shield, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Cloud, Globe, Lock, Pencil, Plus, Route, Send, Shield, X } from 'lucide-react'
+import { Drawer } from '../../components/Drawer'
 
 export interface SiteSpec {
   name: string
@@ -19,7 +20,20 @@ export interface SiteSpec {
   https: boolean
   cert_resolver: string | null
   entrypoints: string[] | null
+  priority?: number | null
+  servers?: string[]
+  service?: string | null
+  conditions?: Condition[]
 }
+
+export interface Condition {
+  type: string
+  value: string
+  name?: string | null
+}
+
+const CONDITIONS = ['PathPrefix', 'Path', 'PathRegexp', 'Method', 'Header', 'HeaderRegexp', 'Query', 'QueryRegexp', 'ClientIP']
+const NAMED = ['Header', 'HeaderRegexp', 'Query', 'QueryRegexp']
 
 interface DockerContainer {
   names: string[]
@@ -38,6 +52,10 @@ const EMPTY: SiteSpec = {
   https: true,
   cert_resolver: null,
   entrypoints: null,
+  priority: null,
+  servers: [],
+  service: null,
+  conditions: [],
 }
 
 // The site builder: "when someone visits … apply … then send to … over HTTPS". The server
@@ -53,14 +71,15 @@ export function SiteForm({
   expectedSha256?: string
   onDone: (created?: { hosts: string[]; https: boolean }) => void
 }) {
-  const { t } = useTranslation(['traefik', 'errors'])
+  const { t } = useTranslation(['traefik', 'dns', 'errors'])
   const queryClient = useQueryClient()
   const editing = initial !== undefined
   const [spec, setSpec] = useState<SiteSpec>(initial ?? EMPTY)
   // One row per address; there is always at least one row to type in.
   const [hosts, setHosts] = useState<string[]>(initial?.hosts?.length ? initial.hosts : [''])
   const [entrypointsText, setEntrypointsText] = useState((initial?.entrypoints ?? []).join(', '))
-  const [byAddress, setByAddress] = useState(initial?.url != null)
+  const [target, setTarget] = useState<'container' | 'address' | 'service'>(initial?.service ? 'service' : initial?.url != null ? 'address' : 'container')
+  const byAddress = target === 'address'
   const [preview, setPreview] = useState<{ yaml: string; name_taken: boolean } | null>(null)
 
   // Suggestions only: the machine may have no Docker, and a name can be typed by hand.
@@ -80,7 +99,12 @@ export function SiteForm({
   const defaultResolver = defaults.data?.traefik_resolver ?? ''
   const known = useQuery({
     queryKey: ['traefik-sites', nodeId],
-    queryFn: () => api.get<{ middlewares: { id: string }[] }>(`/nodes/${nodeId}/traefik/sites`),
+    queryFn: () => api.get<{ middlewares: { id: string }[]; services: { id: string }[] }>(`/nodes/${nodeId}/traefik/sites`),
+  })
+  const dns = useQuery({
+    queryKey: ['dns-report', nodeId],
+    queryFn: () => api.get<{ hosts: { host: string; status: string; resolves: string[] }[] }>(`/nodes/${nodeId}/dns/report`),
+    retry: false,
   })
 
   const entered = entrypointsText.split(/[\s,]+/).filter(Boolean)
@@ -89,9 +113,13 @@ export function SiteForm({
       ...spec,
       hosts: hosts.map((h) => h.trim()).filter(Boolean),
       path_prefix: spec.path_prefix || null,
-      container: byAddress ? null : spec.container,
+      container: target === 'container' ? spec.container : null,
       url: byAddress ? spec.url : null,
-      port: byAddress ? null : spec.port,
+      port: target === 'container' ? spec.port : null,
+      service: target === 'service' ? spec.service || null : null,
+      servers: target === 'service' ? [] : (spec.servers ?? []).map((u) => u.trim()).filter(Boolean),
+      priority: spec.priority || null,
+      conditions: (spec.conditions ?? []).filter((c) => c.value.trim() !== ''),
       cert_resolver: spec.https ? spec.cert_resolver || (editing ? null : defaultResolver || null) : null,
       entrypoints: entered.length > 0 ? entered : editing ? null : defaultEntrypoints.length > 0 ? defaultEntrypoints : null,
     },
@@ -137,10 +165,28 @@ export function SiteForm({
   const hasPath = spec.path_prefix !== null
 
   return (
-    <form onSubmit={submit} aria-label={t(editing ? 'traefik:form.edit' : 'traefik:form.new')}>
-      <h3>{t(editing ? 'traefik:form.edit' : 'traefik:form.new')}</h3>
+    <Drawer
+      title={spec.name || t(editing ? 'traefik:form.edit' : 'traefik:form.new')}
+      badge="HTTP"
+      onClose={() => onDone()}
+      footer={
+        <>
+          <button type="button" onClick={() => show.mutate()} disabled={show.isPending}>
+            {t('traefik:form.preview')}
+          </button>
+          <button type="button" onClick={() => onDone()}>
+            {t('traefik:form.cancel')}
+          </button>
+          <button type="submit" form="site-form" className="primary" disabled={save.isPending}>
+            {t('traefik:form.save')}
+          </button>
+        </>
+      }
+    >
+    <form id="site-form" onSubmit={submit} aria-label={t(editing ? 'traefik:form.edit' : 'traefik:form.new')}>
       <div className="block-flow">
         <Block tone="name" icon={Pencil} title={t('traefik:block.name')} help={t('traefik:block.nameHelp')}>
+          <div className="block-pair">
           <label>
             {t('traefik:form.name')}
             <input
@@ -151,6 +197,17 @@ export function SiteForm({
               onChange={(e) => setSpec({ ...spec, name: e.target.value })}
             />
           </label>
+          <label>
+            {t('traefik:form.priority')}
+            <input
+              type="number"
+              min={1}
+              value={spec.priority ?? ''}
+              placeholder={t('traefik:form.priorityAuto')}
+              onChange={(e) => setSpec({ ...spec, priority: e.target.value === '' ? null : Number(e.target.value) })}
+            />
+          </label>
+          </div>
         </Block>
 
         <Block tone="when" icon={Globe} title={t('traefik:block.when')} help={t('traefik:block.whenHelp')}>
@@ -185,6 +242,22 @@ export function SiteForm({
               </button>
             </div>
           )}
+          {(spec.conditions ?? []).map((c, i) => (
+            <div className="block-cond" key={i}>
+              <select aria-label={t('traefik:form.conditionType')} value={c.type} onChange={(e) => setSpec({ ...spec, conditions: (spec.conditions ?? []).map((x, j) => (j === i ? { type: e.target.value, value: x.value, name: NAMED.includes(e.target.value) ? (x.name ?? '') : null } : x)) })}>
+                {CONDITIONS.map((x) => <option key={x} value={x}>{x}</option>)}
+              </select>
+              {NAMED.includes(c.type) ? (
+                <input aria-label={t('traefik:form.conditionName')} placeholder={t('traefik:form.conditionName')} value={c.name ?? ''} onChange={(e) => setSpec({ ...spec, conditions: (spec.conditions ?? []).map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} />
+              ) : (
+                <span />
+              )}
+              <input aria-label={t('traefik:form.conditionValue')} placeholder={t('traefik:form.conditionValue')} value={c.value} onChange={(e) => setSpec({ ...spec, conditions: (spec.conditions ?? []).map((x, j) => (j === i ? { ...x, value: e.target.value } : x)) })} />
+              <button type="button" className="icon-button" aria-label={t('traefik:form.removeCondition')} onClick={() => setSpec({ ...spec, conditions: (spec.conditions ?? []).filter((_, j) => j !== i) })}>
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
           <div className="block-add">
             <button type="button" onClick={() => setHosts([...hosts, ''])}>
               <Plus size={14} aria-hidden="true" /> {t('traefik:form.addHost')}
@@ -194,6 +267,9 @@ export function SiteForm({
                 <Plus size={14} aria-hidden="true" /> {t('traefik:form.addPath')}
               </button>
             )}
+            <button type="button" onClick={() => setSpec({ ...spec, conditions: [...(spec.conditions ?? []), { type: 'Method', value: '' }] })}>
+              <Plus size={14} aria-hidden="true" /> {t('traefik:form.addCondition')}
+            </button>
           </div>
         </Block>
 
@@ -238,14 +314,23 @@ export function SiteForm({
 
         <Block tone="send" icon={Send} title={t('traefik:block.send')} help={t('traefik:block.sendHelp')}>
           <div className="block-switch" role="group" aria-label={t('traefik:form.target')}>
-            <button type="button" aria-pressed={!byAddress} className={!byAddress ? 'primary' : undefined} onClick={() => setByAddress(false)}>
+            <button type="button" aria-pressed={target === 'container'} className={target === 'container' ? 'primary' : undefined} onClick={() => setTarget('container')}>
               {t('traefik:form.targetContainer')}
             </button>
-            <button type="button" aria-pressed={byAddress} className={byAddress ? 'primary' : undefined} onClick={() => setByAddress(true)}>
+            <button type="button" aria-pressed={byAddress} className={byAddress ? 'primary' : undefined} onClick={() => setTarget('address')}>
               {t('traefik:form.targetAddress')}
             </button>
+            <button type="button" aria-pressed={target === 'service'} className={target === 'service' ? 'primary' : undefined} onClick={() => setTarget('service')}>
+              {t('traefik:form.targetService')}
+            </button>
           </div>
-          {byAddress ? (
+          {target === 'service' ? (
+            <label>
+              {t('traefik:form.service')}
+              <input list="site-services" value={spec.service ?? ''} placeholder="shared@file" onChange={(e) => setSpec({ ...spec, service: e.target.value })} />
+              <datalist id="site-services">{(known.data?.services ?? []).map((x) => <option key={x.id} value={x.id} />)}</datalist>
+            </label>
+          ) : byAddress ? (
             <label>
               {t('traefik:form.address')}
               <input value={spec.url ?? ''} placeholder="http://192.0.2.10:8080" onChange={(e) => setSpec({ ...spec, url: e.target.value })} />
@@ -271,6 +356,25 @@ export function SiteForm({
                   onChange={(e) => setSpec({ ...spec, port: Number(e.target.value) || null })}
                 />
               </label>
+            </div>
+          )}
+ 
+          {target !== 'service' && (
+            <div className="block-conditions">
+              {(spec.servers ?? []).map((url, i) => (
+                <div className="block-row" key={i}>
+                  <Send size={16} aria-hidden="true" />
+                  <input aria-label={t('traefik:form.extraServer')} value={url} placeholder="http://192.0.2.11:8080" onChange={(e) => setSpec({ ...spec, servers: (spec.servers ?? []).map((u, j) => (j === i ? e.target.value : u)) })} />
+                  <button type="button" className="icon-button" aria-label={t('traefik:form.removeServer')} onClick={() => setSpec({ ...spec, servers: (spec.servers ?? []).filter((_, j) => j !== i) })}>
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+              <div className="block-add">
+                <button type="button" title={t('traefik:form.extraServerTip')} onClick={() => setSpec({ ...spec, servers: [...(spec.servers ?? []), ''] })}>
+                  <Plus size={14} aria-hidden="true" /> {t('traefik:form.addServer')}
+                </button>
+              </div>
             </div>
           )}
         </Block>
@@ -299,17 +403,27 @@ export function SiteForm({
             </label>
           )}
         </Block>
-      </div>
-      <div className="actions">
-        <button type="button" onClick={() => show.mutate()} disabled={show.isPending}>
-          {t('traefik:form.preview')}
-        </button>
-        <button type="submit" className="primary" disabled={save.isPending}>
-          {t('traefik:form.save')}
-        </button>
-        <button type="button" onClick={() => onDone()}>
-          {t('traefik:form.cancel')}
-        </button>
+
+        {hosts.some((h) => h.trim() !== '') && (dns.data?.hosts.length ?? 0) > 0 && (
+          <Block tone="dns" icon={Cloud} title={t('traefik:block.dns')} help={t('traefik:block.dnsHelp')}>
+            {hosts.filter((h) => h.trim() !== '').map((h) => {
+              const row = dns.data?.hosts.find((x) => x.host === h.trim().toLowerCase())
+              return (
+                <p className="block-row" key={h}>
+                  <code>{h.trim()}</code>
+                  {row ? (
+                    <span className={`badge ${row.status === 'present' ? 'ok' : row.status === 'missing' ? 'warn' : ''}`}>
+                      {t(`dns:report.states.${row.status}`, { defaultValue: row.status })}
+                      {(row.resolves ?? []).length > 0 && ` · ${(row.resolves ?? []).join(", ")}`}
+                    </span>
+                  ) : (
+                    <span className="hint">{t('traefik:form.dnsLater')}</span>
+                  )}
+                </p>
+              )
+            })}
+          </Block>
+        )}
       </div>
       {preview?.name_taken && !editing && (
         <p className="notice" role="alert">
@@ -323,5 +437,6 @@ export function SiteForm({
         </p>
       )}
     </form>
+    </Drawer>
   )
 }

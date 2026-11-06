@@ -317,5 +317,21 @@
   "schema.help.middlewares": "Dans l'ordre où ils sont appliqués.",
   "schema.group.browser": "Sécurité du navigateur",
   "schema.group.cors": "CORS",
-  "schema.group.hosts": "Hôtes et proxy"
+  "schema.group.hosts": "Hôtes et proxy",
+  "form.targetService": "Un service existant",
+  "form.service": "Service",
+  "form.priority": "Priorité",
+  "form.priorityAuto": "Vide = automatique",
+  "form.addCondition": "Condition (ET)…",
+  "form.conditionType": "Type de condition",
+  "form.conditionName": "Nom",
+  "form.conditionValue": "Valeur",
+  "form.removeCondition": "Retirer la condition",
+  "form.addServer": "Serveur supplémentaire (répartition)",
+  "form.extraServer": "Adresse d'un autre serveur",
+  "form.removeServer": "Retirer ce serveur",
+  "form.extraServerTip": "Les requêtes sont réparties entre tous les serveurs du site.",
+  "block.dns": "DNS",
+  "block.dnsHelp": "Dit si chaque adresse a déjà un enregistrement DNS qui mène à ce serveur.",
+  "form.dnsLater": "non vérifié"
 }
