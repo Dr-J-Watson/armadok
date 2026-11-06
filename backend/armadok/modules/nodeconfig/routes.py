@@ -274,3 +274,44 @@ async def check_places(
         request, registry, node_id, "config.check", {"values": body.places}, Checked
     )
     return {"errors": checked.errors}
+
+
+class Entry(BaseModel):
+    """One name offered by the worker (untrusted): a plain name only."""
+
+    model_config = ConfigDict(extra="ignore", strict=True)
+    name: str = Field(max_length=64, pattern=catalogue.NAME.pattern)
+    project: bool
+
+
+class Browsed(BaseModel):
+    """The worker's answer to `config.browse`."""
+
+    model_config = ConfigDict(extra="ignore", strict=True)
+    kind: Literal["dir", "file"]
+    entries: list[Entry] = Field(max_length=200)
+    truncated: bool = False
+
+
+@router.get("/browse", summary="List what can be picked for a place")
+async def browse(
+    node_id: str,
+    place: str,
+    request: Request,
+    path: str = "",
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict[str, Any]:
+    """Return the sub-folders (or sibling files) of a place under its root, one level.
+
+    Needs `nodeconfig.write`: it tells which folders exist. A project folder is marked, not
+    hidden, so the interface can show why it cannot be chosen.
+    """
+    authorise(conn, registry, who, node_id, "nodeconfig.write")
+    if place not in catalogue.PLACES_BY_TYPE.get(_node_type(conn, node_id), ()) or len(path) > 400:
+        raise ApiError("nodeconfig.not_for_node_type", 422)
+    answer = await _ask(
+        request, registry, node_id, "config.browse", {"place": place, "path": path}, Browsed
+    )
+    return answer.model_dump()

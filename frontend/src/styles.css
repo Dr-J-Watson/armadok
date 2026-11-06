@@ -628,3 +628,6 @@ ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
 .path-row { display: flex; align-items: center; gap: .3rem; }
 .path-row code { color: var(--muted); white-space: nowrap; }
 .path-row input { flex: 1; min-width: 0; }
+.picker { border: 1px solid var(--border); border-radius: 10px; padding: .6rem .8rem; background: var(--surface-2); display: flex; flex-direction: column; gap: .5rem; }
+.picker-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.picker-list button { display: inline-flex; align-items: center; gap: .35rem; }

@@ -23,5 +23,13 @@
   "readOnly": "You can read these settings but not change them.",
   "code": "Authenticator code (to confirm)",
   "save": "Save",
-  "reason.forbidden": "This is a project folder or the hub's own data: it cannot be used."
+  "reason.forbidden": "This is a project folder or the hub's own data: it cannot be used.",
+  "browse": "Browse…",
+  "where": "Where you are",
+  "pickFile": "Pick a file next to the root file.",
+  "emptyFolder": "No sub-folder here.",
+  "isProject": "a project",
+  "truncated": "The list is cut: type the name instead.",
+  "useFolder": "Use {{path}}",
+  "useRoot": "Use the root itself"
 }

@@ -378,3 +378,87 @@ def test_deployments_and_backups_start_their_thread_with_the_settings():
 
     assert "nodeconfig.start_thread" in open(compose_ops.__file__).read()
     assert "nodeconfig.start_thread" in open(backup_ops.__file__).read()
+
+
+# --- browsing ------------------------------------------------------------
+
+
+def names(listing):
+    return [(e["name"], e["project"]) for e in listing["entries"]]
+
+
+def test_browsing_lists_one_level_and_marks_projects(roots):
+    stacks, _ = roots
+    got = nodeconfig.browse({"place": "projects_dir", "path": ""})
+    assert got["kind"] == "dir" and got["truncated"] is False
+    assert names(got) == [("prod", False), ("test", False)]  # the plain file "afile" is no folder
+    deeper = nodeconfig.browse({"place": "projects_dir", "path": "prod"})
+    assert names(deeper) == [("deep", True)]  # a project folder: shown, not enterable
+    with pytest.raises(OperationError):
+        nodeconfig.browse({"place": "projects_dir", "path": "prod/deep"})
+
+
+def test_browsing_never_lists_links_protected_folders_or_odd_names(roots, tmp_path):
+    stacks, _ = roots
+    (stacks / "alias").symlink_to(stacks / "prod")
+    (stacks / "bad name").mkdir()
+    nodeconfig.protect(stacks / "test")
+    try:
+        assert names(nodeconfig.browse({"place": "projects_dir", "path": ""})) == [("prod", False)]
+    finally:
+        nodeconfig._protected.remove((stacks / "test").resolve())
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        {"place": "evil", "path": ""},
+        {"place": "projects_dir", "path": "../etc"},
+        {"place": "projects_dir", "path": "/etc"},
+        {"place": "backup_dir", "path": ""},  # the environment gives no root for it
+        {"place": "projects_dir", "path": 5},
+    ],
+)
+def test_browsing_cannot_look_elsewhere(roots, args):
+    with pytest.raises(OperationError) as refused:
+        nodeconfig.browse(args)
+    assert refused.value.code == "worker.config_invalid"
+
+
+def test_browsing_a_file_place_lists_the_files_with_the_roots_extension(roots):
+    _, logs = roots
+    for name in ("access.log", "other.log", "notes.txt"):
+        (logs / name).write_text("x")
+    (logs / "sub.log").mkdir()
+    (logs / "link.log").symlink_to(logs / "access.log")
+    got = nodeconfig.browse({"place": "accesslog_file", "path": ""})
+    assert got["kind"] == "file" and names(got) == [("access.log", False), ("other.log", False)]
+
+
+def test_the_listing_is_bounded(roots, monkeypatch):
+    stacks, _ = roots
+    monkeypatch.setattr(nodeconfig, "MAX_LISTED", 2)
+    for name in ("a1", "a2", "a3"):
+        (stacks / name).mkdir()
+    got = nodeconfig.browse({"place": "projects_dir", "path": ""})
+    assert len(got["entries"]) == 2 and got["truncated"] is True
+
+
+def test_the_hub_browses_for_writers_only_and_checks_the_place_for_the_node_type(box):
+    client, admin, app = box
+    node = local_node(client, admin)
+    url = f"/api/v1/nodes/{node}/settings/browse"
+    got = client.get(url + "?place=projects_dir", headers=admin).json()
+    assert ("prod", False) in [(e["name"], e["project"]) for e in got["entries"]]
+    assert client.get(url + "?place=projects_dir&path=prod", headers=admin).json()["entries"] == [
+        {"name": "deep", "project": True}
+    ]
+    assert client.get(url + "?place=evil", headers=admin).status_code == 422
+    assert client.get(url + "?place=projects_dir&path=..%2Fetc", headers=admin).status_code == 422
+    _, olga, docker_node = owner_with_node(client, admin)
+    wrong = client.get(
+        f"/api/v1/nodes/{docker_node}/settings/browse?place=traefik_dir", headers=olga
+    )
+    assert wrong.status_code == 422
+    _, stranger = person(client, admin, "sam3")
+    assert client.get(url + "?place=projects_dir", headers=stranger).status_code == 404

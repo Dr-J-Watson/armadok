@@ -89,3 +89,26 @@ describe('node configuration', () => {
     expect(screen.getByLabelText(/Projects folder/)).toBeDisabled()
   })
 })
+
+describe('folder picker', () => {
+  it('walks down the folders, refuses a project, and fills the field with the chosen path', async () => {
+    const asked: string[] = []
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const path = String(input).replace('/api/v1', '')
+      if (path.includes('/settings/browse')) {
+        asked.push(decodeURIComponent(path.split('path=')[1] ?? ''))
+        const deeper = path.includes('path=prod')
+        return json({ kind: 'dir', truncated: false, entries: deeper ? [{ name: 'web', project: true }, { name: 'more', project: false }] : [{ name: 'prod', project: false }] })
+      }
+      return json(settings())
+    })
+    wrap()
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Browse…' }))[0])
+    await userEvent.click(await screen.findByRole('button', { name: /prod/ }))
+    expect(await screen.findByRole('button', { name: /web/ })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: /more/ }))
+    expect(asked).toContain('prod/more')
+    await userEvent.click(await screen.findByRole('button', { name: 'Use prod/more' }))
+    expect(screen.getByLabelText(/Projects folder/)).toHaveValue('prod/more')
+  })
+})

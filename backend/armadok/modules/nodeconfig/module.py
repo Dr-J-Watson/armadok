@@ -40,7 +40,11 @@ module = Module(
         ),
     ),
     audit_events=("nodeconfig.update",),
-    worker_ops=(WorkerOp("config.describe", _ALL), WorkerOp("config.check", _ALL)),
+    worker_ops=(
+        WorkerOp("config.describe", _ALL),
+        WorkerOp("config.check", _ALL),
+        WorkerOp("config.browse", _ALL),
+    ),
     worker_context=(_worker_values,),
     migrations=(repository.MIGRATION,),
     startup=(_protect_data,),

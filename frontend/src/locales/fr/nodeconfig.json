@@ -23,5 +23,13 @@
   "readOnly": "Vous pouvez lire ces réglages mais pas les modifier.",
   "code": "Code de l'authentificateur (pour confirmer)",
   "save": "Enregistrer",
-  "reason.forbidden": "C'est un dossier de projet ou les données du hub : il ne peut pas être utilisé."
+  "reason.forbidden": "C'est un dossier de projet ou les données du hub : il ne peut pas être utilisé.",
+  "browse": "Parcourir…",
+  "where": "Où vous êtes",
+  "pickFile": "Choisissez un fichier à côté du fichier racine.",
+  "emptyFolder": "Aucun sous-dossier ici.",
+  "isProject": "un projet",
+  "truncated": "La liste est coupée : tapez le nom à la place.",
+  "useFolder": "Utiliser {{path}}",
+  "useRoot": "Utiliser la racine elle-même"
 }

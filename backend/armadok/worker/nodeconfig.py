@@ -76,6 +76,12 @@ def _protected_folders() -> list[Path]:
     return found
 
 
+def _touches_protected(path: Path) -> bool:
+    """Say whether a folder is, contains, or lies under one a narrowing must never reach."""
+    real = path.resolve()
+    return any(g == real or g in real.parents or real in g.parents for g in _protected_folders())
+
+
 def _narrow(name: str, root: str, value: str) -> str:
     """Return the path a setting's value points to, or raise `ValueError`.
 
@@ -104,9 +110,8 @@ def _narrow(name: str, root: str, value: str) -> str:
                 raise ValueError("not_found")
             if any((current / marker).exists() for marker in _PROJECT_MARKERS):
                 raise ValueError("forbidden")
-        for guarded in _protected_folders():
-            if current == guarded or guarded in current.parents or current in guarded.parents:
-                raise ValueError("forbidden")
+        if _touches_protected(current):
+            raise ValueError("forbidden")
         return str(current)
     except FileNotFoundError:
         raise ValueError("not_found") from None
@@ -211,7 +216,57 @@ def check(args: dict[str, Any]) -> dict[str, Any]:
     return {"errors": errors}
 
 
+MAX_LISTED = 200
+
+
+def browse(args: dict[str, Any]) -> dict[str, Any]:
+    """List what can be picked for a place, one level at a time.
+
+    For a folder place: the sub-folders of `root/path` (names only; a link is never listed, the
+    hub's own data is left out, and a project folder is listed as such so it can be shown but not
+    entered). For a file place: the files beside the root file that carry its extension. The
+    path is checked like any value, so this cannot be used to look elsewhere.
+
+    Errors: `worker.config_invalid` for a place or path that is not allowed.
+    """
+    name, value = args.get("place"), args.get("path", "")
+    if name not in SETTINGS or not isinstance(value, str) or len(value) > MAX_VALUE:
+        raise OperationError("worker.config_invalid")
+    root = _root(name)
+    if root is None:
+        raise OperationError("worker.config_invalid")
+    entries: list[dict[str, Any]] = []
+    truncated = False
+    try:
+        if SETTINGS[name].kind == "file":
+            folder, suffix = Path(root).parent, Path(root).suffix
+            candidates = sorted(os.scandir(folder), key=lambda e: e.name)
+            for entry in candidates:
+                if not (entry.is_file(follow_symlinks=False) and NAME.fullmatch(entry.name)):
+                    continue
+                if Path(entry.name).suffix == suffix:
+                    entries.append({"name": entry.name, "project": False})
+        else:
+            here = Path(_narrow(name, root, value)) if value else Path(root).resolve()
+            for entry in sorted(os.scandir(here), key=lambda e: e.name):
+                if not (entry.is_dir(follow_symlinks=False) and NAME.fullmatch(entry.name)):
+                    continue
+                child = here / entry.name
+                if _touches_protected(child):
+                    continue
+                is_project = any((child / marker).exists() for marker in _PROJECT_MARKERS)
+                entries.append({"name": entry.name, "project": is_project})
+    except ValueError:
+        raise OperationError("worker.config_invalid") from None
+    except OSError:
+        raise OperationError("worker.not_found") from None
+    if len(entries) > MAX_LISTED:
+        entries, truncated = entries[:MAX_LISTED], True
+    return {"kind": SETTINGS[name].kind, "entries": entries, "truncated": truncated}
+
+
 OPERATIONS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "config.describe": describe,
     "config.check": check,
+    "config.browse": browse,
 }

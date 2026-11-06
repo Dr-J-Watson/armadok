@@ -21,10 +21,17 @@ services:
       # a compromised hub could do what the Docker socket allows. Remove these lines (and the
       # socket below) if you only manage other machines through workers.
       ARMADOK_LOCAL_NODE: "true"
-      # Optional folders the local node may use (mount them below):
+      # Optional folders the local node may use (mount them below). These are ROOTS: in a node's
+      # Configuration tab a person with the right can only pick a sub-folder inside them.
       # ARMADOK_PROJECTS_DIR: /stacks
+      # The same folder as the Docker daemon sees it (the host path): needed for the terminal.
+      # ARMADOK_PROJECTS_HOST_DIR: ${PROJECTS_DIR}
       # ARMADOK_TRAEFIK_DIR: /traefik-dynamic
       # ARMADOK_BACKUP_DIR: /backups
+      # Traefik's metrics, on a private entry point of the same Docker network (not published).
+      # ARMADOK_TRAEFIK_METRICS_URL: http://traefik:8080/metrics
+      # Traefik's JSON access log, for the Visitors panel (mount the file read-only below).
+      # ARMADOK_TRAEFIK_ACCESSLOG: /traefik-logs/access.log
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
@@ -36,6 +43,8 @@ services:
       # - ${BACKUP_DIR}:/backups
     group_add:
       - ${DOCKER_GID:?set it in .env}
+      # The group that may write in the projects and Traefik folders (when they are mounted).
+      # - ${PROJECTS_GID}
     read_only: true
     tmpfs:
       - /tmp

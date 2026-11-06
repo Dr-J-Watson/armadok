@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Problem } from '../../components/Problem'
 import { api } from '../../core/api'
 import { useAuth } from '../../core/auth'
+import { FolderPicker } from './FolderPicker'
 
 interface Place {
   kind: 'dir' | 'file' | null
@@ -40,6 +41,8 @@ export function NodeSettings({ nodeId }: { nodeId: string }) {
   const [resolver, setResolver] = useState<string | null>(null)
   const [code, setCode] = useState('')
   const [refused, setRefused] = useState<Record<string, string>>({})
+  // The place whose picker is open (one at a time).
+  const [picking, setPicking] = useState<string | null>(null)
 
   const save = useMutation({
     mutationFn: async () => {
@@ -102,6 +105,23 @@ export function NodeSettings({ nodeId }: { nodeId: string }) {
                   onChange={(e) => setEdits({ ...edits, [name]: e.target.value })}
                 />
               </span>
+            )}
+            {data.can_write && place.root !== null && (
+              <button type="button" className="link-button" onClick={() => setPicking(picking === name ? null : name)}>
+                {t('nodeconfig:browse')}
+              </button>
+            )}
+            {picking === name && place.root !== null && (
+              <FolderPicker
+                nodeId={nodeId}
+                place={name}
+                root={place.root}
+                start={place.kind === 'dir' ? (edits[name] ?? place.value) : ''}
+                onPick={(value) => {
+                  setEdits({ ...edits, [name]: value })
+                  setPicking(null)
+                }}
+              />
             )}
             {!place.valid && <small className="error">{t('nodeconfig:invalidNow')}</small>}
             {refused[name] && <small className="error">{t(`nodeconfig:reason.${refused[name]}`, { defaultValue: refused[name] })}</small>}
