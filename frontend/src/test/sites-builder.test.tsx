@@ -54,7 +54,7 @@ describe('site builder', () => {
     renderIt()
     await userEvent.click(await screen.findByRole('button', { name: 'New site' }))
     await userEvent.type(screen.getByLabelText(/^Name/), 'blog')
-    await userEvent.type(screen.getByLabelText(/When someone visits/), 'blog.example.com')
+    await userEvent.type(screen.getByLabelText('Address'), 'blog.example.com')
     await userEvent.type(screen.getByLabelText('Container name'), 'blog-web')
     expect(screen.getByLabelText('Port')).toHaveValue(8080)
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
