@@ -80,18 +80,18 @@ describe('relations map', () => {
     )
   })
 
-  it('hides a type from the list and remembers it for this node only', async () => {
+  it('hides images by default, shows them on request and remembers the choice for this node only', async () => {
     serve()
     const { unmount } = renderMap()
     await userEvent.click(await screen.findByText('Text list of objects'))
-    expect(await screen.findByRole('button', { name: 'nginx:1.27' })).toBeInTheDocument()
-    await userEvent.click(await screen.findByRole('checkbox', { name: 'Image' }))
     expect(screen.queryByRole('button', { name: 'nginx:1.27' })).not.toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Image' }))
+    expect(await screen.findByRole('button', { name: 'nginx:1.27' })).toBeInTheDocument()
     unmount()
     renderMap()
-    expect(await screen.findByRole('checkbox', { name: 'Image' })).not.toBeChecked()
-    expect(window.localStorage.getItem('armadok.map.hidden.n1')).toContain('image')
-    expect(window.localStorage.getItem('armadok.map.hidden.other')).toBeNull()
+    expect(await screen.findByRole('checkbox', { name: 'Image' })).toBeChecked()
+    expect(window.localStorage.getItem('armadok.map.hidden.v2.n1')).not.toContain('image')
+    expect(window.localStorage.getItem('armadok.map.hidden.v2.other')).toBeNull()
   })
 
   it('says why a provider is missing instead of failing, and shows an empty state', async () => {
@@ -106,6 +106,7 @@ describe('relations map', () => {
     serve()
     renderMap()
     await userEvent.type(await screen.findByRole('searchbox'), 'nginx')
-    expect(screen.getByRole('button', { name: 'nginx:1.27' })).toBeInTheDocument()
+    // Even a hidden type can be found: choosing the result selects it.
+    expect(within(screen.getByRole('list', { name: 'Search results' })).getByRole('button', { name: /nginx:1.27/ })).toBeInTheDocument()
   })
 })

@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test'
 const objects = [['network', 'proxy']]
 const links = []
 const link = (a, b, kind) => links.push({ source: { type: a[0], id: a[1] }, target: { type: b[0], id: b[1] }, kind })
-for (let i = 1; i <= 14; i += 1) {
+for (let i = 1; i <= 45; i += 1) {
   const p = ['project', `project-${i}`], c = ['container', `project-${i}-web`], img = ['image', `image-${i}:latest`]
   objects.push(p, c, img)
   link(c, p, 'part_of'); link(c, img, 'runs'); link(c, ['network', 'proxy'], 'attached_to')

@@ -96,7 +96,7 @@ export interface MapLayout {
   top: number
 }
 
-export const COLUMN_WIDTH = 190
+export const COLUMN_WIDTH = 180
 export const ROW_HEIGHT = 46
 
 // A fixed, readable layout: objects in columns by type, and inside a column ordered by where
@@ -168,4 +168,50 @@ export function neighbourhood(map: RelationsMap, key: string, depth: number, vis
     links: map.links.filter((l) => keep.has(objectKey(l.source)) && keep.has(objectKey(l.target))),
     unavailable: map.unavailable,
   }
+}
+
+const GAP = 70
+const NODE_W = 150
+const SHELF_WIDTH = 1500
+
+// Lays the map out as separate small maps: each group of objects that are linked together (one
+// site, one project...) is drawn left to right on its own, and the groups are packed in rows like
+// words on a page. Big groups come first, loose objects last. Nothing is shared between groups,
+// so even a hundred objects stay readable at a fixed size and can be moved one group at a time.
+export function layoutGroups(nodes: { id: string; type: string }[], edges: { source: string; target: string }[]): Record<string, { x: number; y: number }> {
+  const parent = new Map(nodes.map((n) => [n.id, n.id]))
+  const find = (id: string): string => {
+    let root = id
+    while (parent.get(root) !== root) root = parent.get(root)!
+    parent.set(id, root)
+    return root
+  }
+  for (const e of edges) if (parent.has(e.source) && parent.has(e.target)) parent.set(find(e.source), find(e.target))
+  const groups = new Map<string, { id: string; type: string }[]>()
+  for (const n of nodes) groups.set(find(n.id), [...(groups.get(find(n.id)) ?? []), n])
+
+  const laid = [...groups.values()].map((members) => {
+    const ids = new Set(members.map((m) => m.id))
+    const inner = layoutMap(members, edges.filter((e) => ids.has(e.source) && ids.has(e.target)))
+    const xs = Object.values(inner.positions).map((p) => p.x)
+    const ys = Object.values(inner.positions).map((p) => p.y)
+    return { members, positions: inner.positions, width: Math.max(...xs) + NODE_W, height: Math.max(...ys) + 30, key: members.map((m) => m.id).sort()[0] }
+  })
+  laid.sort((a, b) => b.members.length - a.members.length || a.key.localeCompare(b.key))
+
+  const result: Record<string, { x: number; y: number }> = {}
+  let x = 0
+  let y = 0
+  let rowHeight = 0
+  for (const g of laid) {
+    if (x > 0 && x + g.width > SHELF_WIDTH) {
+      x = 0
+      y += rowHeight + GAP
+      rowHeight = 0
+    }
+    for (const [id, p] of Object.entries(g.positions)) result[id] = { x: x + p.x, y: y + p.y }
+    x += g.width + GAP
+    rowHeight = Math.max(rowHeight, g.height)
+  }
+  return result
 }

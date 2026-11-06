@@ -4,10 +4,11 @@
 
 import cytoscape from 'cytoscape'
 import type { Core, ElementDefinition } from 'cytoscape'
-import { Expand, Minimize2, Minus, Plus, ScanSearch } from 'lucide-react'
+import { Expand, LayoutGrid, Minimize2, Minus, Plus, ScanSearch } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { KNOWN_TYPES, layoutMap } from './graph'
+import { readPref, writePref } from '../../core/storage'
+import { KNOWN_TYPES, layoutGroups } from './graph'
 
 interface Props {
   elements: ElementDefinition[]
@@ -17,6 +18,8 @@ interface Props {
   themeKey: string
   // Objects a search matches: lit up while nothing is selected.
   highlight?: Set<string> | null
+  // Where the person's own placements are kept (one map per node).
+  storageKey: string
 }
 
 // Colours come from CSS variables so themes apply to the map too.
@@ -65,7 +68,7 @@ function stylesheet(): cytoscape.StylesheetJson {
     },
     ...typeStyles,
     {
-      selector: 'node.colhead',
+      selector: 'node.__unused',
       style: {
         shape: 'rectangle',
         'background-opacity': 0,
@@ -109,7 +112,19 @@ function stylesheet(): cytoscape.StylesheetJson {
   ] as cytoscape.StylesheetJson
 }
 
-export function GraphView({ elements, selected, onSelect, themeKey, highlight = null }: Props) {
+// The first view: readable size, at the top left, rather than everything squeezed in. A map that
+// is too big to read all at once is scrolled; "show everything" is one button away.
+const READABLE = 0.6
+function startView(instance: Core) {
+  instance.fit(undefined, 30)
+  if (instance.zoom() < READABLE) {
+    const box = instance.elements().boundingBox()
+    instance.zoom(READABLE)
+    instance.pan({ x: 30 - box.x1 * READABLE, y: 30 - box.y1 * READABLE })
+  }
+}
+
+export function GraphView({ elements, selected, onSelect, themeKey, highlight = null, storageKey }: Props) {
   const highlightKey = highlight ? [...highlight].sort().join('|') : ''
   const highlightRef = useRef(highlight)
   useEffect(() => {
@@ -124,31 +139,40 @@ export function GraphView({ elements, selected, onSelect, themeKey, highlight = 
     onSelectRef.current = onSelect
   }, [onSelect])
 
-  // The drawing's data: the server's objects placed in columns, plus a title above each column
-  // and a readable name on each link.
+  // The drawing's data: the server's objects placed group by group, with a readable name on each
+  // link.
   const drawn = useMemo(() => {
     const nodes = elements.filter((e) => e.group === 'nodes').map((e) => ({ id: String(e.data.id), type: String(e.data.type) }))
     const edges = elements.filter((e) => e.group === 'edges').map((e) => ({ source: String(e.data.source), target: String(e.data.target) }))
-    const layout = layoutMap(nodes, edges)
-    const heads: ElementDefinition[] = layout.columns.map((c, i) => ({
-      group: 'nodes',
-      classes: 'colhead',
-      data: { id: `__head${i}`, label: c.types.map((type) => t(`types.${type}`, { defaultValue: type })).join(' · '), type: '__head' },
-      position: { x: c.x, y: -50 },
-      selectable: false,
-      grabbable: false,
-    }))
-    const placed = elements.map((e) =>
+    const where = layoutGroups(nodes, edges)
+    return elements.map((e) =>
       e.group === 'nodes'
-        ? { ...e, position: layout.positions[String(e.data.id)] }
+        ? { ...e, position: where[String(e.data.id)] }
         : { ...e, data: { ...e.data, kindLabel: t(`kinds.${String(e.data.kind)}`, { defaultValue: String(e.data.kind) }) } },
     )
-    return [...heads, ...placed]
   }, [elements, t])
+
+  // What the person moved by hand is kept, and put back whenever the map is drawn again.
+  const placesKey = `map.pos.${storageKey}`
+  const [layoutVersion, setLayoutVersion] = useState(0)
+  const savedPlaces = (): Record<string, { x: number; y: number }> => {
+    try {
+      return JSON.parse(readPref(placesKey) ?? '{}') as Record<string, { x: number; y: number }>
+    } catch {
+      return {}
+    }
+  }
 
   // The drawing is rebuilt only when what it shows really changes (not at every refresh or
   // render), and the zoom and position the person chose are put back afterwards.
-  const signature = JSON.stringify(drawn)
+  // Compared without the order the server happened to answer in.
+  const signature = JSON.stringify([
+    [...drawn.map((e) => {
+      const d = e.data as Record<string, unknown>
+      return `${e.group}|${d.id}|${d.label ?? ''}|${d.source ?? ''}|${d.target ?? ''}`
+    })].sort(),
+    layoutVersion,
+  ])
   const drawnRef = useRef(drawn)
   useEffect(() => {
     drawnRef.current = drawn
@@ -158,15 +182,24 @@ export function GraphView({ elements, selected, onSelect, themeKey, highlight = 
   useEffect(() => {
     if (!container.current) return
     const keep = view.current && view.current.scope === scope ? view.current : null
+    const mine = savedPlaces()
     const instance = cytoscape({
       container: container.current,
-      elements: drawnRef.current,
+      elements: drawnRef.current.map((e) => (e.group === 'nodes' && mine[String(e.data.id)] ? { ...e, position: mine[String(e.data.id)] } : e)),
       style: stylesheet(),
-      layout: { name: 'preset', fit: !keep, padding: 30 },
+      layout: { name: 'preset', fit: false },
       wheelSensitivity: 0.25,
       minZoom: 0.15,
       maxZoom: 2.5,
       ...(keep ? { zoom: keep.zoom, pan: keep.pan } : {}),
+    })
+    if (!keep) startView(instance)
+    instance.on('dragfree', 'node', () => {
+      const places: Record<string, { x: number; y: number }> = {}
+      instance.nodes().forEach((n) => {
+        places[n.id()] = n.position()
+      })
+      writePref(placesKey, JSON.stringify(places))
     })
     instance.on('tap', 'node', (event) => onSelectRef.current(event.target.id()))
     instance.on('tap', (event) => {
@@ -189,6 +222,7 @@ export function GraphView({ elements, selected, onSelect, themeKey, highlight = 
       instance.destroy()
       cy.current = null
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, themeKey, scope])
 
   // The box changes size when the details open or close: tell the canvas, keeping the view.
@@ -203,7 +237,6 @@ export function GraphView({ elements, selected, onSelect, themeKey, highlight = 
   // The canvas keeps its size by itself only if told when its box changes.
   useEffect(() => {
     cy.current?.resize()
-    cy.current?.fit(undefined, 30)
   }, [big])
 
   // Show what is selected: its neighbourhood stays bright, the rest fades.
@@ -258,6 +291,19 @@ export function GraphView({ elements, selected, onSelect, themeKey, highlight = 
         </button>
         <button type="button" className="icon-button" title={t('fit')} aria-label={t('fit')} onClick={() => cy.current?.fit(undefined, 30)}>
           <ScanSearch size={16} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="icon-button"
+          title={t('resetLayout')}
+          aria-label={t('resetLayout')}
+          onClick={() => {
+            writePref(placesKey, '{}')
+            view.current = null
+            setLayoutVersion((v) => v + 1)
+          }}
+        >
+          <LayoutGrid size={16} aria-hidden="true" />
         </button>
         <button type="button" className="icon-button" title={t(big ? 'shrink' : 'enlarge')} aria-label={t(big ? 'shrink' : 'enlarge')} aria-pressed={big} onClick={() => setBig(!big)}>
           {big ? <Minimize2 size={16} aria-hidden="true" /> : <Expand size={16} aria-hidden="true" />}

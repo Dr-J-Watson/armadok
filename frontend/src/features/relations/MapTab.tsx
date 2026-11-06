@@ -14,7 +14,7 @@ import { Problem } from '../../components/Problem'
 
 // Which types are hidden is remembered per node (a display preference, nothing else).
 function hiddenKey(nodeId: string) {
-  return `map.hidden.${nodeId}`
+  return `map.hidden.v2.${nodeId}`
 }
 
 // null when the person never chose: the page then picks a sensible default for the size.
@@ -27,9 +27,8 @@ function loadHidden(nodeId: string): Set<string> | null {
   }
 }
 
-// On a big node, images, networks and volumes (often shared by everything) bury the rest.
-const NOISY = ['image', 'network', 'volume']
-const BIG = 40
+// Images, networks and volumes are often shared by everything and bury the rest: hidden until asked for.
+const NOISY = ['image', 'network', 'volume', 'service']
 
 // The same value as before while its content is unchanged.
 function useStable<T>(value: T): T {
@@ -67,8 +66,7 @@ export function MapTab({ nodeId }: { nodeId: string }) {
     for (const o of answer?.objects ?? []) result[o.type] = (result[o.type] ?? 0) + 1
     return result
   }, [answer])
-  const bigNode = (answer?.objects.length ?? 0) > BIG
-  const hidden = useMemo(() => chosen ?? new Set(bigNode ? NOISY : []), [chosen, bigNode])
+  const hidden = useMemo(() => chosen ?? new Set(NOISY), [chosen])
   const visible = useMemo(() => new Set(types.filter((type) => !hidden.has(type))), [types, hidden])
   const data = answer ?? map.data
   const elements = useMemo(() => {
@@ -129,6 +127,7 @@ export function MapTab({ nodeId }: { nodeId: string }) {
                       <button
                         type="button"
                         onClick={() => {
+                          if (hidden.has(o.type)) toggle(o.type) // a hidden kind would not be drawn
                           select(objectKey(o))
                           setSearch('')
                         }}
@@ -168,7 +167,7 @@ export function MapTab({ nodeId }: { nodeId: string }) {
           </div>
 
           <div className={`map-work${selectedObject ? ' has-drawer' : ''}`}>
-            <GraphView elements={elements} selected={selected} onSelect={select} themeKey={themeKey} highlight={highlight} />
+            <GraphView elements={elements} selected={selected} onSelect={select} themeKey={themeKey} highlight={highlight} storageKey={nodeId} />
             {!selectedObject && <p className="map-empty hint">{t('relations:pickOne')}</p>}
             {selectedObject && (
               <div className="map-drawer">

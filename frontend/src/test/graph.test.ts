@@ -1,4 +1,4 @@
-import { buildElements, layoutMap, matchesSearch, neighbourhood, objectKey, typesOf } from '../features/relations/graph'
+import { buildElements, layoutGroups, layoutMap, matchesSearch, neighbourhood, objectKey, typesOf } from '../features/relations/graph'
 import type { RelationsMap } from '../features/relations/graph'
 
 const map: RelationsMap = {
@@ -92,5 +92,21 @@ describe('relations neighbourhood', () => {
 
   it('does not walk through a hidden type', () => {
     expect(neighbourhood(m, 'container:a', 3, new Set(['container'])).objects.map((o) => o.id)).toEqual(['a', 'b', 'c'])
+  })
+})
+
+describe('relations group layout', () => {
+  it('draws separate groups apart and packs loose objects after the big ones', () => {
+    const nodes = ['a', 'b', 'c', 'x', 'y'].map((id) => ({ id, type: 'container' }))
+    const edges = [
+      { source: 'a', target: 'b' },
+      { source: 'b', target: 'c' },
+    ]
+    const where = layoutGroups(nodes, edges)
+    expect(Object.keys(where).sort()).toEqual(['a', 'b', 'c', 'x', 'y'])
+    // The linked group comes first (left), and x and y do not sit on top of it or of each other.
+    expect(where.a.x).toBe(0)
+    expect(where.x.x).toBeGreaterThan(where.c.x)
+    expect(where.x).not.toEqual(where.y)
   })
 })
