@@ -550,17 +550,26 @@ def test_a_big_compose_file_is_listed_without_being_read(root):
     assert blog["services"] == [] and blog["error"] is None
 
 
-def test_a_hook_cannot_be_made_for_a_project_that_is_not_imported(live, root):  # noqa: F811
-    client, headers, port, tmp_path = live
-    node, stop = connect_worker(client, headers, port, tmp_path, "docker")
-    hook = {
-        "name": "ci",
-        "action": "project.redeploy",
-        "target": {"node_id": node, "project": "blog"},
-    }
-    assert client.post("/api/v1/hooks", headers=headers, json=hook).status_code == 404
-    client.post(
-        f"/api/v1/nodes/{node}/projects/import", headers=headers, json={"projects": ["blog"]}
-    )
-    assert client.post("/api/v1/hooks", headers=headers, json=hook).status_code == 201
-    stop.set()
+def test_a_hook_or_schedule_cannot_target_a_project_that_is_not_imported():
+    import sqlite3
+
+    import pytest
+
+    from armadok.core.errors import ApiError
+    from armadok.modules.projects import hook, states
+
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript("CREATE TABLE nodes (id TEXT PRIMARY KEY);" + states.MIGRATION.sql)
+    conn.execute("INSERT INTO nodes VALUES ('n1')")
+    target = {"node_id": "n1", "project": "blog"}
+    for action in (hook.ACTION, hook.RESTART):
+        assert action.check is not None
+        with pytest.raises(ApiError) as caught:
+            action.check(conn, None, None, target)
+        assert caught.value.status_code == 404
+    states.set_state(conn, "n1", ["blog"], "managed")
+    hook.ACTION.check(conn, None, None, target)  # imported: allowed
+    states.set_state(conn, "n1", ["blog"], "ignored")
+    with pytest.raises(ApiError):
+        hook.ACTION.check(conn, None, None, target)
