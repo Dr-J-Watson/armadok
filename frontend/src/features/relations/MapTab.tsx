@@ -24,6 +24,18 @@ function loadHidden(nodeId: string): Set<string> {
   }
 }
 
+// The same value as before while its content is unchanged.
+function useStable<T>(value: T): T {
+  const [kept, setKept] = useState(value)
+  const key = JSON.stringify(value)
+  const [seen, setSeen] = useState(key)
+  if (seen !== key) {
+    setSeen(key)
+    setKept(value)
+  }
+  return kept
+}
+
 export function MapTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['relations', 'errors'])
   const [params, setParams] = useSearchParams()
@@ -37,12 +49,15 @@ export function MapTab({ nodeId }: { nodeId: string }) {
     refetchInterval: 15000,
   })
 
-  const types = useMemo(() => typesOf(map.data?.objects ?? []), [map.data])
+  // The server is asked again every few seconds; the drawing is only rebuilt (and re-laid out)
+  // when the answer actually differs, so it does not jump while someone reads it.
+  const answer = useStable(map.data)
+  const types = useMemo(() => typesOf(answer?.objects ?? []), [answer])
   const visible = useMemo(() => new Set(types.filter((type) => !hidden.has(type))), [types, hidden])
-  const elements = useMemo(() => (map.data ? buildElements(map.data, visible) : []), [map.data, visible])
+  const elements = useMemo(() => (answer ? buildElements(answer, visible) : []), [answer, visible])
   const matches = useMemo(
-    () => (map.data?.objects ?? []).filter((o) => visible.has(o.type) && matchesSearch(o, search)),
-    [map.data, visible, search],
+    () => (answer?.objects ?? []).filter((o) => visible.has(o.type) && matchesSearch(o, search)),
+    [answer, visible, search],
   )
   const themeKey = `${document.documentElement.dataset.theme ?? 'system'}`
   const selectedObject = map.data?.objects.find((o) => objectKey(o) === selected)

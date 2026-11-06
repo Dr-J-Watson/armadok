@@ -32,5 +32,12 @@
   "types.certificate": "Certificate",
   "kinds.covers": "covers",
   "types.probe": "Availability probe",
-  "kinds.watches": "watches"
+  "kinds.watches": "watches",
+  "tools": "Map controls",
+  "zoomIn": "Zoom in",
+  "zoomOut": "Zoom out",
+  "fit": "Show everything",
+  "enlarge": "Full screen",
+  "shrink": "Leave full screen",
+  "hint": "Left to right: from the address visitors type to what runs it. Click an object to follow its links; scroll to zoom, drag to move."
 }

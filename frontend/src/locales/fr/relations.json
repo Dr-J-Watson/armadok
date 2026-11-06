@@ -32,5 +32,12 @@
   "types.certificate": "Certificat",
   "kinds.covers": "couvre",
   "types.probe": "Sonde de disponibilité",
-  "kinds.watches": "surveille"
+  "kinds.watches": "surveille",
+  "tools": "Commandes de la carte",
+  "zoomIn": "Agrandir",
+  "zoomOut": "Réduire",
+  "fit": "Tout afficher",
+  "enlarge": "Plein écran",
+  "shrink": "Quitter le plein écran",
+  "hint": "De gauche à droite : de l'adresse que tapent les visiteurs à ce qui la fait tourner. Cliquez sur un objet pour suivre ses liens ; molette pour zoomer, glisser pour déplacer."
 }

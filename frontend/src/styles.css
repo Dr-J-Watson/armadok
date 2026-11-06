@@ -336,7 +336,6 @@ a.menu-item { display: flex; align-items: center; gap: .5rem; padding: .35rem 1r
 .swatch[data-type='project'] { background: var(--t-project); } .swatch[data-type='image'] { background: var(--t-image); }
 .swatch[data-type='network'] { background: var(--t-network); } .swatch[data-type='volume'] { background: var(--t-volume); }
 .map-layout { display: grid; gap: var(--gap); grid-template-columns: 1fr; }
-@media (min-width: 60rem) { .map-layout { grid-template-columns: 2fr 1fr; } }
 .map-canvas { height: 62vh; min-height: 22rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
 .object-list { margin-top: var(--gap); }
 .object-list ul { list-style: none; padding: 0; max-height: 18rem; overflow: auto; }
@@ -645,3 +644,13 @@ ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
 .section-head .hint { margin: 0; }
 .danger-zone-box { margin-top: 2rem; padding: 1rem 1.25rem; border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); border-radius: var(--radius-lg); }
 .actions-cell { display: flex; flex-wrap: wrap; gap: .35rem; }
+
+/* Map: the canvas, its tools, and an enlarged mode. */
+.map-frame { position: relative; }
+.map-frame .map-canvas { height: 64vh; min-height: 24rem; background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 22px 22px; background-color: var(--surface); }
+.map-frame.map-big { position: fixed; inset: .75rem; z-index: 40; background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+.map-frame.map-big .map-canvas { height: calc(100% - 2rem); }
+.map-tools { position: absolute; bottom: 2.6rem; right: .6rem; display: flex; flex-direction: column; gap: .25rem; padding: .25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+.map-tools .icon-button { color: var(--text); }
+.map-tools .icon-button:hover { background: var(--accent-soft); color: var(--accent); }
+.map-hint { margin: .35rem .25rem 0; }

@@ -1,4 +1,4 @@
-import { buildElements, matchesSearch, objectKey, typesOf } from '../features/relations/graph'
+import { buildElements, layoutMap, matchesSearch, objectKey, typesOf } from '../features/relations/graph'
 import type { RelationsMap } from '../features/relations/graph'
 
 const map: RelationsMap = {
@@ -39,5 +39,35 @@ describe('relations graph helpers', () => {
     expect(matchesSearch(map.objects[1], 'DEMO')).toBe(true)
     expect(matchesSearch(map.objects[1], 'zzz')).toBe(false)
     expect(matchesSearch(map.objects[1], '  ')).toBe(true)
+  })
+})
+
+describe('relations map layout', () => {
+  it('puts types in columns from domains to volumes and keeps linked objects level', () => {
+    const nodes = [
+      { id: 'volume:v', type: 'volume' },
+      { id: 'domain:a.example.com', type: 'domain' },
+      { id: 'container:c', type: 'container' },
+      { id: 'router:r', type: 'router' },
+      { id: 'container:d', type: 'container' },
+    ]
+    const edges = [
+      { source: 'domain:a.example.com', target: 'router:r' },
+      { source: 'router:r', target: 'container:c' },
+      { source: 'container:c', target: 'volume:v' },
+    ]
+    const { positions, columns } = layoutMap(nodes, edges)
+    expect(columns.map((c) => c.types)).toEqual([['domain'], ['router'], ['container'], ['volume']])
+    const x = (id: string) => positions[id].x
+    expect(x('domain:a.example.com')).toBeLessThan(x('router:r'))
+    expect(x('router:r')).toBeLessThan(x('container:c'))
+    expect(x('container:c')).toBeLessThan(x('volume:v'))
+    // The container that is linked sits next to the router, the loose one after it.
+    expect(positions['container:c'].y).toBeLessThan(positions['container:d'].y)
+  })
+
+  it('gives the same layout for the same data', () => {
+    const nodes = [{ id: 'a', type: 'container' }, { id: 'b', type: 'container' }]
+    expect(layoutMap(nodes, [])).toEqual(layoutMap([...nodes].reverse(), []))
   })
 })

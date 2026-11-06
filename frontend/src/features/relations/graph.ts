@@ -71,3 +71,75 @@ export function matchesSearch(object: RelationObject, search: string): boolean {
   const needle = search.trim().toLowerCase()
   return !needle || object.label.toLowerCase().includes(needle) || object.id.toLowerCase().includes(needle)
 }
+
+// Which column a type sits in, from the entry points (domains) to what they end up on (volumes).
+// The map reads left to right: who is reached, how, and by what. Unknown types go last.
+const COLUMN_RANK: Record<string, number> = {
+  domain: 0,
+  certificate: 0,
+  probe: 0,
+  router: 1,
+  middleware: 2,
+  service: 2,
+  container: 3,
+  project: 4,
+  image: 5,
+  network: 5,
+  volume: 5,
+}
+export const rankOf = (type: string): number => COLUMN_RANK[type] ?? 6
+
+export interface MapLayout {
+  positions: Record<string, { x: number; y: number }>
+  // One entry per column that holds something, left to right.
+  columns: { x: number; types: string[] }[]
+  top: number
+}
+
+export const COLUMN_WIDTH = 190
+export const ROW_HEIGHT = 46
+
+// A fixed, readable layout: objects in columns by type, and inside a column ordered by where
+// their neighbours stand (a few sweeps of the barycentre rule), which keeps most links short and
+// uncrossed. Being computed, not simulated, it is the same at every refresh.
+export function layoutMap(nodes: { id: string; type: string }[], edges: { source: string; target: string }[]): MapLayout {
+  const ranks = [...new Set(nodes.map((n) => rankOf(n.type)))].sort((a, b) => a - b)
+  const byRank = new Map<number, { id: string; type: string }[]>(ranks.map((r) => [r, []]))
+  for (const n of [...nodes].sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))) byRank.get(rankOf(n.type))!.push(n)
+  const neighbours = new Map<string, string[]>()
+  for (const e of edges) {
+    neighbours.set(e.source, [...(neighbours.get(e.source) ?? []), e.target])
+    neighbours.set(e.target, [...(neighbours.get(e.target) ?? []), e.source])
+  }
+  const index = new Map<string, number>()
+  const reindex = () => byRank.forEach((list) => list.forEach((n, i) => index.set(n.id, i)))
+  reindex()
+  const sweep = (order: number[]) => {
+    for (const r of order) {
+      const list = byRank.get(r)!
+      const score = (id: string) => {
+        const near = (neighbours.get(id) ?? []).filter((x) => index.has(x))
+        return near.length ? near.reduce((sum, x) => sum + index.get(x)!, 0) / near.length : index.get(id)!
+      }
+      const scored = new Map(list.map((n) => [n.id, score(n.id)]))
+      list.sort((a, b) => scored.get(a.id)! - scored.get(b.id)!)
+      list.forEach((n, i) => index.set(n.id, i))
+    }
+  }
+  for (let i = 0; i < 4; i += 1) {
+    sweep(ranks.slice(1))
+    sweep([...ranks].reverse().slice(1))
+  }
+  const tallest = Math.max(1, ...[...byRank.values()].map((l) => l.length))
+  const positions: MapLayout['positions'] = {}
+  const columns: MapLayout['columns'] = []
+  ranks.forEach((r, c) => {
+    const list = byRank.get(r)!
+    const offset = ((tallest - list.length) * ROW_HEIGHT) / 2 // short columns are centred
+    list.forEach((n, i) => {
+      positions[n.id] = { x: c * COLUMN_WIDTH, y: offset + i * ROW_HEIGHT }
+    })
+    columns.push({ x: c * COLUMN_WIDTH, types: [...new Set(list.map((n) => n.type))] })
+  })
+  return { positions, columns, top: 0 }
+}
