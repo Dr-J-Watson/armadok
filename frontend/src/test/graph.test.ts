@@ -73,6 +73,13 @@ describe('relations map layout', () => {
 })
 
 describe('relations neighbourhood', () => {
+  it('does not walk on through an object that touches everything', () => {
+    const objects = [{ type: 'container', id: 'a', label: 'a' }, { type: 'network', id: 'hub', label: 'hub' }, ...Array.from({ length: 15 }, (_, i) => ({ type: 'container', id: `x${i}`, label: `x${i}` }))]
+    const links = objects.filter((o) => o.id !== 'hub').map((o) => ({ source: { type: 'container', id: o.id }, target: { type: 'network', id: 'hub' }, kind: 'attached_to' }))
+    const sub = neighbourhood({ objects, links, unavailable: {} }, 'container:a', 2, new Set(['container', 'network']))
+    expect(sub.objects.map((o) => o.id).sort()).toEqual(['a', 'hub'])
+  })
+
   const m: RelationsMap = {
     objects: ['a', 'b', 'c', 'd'].map((id) => ({ type: id === 'd' ? 'image' : 'container', id, label: id })),
     links: [

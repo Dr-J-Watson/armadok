@@ -167,7 +167,7 @@ export function MapTab({ nodeId }: { nodeId: string }) {
           </div>
 
           <div className={`map-work${selectedObject ? ' has-drawer' : ''}`}>
-            <GraphView elements={elements} selected={selected} onSelect={select} themeKey={themeKey} highlight={highlight} storageKey={nodeId} />
+            <GraphView elements={elements} selected={selected} onSelect={select} themeKey={themeKey} highlight={highlight} storageKey={nodeId} viewScope={only && selected ? `only:${selected}:${depth}` : 'all'} />
             {!selectedObject && <p className="map-empty hint">{t('relations:pickOne')}</p>}
             {selectedObject && (
               <div className="map-drawer">

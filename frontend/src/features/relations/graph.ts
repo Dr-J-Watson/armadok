@@ -146,6 +146,8 @@ export function layoutMap(nodes: { id: string; type: string }[], edges: { source
 
 // What lies within `depth` links of an object (whichever way the links point), among the objects
 // of the visible types. Lets a big map be read one neighbourhood at a time.
+const HUB = 12
+
 export function neighbourhood(map: RelationsMap, key: string, depth: number, visible: Set<string>): RelationsMap {
   const shown = map.objects.filter((o) => visible.has(o.type) || objectKey(o) === key)
   const ok = new Set(shown.map(objectKey))
@@ -160,7 +162,12 @@ export function neighbourhood(map: RelationsMap, key: string, depth: number, vis
   const keep = new Set([key])
   let edge = [key]
   for (let i = 0; i < depth; i += 1) {
-    edge = edge.flatMap((k) => [...(next.get(k) ?? [])]).filter((k) => !keep.has(k))
+    // A shared network or volume touches everything: it is shown when directly linked, but the
+    // walk does not continue through it, or every neighbourhood would become the whole node.
+    edge = edge
+      .filter((k) => k === key || (next.get(k)?.size ?? 0) <= HUB)
+      .flatMap((k) => [...(next.get(k) ?? [])])
+      .filter((k) => !keep.has(k))
     edge.forEach((k) => keep.add(k))
   }
   return {

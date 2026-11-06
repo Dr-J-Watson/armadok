@@ -683,3 +683,5 @@ ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
 .map-drawer .panel { border: 0; box-shadow: none; }
 .map-close { position: absolute; top: .5rem; right: .5rem; z-index: 6; }
 @media (max-width: 60rem) { .map-work.has-drawer { grid-template-columns: minmax(0, 1fr); } .map-drawer { max-height: none; min-height: 0; } }
+.map-focus button { white-space: nowrap; }
+.map-focus select { width: auto; }

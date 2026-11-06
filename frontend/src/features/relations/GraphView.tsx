@@ -20,6 +20,9 @@ interface Props {
   highlight?: Set<string> | null
   // Where the person's own placements are kept (one map per node).
   storageKey: string
+  // Changes when the set of objects shown is a different one (not a refresh): the view is then
+  // started again instead of kept.
+  viewScope?: string
 }
 
 // Colours come from CSS variables so themes apply to the map too.
@@ -117,14 +120,18 @@ function stylesheet(): cytoscape.StylesheetJson {
 const READABLE = 0.6
 function startView(instance: Core) {
   instance.fit(undefined, 30)
-  if (instance.zoom() < READABLE) {
+  if (instance.zoom() > 1) {
+    // A few objects must not be blown up to the size of the screen.
+    instance.zoom(1)
+    instance.center()
+  } else if (instance.zoom() < READABLE) {
     const box = instance.elements().boundingBox()
     instance.zoom(READABLE)
     instance.pan({ x: 30 - box.x1 * READABLE, y: 30 - box.y1 * READABLE })
   }
 }
 
-export function GraphView({ elements, selected, onSelect, themeKey, highlight = null, storageKey }: Props) {
+export function GraphView({ elements, selected, onSelect, themeKey, highlight = null, storageKey, viewScope = 'all' }: Props) {
   const highlightKey = highlight ? [...highlight].sort().join('|') : ''
   const highlightRef = useRef(highlight)
   useEffect(() => {
@@ -177,7 +184,7 @@ export function GraphView({ elements, selected, onSelect, themeKey, highlight = 
   useEffect(() => {
     drawnRef.current = drawn
   })
-  const scope = 'all'
+  const scope = viewScope
   const view = useRef<{ scope: string; zoom: number; pan: { x: number; y: number } } | null>(null)
   useEffect(() => {
     if (!container.current) return
