@@ -162,3 +162,32 @@ describe('renaming a middleware', () => {
     expect(sent[1].body).toEqual({ new_name: 'office', expected_sha256: 'a'.repeat(64) })
   })
 })
+
+describe('switching a middleware on and off', () => {
+  it('asks the server to switch it off, then offers to switch it back on', async () => {
+    const sent: { path: string; body: Record<string, unknown> }[] = []
+    let off = false
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      if (init?.method === 'POST') {
+        sent.push({ path: String(input), body: JSON.parse(String(init.body)) })
+        off = !off
+        return json({ changed: ['middlewares/old.yml'] })
+      }
+      if (String(input).endsWith('/traefik/items/overview'))
+        return json({ routers: [], services: [], errors: [], middlewares: [{ name: 'old', id: 'old@file', type: 'chain', path: 'middlewares/old.yml', refs: [], disabled: off }] })
+      return json({ middlewares: [] })
+    })
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MemoryRouter>
+          <MiddlewaresPage nodeId="n1" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await userEvent.click(await screen.findByRole('switch', { name: 'Switch off old' }))
+    expect(sent[0]).toMatchObject({ path: '/api/v1/nodes/n1/traefik/items/toggle', body: { path: 'middlewares/old.yml', kind: 'middlewares', name: 'old', enabled: false } })
+    await userEvent.click(await screen.findByRole('switch', { name: 'Switch on old' }))
+    expect(sent[1].body.enabled).toBe(true)
+  })
+})
+
