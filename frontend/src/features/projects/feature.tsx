@@ -8,6 +8,8 @@ export const projectsFeature: Feature = {
     {
       id: 'projects',
       labelKey: 'projects:tab',
+      area: 'docker',
+      icon: 'package',
       nodeTypes: ['docker', 'full'],
       render: ({ nodeId }) => <ProjectsTab nodeId={nodeId} />,
     },

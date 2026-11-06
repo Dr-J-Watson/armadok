@@ -1,13 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api'
-import { useAuth, useCanFn } from '../../core/auth'
-import { useModules } from '../../core/modules'
-import type { NodeTab } from '../../core/registry'
-import { features } from '../enabled'
+import { useAuth } from '../../core/auth'
+import { useNodeTabs } from './useNodeTabs'
+import { AddWorker } from './AddWorker'
 import { useFeatures } from '../../core/useFeatures'
 import { NodeIcon } from '../../components/NodeIcon'
 import type { Node } from './types'
@@ -20,7 +19,6 @@ export function NodePage() {
   const [search, setSearch] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const modules = useModules()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [code, setCode] = useState('')
   const auth = useAuth()
@@ -41,18 +39,10 @@ export function NodePage() {
     },
   })
 
-  // Tabs are contributed by features; only those whose module is enabled and that apply to
-  // this node's type are shown.
-  const allTabs = useMemo<NodeTab[]>(() => {
-    if (!node.data || !modules) return []
-    return features
-      .filter((f) => !f.requiresModule || modules.has(f.requiresModule))
-      .flatMap((f) => f.nodeTabs ?? [])
-      .filter((tab) => !tab.nodeTypes || tab.nodeTypes.includes(node.data.type))
-  }, [node.data, modules])
-
-  const can = useCanFn()
-  const tabs = allTabs.filter((tab) => !tab.requiresRight || can(tab.requiresRight))
+  // Tabs are contributed by features (see `useNodeTabs`); the side menu shows those of the
+  // Docker and network areas, this page keeps the node's own settings.
+  const tabs = useNodeTabs(node.data)
+  const settingsTabs = tabs.filter((tab) => tab.area === undefined)
 
   if (node.isPending) return <p>{t('loading')}</p>
   if (node.isError) {
@@ -65,51 +55,49 @@ export function NodePage() {
   }
 
   const current = tabs.find((tab) => tab.id === search.get('tab'))
+  // A page of the Docker or network area (or the node's map) shows only its content: the side
+  // menu already says where you are. Settings keep a small strip of their own.
+  const inSettings = !current || current.area === undefined
 
   return (
     <>
-      <nav className="crumbs" aria-label={t('nodes:back')}>
-        <Link to="/nodes">
-          <ChevronLeft size={16} aria-hidden="true" /> {t('nodes:back')}
-        </Link>
-      </nav>
-      <header className="page-head">
-        <span className="node-icon" aria-hidden="true">
-          <NodeIcon type={node.data.type} size={22} />
-        </span>
-        <div>
-          <h1>
-            {node.data.name}
-            <span className="badge">{t(`nodes:types.${node.data.type}`)}</span>
-            {node.data.local && <span className="badge ok">{t('nodes:local')}</span>}
-          </h1>
-          {(node.data.local || node.data.description) && (
-            <p className="hint">{node.data.local ? t('nodes:localDescription') : node.data.description}</p>
-          )}
-        </div>
-      </header>
+      {inSettings ? (
+        <>
+          <nav className="crumbs" aria-label={t('nodes:back')}>
+            <Link to="/nodes">
+              <ChevronLeft size={16} aria-hidden="true" /> {t('nodes:back')}
+            </Link>
+          </nav>
+          <header className="page-head">
+            <span className="node-icon" aria-hidden="true">
+              <NodeIcon type={node.data.type} size={22} />
+            </span>
+            <div>
+              <h1>
+                {node.data.name}
+                <span className="badge">{t(`nodes:types.${node.data.type}`)}</span>
+                {node.data.local && <span className="badge ok">{t('nodes:local')}</span>}
+              </h1>
+              {(node.data.local || node.data.description) && (
+                <p className="hint">{node.data.local ? t('nodes:localDescription') : node.data.description}</p>
+              )}
+            </div>
+          </header>
 
-      <div role="tablist" className="tabs">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={!current}
-          onClick={() => setSearch({}, { replace: true })}
-        >
-          {t('nodes:tabs.overview')}
-        </button>
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={current?.id === tab.id}
-            onClick={() => setSearch({ tab: tab.id }, { replace: true })}
-          >
-            {t(tab.labelKey)}
-          </button>
-        ))}
-      </div>
+          <div role="tablist" className="tabs">
+            <button type="button" role="tab" aria-selected={!current} onClick={() => setSearch({}, { replace: true })}>
+              {t('nodes:tabs.overview')}
+            </button>
+            {settingsTabs.map((tab) => (
+              <button key={tab.id} type="button" role="tab" aria-selected={current?.id === tab.id} onClick={() => setSearch({ tab: tab.id }, { replace: true })}>
+                {t(tab.labelKey)}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="visually-hidden">{node.data.name}</p>
+      )}
 
       <section role="tabpanel">
         {current ? (
@@ -129,6 +117,7 @@ export function NodePage() {
                 </dd>
               </dl>
             </div>
+            <AddWorker node={node.data} />
             {sections.map((section) => (
               <div key={section.id} className="panel">
                 {section.render({ nodeId, objectType: 'node', objectId: nodeId, objectLabel: node.data.name })}

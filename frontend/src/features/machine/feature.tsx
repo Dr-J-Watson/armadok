@@ -8,6 +8,8 @@ export const machineFeature: Feature = {
     {
       id: 'machine',
       labelKey: 'machine:tab',
+      area: 'node',
+      icon: 'cpu',
       render: ({ nodeId }) => <MachineTab nodeId={nodeId} />,
     },
   ],

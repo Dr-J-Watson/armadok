@@ -9,6 +9,8 @@ export const imageScanFeature: Feature = {
     {
       id: 'imagescan',
       labelKey: 'imagescan:tab',
+      area: 'docker',
+      icon: 'bug',
       nodeTypes: ['docker', 'full'],
       requiresRight: 'imagescan.read',
       render: ({ nodeId }) => <ImageScanTab nodeId={nodeId} />,

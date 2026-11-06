@@ -9,6 +9,7 @@ import { useFeatures } from '../core/useFeatures'
 import type { NavItem } from '../core/registry'
 import { useRealtimeStatus } from '../core/RealtimeProvider'
 import { AccountMenu } from './AccountMenu'
+import { NodeSwitcher } from './NodeSwitcher'
 
 // The groups of the side menu, in the order they appear. A feature picks one with `section`.
 const SECTIONS = ['main', 'access', 'admin', 'personal'] as const
@@ -89,6 +90,7 @@ export function Layout({ nav }: { nav: NavItem[] }) {
           </span>
         </div>
         {search && <div className="sidebar-search">{search.render()}</div>}
+        <NodeSwitcher onGo={() => setOpen(false)} />
         <nav aria-label={t('nav.main')}>
           {SECTIONS.map((section) => {
             const items = nav.filter((n) => (n.section ?? 'main') === section)

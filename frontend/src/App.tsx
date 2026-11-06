@@ -4,8 +4,6 @@ import type { RouteObject } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth, useCanFn } from './core/auth'
 import type { NavItem } from './core/registry'
-import { readPref } from './core/storage'
-import { DISMISSED } from './features/start/StartPage'
 import { useModules } from './core/modules'
 import { RealtimeProvider } from './core/RealtimeProvider'
 import { features } from './features/enabled'
@@ -15,14 +13,12 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { NotFound } from './components/NotFound'
 import { Layout } from './shell/Layout'
 
-// Where to land: the checklist for an administrator who has not hidden it yet, else the first
-// page of the navigation.
+// Where to land: the overview, else the first page of the navigation this account may open (so
+// nobody lands on a page that refuses them). The getting-started help lives in a node's settings.
 function Landing({ nav }: { nav: NavItem[] }) {
   const can = useCanFn()
-  const showStart = can('users.create') && readPref(DISMISSED) !== '1' && nav.some((n) => n.id === 'start')
-  // The first page this account is allowed to open, so nobody lands on a page that refuses them.
-  const first = nav.find((n) => n.id !== 'start' && (!n.requiresRight || can(n.requiresRight)))
-  return <Navigate to={showStart ? '/start' : nav.some((n) => n.id === 'dashboard') ? '/dashboard' : (first?.to ?? '/nodes')} replace />
+  const first = nav.find((n) => !n.requiresRight || can(n.requiresRight))
+  return <Navigate to={nav.some((n) => n.id === 'dashboard') ? '/dashboard' : (first?.to ?? '/nodes')} replace />
 }
 
 // Features whose backend module is not enabled are left out entirely.

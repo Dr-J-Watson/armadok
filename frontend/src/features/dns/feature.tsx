@@ -16,6 +16,8 @@ export const dnsFeature: Feature = {
     {
       id: 'dns',
       labelKey: 'dns:tab',
+      area: 'network',
+      icon: 'globe',
       nodeTypes: ['network', 'full'],
       render: ({ nodeId }) => <NodeDnsTab nodeId={nodeId} />,
     },

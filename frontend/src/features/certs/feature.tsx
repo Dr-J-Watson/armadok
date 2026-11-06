@@ -8,6 +8,8 @@ export const certsFeature: Feature = {
     {
       id: 'certs',
       labelKey: 'certs:tab',
+      area: 'network',
+      icon: 'lock',
       nodeTypes: ['network', 'full'],
       render: ({ nodeId }) => <CertsTab nodeId={nodeId} />,
     },

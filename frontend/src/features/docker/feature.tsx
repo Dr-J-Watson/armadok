@@ -9,12 +9,16 @@ export const dockerFeature: Feature = {
     {
       id: 'containers',
       labelKey: 'docker:tab',
+      area: 'docker',
+      icon: 'box',
       nodeTypes: ['docker', 'full'],
       render: ({ nodeId }) => <ContainersTab nodeId={nodeId} />,
     },
     {
       id: 'docker-resources',
       labelKey: 'docker:resourcesTab',
+      area: 'docker',
+      icon: 'cpu',
       nodeTypes: ['docker', 'full'],
       render: ({ nodeId }) => <ResourcesTab nodeId={nodeId} />,
     },

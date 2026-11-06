@@ -3,9 +3,9 @@
   "intro": "A look at how this installation is set up. Nothing here changes anything; each line says where to act.",
   "allGood": "Everything looks fine.",
   "toLookAt": "{{count}} thing(s) to look at.",
-  "machines": "Machines",
-  "noMachine": "No machine yet.",
-  "manageMachines": "Manage machines",
+  "machines": "Nodes",
+  "noMachine": "No node yet.",
+  "manageMachines": "Manage nodes",
   "checks": "Security and set-up",
   "go": "Open",
   "hide": "Hide this page for now",
@@ -19,7 +19,7 @@
   "capability.traefik": "Traefik folder",
   "capability.certificates": "Certificates file",
   "state.ok": "ready",
-  "state.not_configured": "not set up on this machine",
+  "state.not_configured": "not set up on this node",
   "state.unavailable": "not reachable",
   "state.worker_offline": "its worker is not connected",
   "state.timeout": "did not answer in time",
@@ -39,5 +39,6 @@
   "proxy.restricted": "The proxy whose forwarded addresses are trusted is set.",
   "proxy.any": "Every sender is trusted for forwarded addresses (UVICORN_FORWARDED_ALLOW_IPS is *): name your proxy instead.",
   "proxy.none": "Behind a reverse proxy, set UVICORN_FORWARDED_ALLOW_IPS so visitors' real addresses are seen.",
-  "notAdmin": "This page is for administrators."
+  "notAdmin": "This page is for administrators.",
+  "tab": "Help"
 }

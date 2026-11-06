@@ -25,6 +25,11 @@ export interface NodeTabProps {
 export interface NodeTab {
   id: string
   labelKey: string // in the feature's own namespace, e.g. "docker:tab"
+  // Where it lives: in the Docker menu, in the network menu, among the node's own pages (map,
+  // resources), or - when omitted - in the node's settings (members, rights, worker...).
+  area?: 'docker' | 'network' | 'node'
+  // A name from `components/NavIcon`, for the side menu.
+  icon?: string
   // Node types that get this tab (omit for all).
   nodeTypes?: string[]
   // Hidden when the account does not hold this right everywhere (the server still decides).

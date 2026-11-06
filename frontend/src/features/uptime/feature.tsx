@@ -9,6 +9,8 @@ export const uptimeFeature: Feature = {
     {
       id: 'uptime',
       labelKey: 'uptime:tab',
+      area: 'network',
+      icon: 'pulse',
       nodeTypes: ['network', 'full'],
       render: ({ nodeId }) => <UptimeTab nodeId={nodeId} />,
     },

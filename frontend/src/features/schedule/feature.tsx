@@ -9,6 +9,8 @@ export const scheduleFeature: Feature = {
     {
       id: 'schedule',
       labelKey: 'schedule:tab',
+      area: 'docker',
+      icon: 'clock',
       nodeTypes: ['docker', 'full'],
       render: ({ nodeId }) => <ScheduleTab nodeId={nodeId} />,
     },

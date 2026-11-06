@@ -3,16 +3,12 @@ import { expect, test } from '@playwright/test'
 const PASSWORD = 'correct horse battery'
 const USER = 'admin'
 
-async function signIn(page, { direct = false } = {}) {
+async function signIn(page) {
   await page.goto('/')
   await page.getByLabel('Username').fill(USER)
   await page.getByLabel('Password').fill(PASSWORD)
   await page.getByRole('button', { name: 'Log in' }).click()
-  // A new administrator first lands on the checklist; the overview is one click away.
-  await expect(page.getByRole('heading', { name: 'Getting started' })).toBeVisible()
-  // On a phone the menu is folded away, so go there by address.
-  if (direct) await page.goto('/dashboard')
-  else await page.getByRole('link', { name: 'Overview' }).first().click()
+  // Signing in lands on the overview.
   await expect(page.getByRole('heading', { name: `Hello, ${USER}` })).toBeVisible()
 }
 
@@ -25,8 +21,8 @@ test('the first visit asks for the install code and creates the administrator', 
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
   await page.getByLabel('Confirm the password').fill(PASSWORD)
   await page.locator('form button[type="submit"]').click()
-  // Set-up signs the new administrator in and lands them on the checklist.
-  await expect(page.getByRole('heading', { name: 'Getting started' })).toBeVisible()
+  // Set-up signs the new administrator in and lands them on the overview.
+  await expect(page.getByRole('heading', { name: `Hello, ${USER}` })).toBeVisible()
 })
 
 test('a wrong password is refused with a clear message, the right one opens the overview', async ({ page }) => {
@@ -37,27 +33,25 @@ test('a wrong password is refused with a clear message, the right one opens the 
   await expect(page.getByRole('alert')).toBeVisible()
   await page.getByLabel('Password').fill(PASSWORD)
   await page.getByRole('button', { name: 'Log in' }).click()
-  await expect(page.getByRole('heading', { name: 'Getting started' })).toBeVisible()
-  await expect(page).toHaveTitle(/Getting started · Armadok/)
-  await page.getByRole('link', { name: 'Overview' }).first().click()
+  await expect(page.getByRole('heading', { name: `Hello, ${USER}` })).toBeVisible()
   await expect(page).toHaveTitle(/Overview · Armadok/)
 })
 
-test('a machine can be added, appears as a card and opens on its own page', async ({ page }) => {
+test('a node can be added, appears as a card and opens on its own page', async ({ page }) => {
   await signIn(page)
-  await page.getByRole('link', { name: 'Machines', exact: true }).first().click()
-  await page.getByRole('button', { name: 'Add a machine' }).click()
+  await page.getByRole('link', { name: 'Nodes', exact: true }).first().click()
+  await page.getByRole('button', { name: 'Add a node' }).click()
   await page.getByLabel('Name').fill('Garage server')
-  await page.getByRole('button', { name: 'Add the machine' }).click()
+  await page.getByRole('button', { name: 'Add the node' }).click()
   const card = page.getByRole('link', { name: /Garage server/ })
   await expect(card).toBeVisible()
   await card.click()
   await expect(page.getByRole('heading', { name: /Garage server/ })).toBeVisible()
   await expect(page.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
   // The dangerous part is folded away until asked for.
-  await expect(page.getByRole('button', { name: 'Delete the machine' })).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Delete the node' })).toBeHidden()
   await page.getByText('Danger zone').click()
-  await expect(page.getByRole('button', { name: 'Delete the machine' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Delete the node' })).toBeVisible()
 })
 
 test('the look can be changed from the account menu and is remembered', async ({ page }) => {
@@ -74,13 +68,13 @@ test('the look can be changed from the account menu and is remembered', async ({
   await page.getByRole('button', { name: 'System' }).click()
 })
 
-test('the search opens with Ctrl+K, finds a machine and goes to it', async ({ page }) => {
+test('the search opens with Ctrl+K, finds a node and goes to it', async ({ page }) => {
   await signIn(page)
   await page.keyboard.press('Control+k')
-  const box = page.getByRole('combobox')
+  const box = page.getByRole('combobox', { name: /A page, a node/ })
   await expect(box).toBeFocused()
   await box.fill('Garage')
-  await page.getByRole('option', { name: /Garage server/ }).click()
+  await page.getByRole('listbox').getByRole('option', { name: /Garage server/ }).click()
   await expect(page.getByRole('heading', { name: /Garage server/ })).toBeVisible()
 })
 
@@ -95,13 +89,13 @@ test('an unknown address says so kindly and links back', async ({ page }) => {
 test('on a phone the menu is a drawer that opens, navigates and closes', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'en-GB' })
   const page = await context.newPage()
-  await signIn(page, { direct: true })
+  await signIn(page)
   const menu = page.getByRole('button', { name: 'Menu' })
   await expect(page.locator('.sidebar')).not.toBeInViewport()
   await menu.click()
   await expect(page.locator('.sidebar')).toBeInViewport()
-  await page.getByRole('link', { name: 'Machines', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Machines' })).toBeVisible()
+  await page.getByRole('link', { name: 'Nodes', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Nodes' })).toBeVisible()
   await expect(page.locator('.sidebar')).not.toBeInViewport()
   // No horizontal scrolling on a phone.
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)

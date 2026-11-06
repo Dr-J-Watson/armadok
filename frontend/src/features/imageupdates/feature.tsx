@@ -9,6 +9,8 @@ export const imageUpdatesFeature: Feature = {
     {
       id: 'image-updates',
       labelKey: 'imageupdates:tab',
+      area: 'docker',
+      icon: 'refresh',
       nodeTypes: ['docker', 'full'],
       requiresRight: 'imageupdates.read',
       render: ({ nodeId }) => <ImageUpdatesTab nodeId={nodeId} />,

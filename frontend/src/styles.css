@@ -615,3 +615,13 @@ ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
 .block-pair { display: grid; gap: .7rem; grid-template-columns: 1fr 8rem; }
 .icon-button { padding: .25rem; border-color: transparent; background: transparent; box-shadow: none; color: var(--muted); display: inline-flex; }
 @media (max-width: 36rem) { .block-pair { grid-template-columns: 1fr; } }
+
+/* The node switcher at the top of the side menu: the node, its work area, then its pages. */
+.node-switcher { display: flex; flex-direction: column; gap: .5rem; margin: .25rem 0 1rem; padding-bottom: .9rem; border-bottom: 1px solid var(--border); }
+.node-select select { width: 100%; font-weight: 650; }
+.mode-switch { display: flex; gap: .35rem; }
+.mode-switch button { flex: 1; padding: .3rem .5rem; font-size: .85rem; }
+.mode-label { margin: 0; padding: 0 .35rem; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.node-switcher nav { display: flex; flex-direction: column; gap: .1rem; }
+.node-switcher .nav-link[aria-current='page'] { background: var(--accent-soft); color: var(--accent); }
+.plain-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .6rem; }

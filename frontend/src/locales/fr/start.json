@@ -3,9 +3,9 @@
   "intro": "Un coup d'œil sur la façon dont cette installation est réglée. Rien ici ne modifie quoi que ce soit ; chaque ligne dit où agir.",
   "allGood": "Tout semble en ordre.",
   "toLookAt": "{{count}} point(s) à regarder.",
-  "machines": "Machines",
-  "noMachine": "Aucune machine pour l'instant.",
-  "manageMachines": "Gérer les machines",
+  "machines": "Nœuds",
+  "noMachine": "Aucun nœud pour l'instant.",
+  "manageMachines": "Gérer les nœuds",
   "checks": "Sécurité et réglages",
   "go": "Ouvrir",
   "hide": "Masquer cette page pour l'instant",
@@ -19,7 +19,7 @@
   "capability.traefik": "Dossier de Traefik",
   "capability.certificates": "Fichier des certificats",
   "state.ok": "prêt",
-  "state.not_configured": "non réglé sur cette machine",
+  "state.not_configured": "non réglé sur ce nœud",
   "state.unavailable": "injoignable",
   "state.worker_offline": "son worker n'est pas connecté",
   "state.timeout": "n'a pas répondu à temps",
@@ -39,5 +39,6 @@
   "proxy.restricted": "Le proxy dont les adresses transmises sont crues est réglé.",
   "proxy.any": "Tout émetteur est cru pour les adresses transmises (UVICORN_FORWARDED_ALLOW_IPS vaut *) : nommez plutôt votre proxy.",
   "proxy.none": "Derrière un proxy inverse, réglez UVICORN_FORWARDED_ALLOW_IPS pour voir les vraies adresses des visiteurs.",
-  "notAdmin": "Cette page est réservée aux administrateurs."
+  "notAdmin": "Cette page est réservée aux administrateurs.",
+  "tab": "Aide"
 }

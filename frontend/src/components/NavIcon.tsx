@@ -1,5 +1,15 @@
 import {
+  Activity,
+  BarChart3,
   Bell,
+  Box,
+  CalendarClock,
+  Cpu,
+  Lock,
+  Package,
+  RefreshCw,
+  Route,
+  Waypoints,
   Bot,
   BookOpen,
   Bug,
@@ -42,6 +52,16 @@ const ICONS: Record<string, LucideIcon> = {
   help: BookOpen,
   user: User,
   bell: Bell,
+  package: Package,
+  box: Box,
+  cpu: Cpu,
+  refresh: RefreshCw,
+  clock: CalendarClock,
+  route: Route,
+  lock: Lock,
+  chart: BarChart3,
+  pulse: Activity,
+  map: Waypoints,
 }
 
 export function NavIcon({ name, size = 18 }: { name?: string; size?: number }) {

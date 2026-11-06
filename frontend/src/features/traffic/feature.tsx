@@ -8,6 +8,8 @@ export const trafficFeature: Feature = {
     {
       id: 'traffic',
       labelKey: 'traffic:tab',
+      area: 'network',
+      icon: 'chart',
       nodeTypes: ['network', 'full'],
       requiresRight: 'traffic.read',
       render: ({ nodeId }) => <TrafficTab nodeId={nodeId} />,

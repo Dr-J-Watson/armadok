@@ -11,6 +11,8 @@ export const relationsFeature: Feature = {
     {
       id: 'map',
       labelKey: 'relations:tab',
+      area: 'node',
+      icon: 'map',
       render: ({ nodeId }) => (
         <Suspense fallback={<p>…</p>}>
           <MapTab nodeId={nodeId} />

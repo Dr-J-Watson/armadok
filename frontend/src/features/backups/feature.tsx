@@ -9,6 +9,8 @@ export const backupsFeature: Feature = {
     {
       id: 'backups',
       labelKey: 'backups:tab',
+      area: 'docker',
+      icon: 'backup',
       nodeTypes: ['docker', 'full'],
       render: ({ nodeId }) => <BackupsTab nodeId={nodeId} />,
     },

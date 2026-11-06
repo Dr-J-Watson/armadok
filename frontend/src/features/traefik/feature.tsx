@@ -8,6 +8,8 @@ export const traefikFeature: Feature = {
     {
       id: 'traefik',
       labelKey: 'traefik:tab',
+      area: 'network',
+      icon: 'route',
       nodeTypes: ['network', 'full'],
       render: ({ nodeId }) => <TraefikTab nodeId={nodeId} />,
     },
