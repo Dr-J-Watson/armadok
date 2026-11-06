@@ -5,20 +5,19 @@ import { api } from '../../core/api'
 import { FileEditor } from '../../shell/FileEditor'
 import { Coherence } from './Coherence'
 import { DomainSwitch } from './DomainSwitch'
-import { ManagedSites } from './ManagedSites'
-import { Middlewares } from './Middlewares'
-import { SitesView } from './SitesView'
 import { StaticConfig } from './StaticConfig'
 import { Problem } from '../../components/Problem'
 
-type View = 'sites' | 'managed' | 'middlewares' | 'coherence' | 'static' | 'files'
+type View = 'coherence' | 'static' | 'domains' | 'files'
 
-export function TraefikTab({ nodeId }: { nodeId: string }) {
+// The less common Traefik pages: what the files say about each other, the static configuration,
+// pausing a whole domain, and the raw files. Sites and middlewares have pages of their own.
+export function TraefikAdvanced({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['traefik', 'errors'])
   const [params, setParams] = useSearchParams()
   // View and open file live in the address: shareable, and kept on reload.
   const asked = params.get('view')
-  const view: View = asked === 'files' || asked === 'managed' || asked === 'middlewares' || asked === 'coherence' || asked === 'static' ? asked : 'sites'
+  const view: View = asked === 'files' || asked === 'domains' || asked === 'static' ? asked : 'coherence'
   const file = params.get('file')
 
   function go(next: Record<string, string | null>) {
@@ -33,7 +32,7 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
   return (
     <>
       <div className="actions">
-        {(['sites', 'managed', 'middlewares', 'coherence', 'static', 'files'] as const).map((name) => (
+        {(['coherence', 'static', 'domains', 'files'] as const).map((name) => (
           <button
             key={name}
             type="button"
@@ -46,19 +45,12 @@ export function TraefikTab({ nodeId }: { nodeId: string }) {
           </button>
         ))}
       </div>
-      {view === 'managed' ? (
-        <>
-          <ManagedSites nodeId={nodeId} />
-          <DomainSwitch nodeId={nodeId} />
-        </>
-      ) : view === 'middlewares' ? (
-        <Middlewares nodeId={nodeId} />
+      {view === 'domains' ? (
+        <DomainSwitch nodeId={nodeId} />
       ) : view === 'static' ? (
         <StaticConfig nodeId={nodeId} />
       ) : view === 'coherence' ? (
         <Coherence nodeId={nodeId} onOpenFile={(path) => go({ view: 'files', file: path })} />
-      ) : view === 'sites' ? (
-        <SitesView nodeId={nodeId} onOpenFile={(path) => go({ view: 'files', file: path })} />
       ) : (
         <FilesView nodeId={nodeId} file={file} onPick={(path) => go({ file: path })} />
       )}

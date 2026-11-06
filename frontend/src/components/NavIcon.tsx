@@ -5,6 +5,8 @@ import {
   Box,
   CalendarClock,
   Cpu,
+  Layers,
+  Wrench,
   Lock,
   Package,
   RefreshCw,
@@ -35,6 +37,8 @@ import type { LucideIcon } from 'lucide-react'
 // one for each feature. An unknown name gets a plain dot, never a broken menu.
 const ICONS: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
+  layers: Layers,
+  wrench: Wrench,
   wand: Wand2,
   rocket: Rocket,
   server: Server,

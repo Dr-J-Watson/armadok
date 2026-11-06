@@ -4,7 +4,8 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import '../core/i18n'
 import { setAccessToken } from '../core/api'
-import { TraefikTab } from '../features/traefik/TraefikTab'
+import { SitesPage } from '../features/traefik/SitesPage'
+import { TraefikAdvanced } from '../features/traefik/TraefikTab'
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
 const SHA = 'c'.repeat(64)
@@ -26,6 +27,7 @@ function server(putAnswer: Response | null = null) {
     const path = String(input).replace('/api/v1', '')
     const method = (init?.method ?? 'GET').toUpperCase()
     if (path === '/nodes/n1/traefik/sites') return json(sites)
+    if (path === '/nodes/n1/traefik/managed') return json({ sites: [] })
     if (path === '/nodes/n1/traefik/files') return json({ files: [{ path: 'apps/blog.yml', size: 10 }, { path: 'base.yaml', size: 5 }], truncated: false })
     if (path === '/nodes/n1/traefik/files/apps/blog.yml') {
       if (method === 'PUT') {
@@ -38,11 +40,11 @@ function server(putAnswer: Response | null = null) {
   })
 }
 
-function renderTab(url = '/nodes/n1?tab=traefik') {
+function renderTab(url = '/nodes/n1?tab=traefik', Page: typeof SitesPage = SitesPage) {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <MemoryRouter initialEntries={[url]}>
-        <TraefikTab nodeId="n1" />
+        <Page nodeId="n1" />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -60,7 +62,6 @@ describe('traefik tab', () => {
     expect(await screen.findByText('Host(`blog.example.com`)')).toBeInTheDocument()
     expect(screen.getByText('blog-svc')).toBeInTheDocument()
     expect(screen.getByText('auth')).toBeInTheDocument() // the provider suffix is not shown
-    expect(screen.getByText('HTTPS', { selector: '.badge' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Relations' })).toHaveAttribute('href', expect.stringContaining('focus=router'))
   })
 
@@ -72,7 +73,7 @@ describe('traefik tab', () => {
 
   it('opens the file of a site in the editor and saves it naming the version it replaces', async () => {
     server()
-    renderTab()
+    renderTab('/nodes/n1?tab=traefik-advanced&view=files', TraefikAdvanced)
     await userEvent.click(await screen.findByRole('button', { name: 'apps/blog.yml' }))
     const editor = await screen.findByLabelText('Content of apps/blog.yml')
     await userEvent.type(editor, '# note')
@@ -83,7 +84,7 @@ describe('traefik tab', () => {
 
   it('explains why a save was refused when the YAML is invalid', async () => {
     server(json({ error: { code: 'traefik.invalid_yaml' } }, 422))
-    renderTab('/nodes/n1?tab=traefik&view=files&file=apps%2Fblog.yml')
+    renderTab('/nodes/n1?tab=traefik-advanced&view=files&file=apps%2Fblog.yml', TraefikAdvanced)
     await userEvent.type(await screen.findByLabelText('Content of apps/blog.yml'), '[[')
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('not valid YAML')

@@ -95,7 +95,7 @@ describe('application', () => {
     const group = await screen.findByRole('group', { name: 'Work area' })
     expect(within(group).getByRole('button', { name: 'Docker' })).toBeInTheDocument()
     await userEvent.click(within(group).getByRole('button', { name: 'Network' }))
-    expect(await screen.findByRole('link', { name: 'Traefik' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Sites' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Containers' })).not.toBeInTheDocument()
   })
 

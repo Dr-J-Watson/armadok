@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import '../core/i18n'
 import { setAccessToken } from '../core/api'
-import { ManagedSites } from '../features/traefik/ManagedSites'
+import { SitesPage } from '../features/traefik/SitesPage'
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
 const spec = {
@@ -26,7 +26,15 @@ function server(sites: unknown[]) {
     if (path.endsWith('/dns/fix')) { dnsStatus = 'present'; return json({}, 201) }
     if (path.endsWith('/certs')) return json({ hosts: [{ host: 'blog.example.com', state: 'missing' }] })
     if (path.endsWith('/managed')) return json({ sites })
-    if (path.endsWith('/traefik/sites')) return method === 'POST' ? json({ name: 'blog' }, 201) : json({ middlewares: [{ id: 'auth@file' }] })
+    if (path.endsWith('/traefik/sites'))
+      return method === 'POST'
+        ? json({ name: 'blog' }, 201)
+        : json({
+            routers: sites
+              .filter((s) => !(s as { paused: boolean }).paused)
+              .map((s) => ({ id: `${(s as { name: string }).name}@file`, name: (s as { name: string }).name, rule: 'Host(`blog.example.com`)', service: 'x@file', middlewares: [], tls: true, path: `sites/${(s as { name: string }).name}.yml` })),
+            services: [], middlewares: [{ id: 'auth@file' }], errors: [],
+          })
     if (path.endsWith('/sites/preview')) return json({ yaml: 'http:\n  routers: {}\n', name_taken: false })
     if (path.includes('/docker/containers')) return json({ containers: [{ names: ['blog-web'], ports: [{ private: 8080 }] }] })
     if (path.includes('/history/')) return json({ versions: [{ version: '1700000000000.abcd1234', at: 1700000000000, size: 10 }] })
@@ -38,7 +46,7 @@ function renderIt() {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <MemoryRouter>
-        <ManagedSites nodeId="n1" />
+        <SitesPage nodeId="n1" />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -73,16 +81,16 @@ describe('site builder', () => {
     expect(calls[0].body).toMatchObject({ spec: { name: 'blog', hosts: ['blog.example.com'], container: 'blog-web', port: 8080, https: true, url: null, entrypoints: ['websecure'], cert_resolver: 'lehttp' } })
   })
 
-  it('pauses, asks twice before deleting, and offers older versions', async () => {
+  it('pauses, asks before deleting, and offers older versions', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     server([{ name: 'blog', paused: false, sha256: 'a'.repeat(64), spec, modified_by_hand: false }])
     renderIt()
-    await userEvent.click(await screen.findByRole('button', { name: 'Pause' }))
+    await userEvent.click(await screen.findByRole('switch', { name: /Pause/ }))
     expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/nodes/n1/traefik/sites/blog/pause' })
-    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
-    expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(0)
-    await userEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }))
+    await userEvent.click(screen.getByRole('button', { name: /Delete/ }))
     expect(calls.at(-1)?.path).toBe(`/nodes/n1/traefik/sites/blog?expected_sha256=${'a'.repeat(64)}`)
-    await userEvent.click(screen.getByRole('button', { name: 'History' }))
+    await userEvent.click(screen.getByLabelText('More'))
+    await userEvent.click(screen.getByRole('button', { name: /History/ }))
     await userEvent.click(await screen.findByRole('button', { name: 'Put back' }))
     expect(calls.at(-1)).toMatchObject({ path: '/nodes/n1/traefik/restore/sites/blog.yml', body: { version: '1700000000000.abcd1234' } })
   })
