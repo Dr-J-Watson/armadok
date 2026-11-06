@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Cloud } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { api } from '../../core/api'
 import type { Node } from '../nodes/types'
@@ -86,10 +87,13 @@ export function DomainsSection() {
       {failed != null && <Problem error={failed} />}
       {domains.isPending && <p className="loading">{t('loading')}</p>}
       {domains.data?.length === 0 && <p className="empty">{t('dns:domains.empty')}</p>}
-      <ul className="cards">
+      <ul className="dom-grid">
         {domains.data?.map((d) => (
-          <li key={d.id}>
-            <Link to={`/dns/${d.id}`}><strong>{d.name}</strong></Link>
+          <li key={d.id} className="dom-card">
+            <header>
+              <Cloud size={16} aria-hidden="true" className="muted" />
+              <Link to={`/dns/${d.id}`} className="strong"><strong>{d.name}</strong></Link>
+            </header>
             <span className="badge">{d.provider ? t(`dns:providers.${d.provider}`, { defaultValue: d.provider }) : t('dns:domains.shared')}</span>
             {d.access !== 'owner' && <span className="badge">{t(`dns:access.${d.access}`)}</span>}
             {d.verified === false && <span className="badge off" title={t('dns:domains.unverifiedHint')}>{t('dns:domains.unverified')}</span>}
@@ -183,8 +187,10 @@ export function DomainsSection() {
       ))}
       {imported !== null && <p role="status" className="ok-text">{imported ? t('dns:domains.imported', { names: imported }) : t('dns:domains.nothingNew')}</p>}
 
+      <details className="panel add-panel" open={domains.data?.length === 0}>
+      <summary>{t('dns:domains.add')}</summary>
       <form className="form" onSubmit={submit}>
-        <h3>{t('dns:domains.add')}</h3>
+        <h3 className="visually-hidden">{t('dns:domains.add')}</h3>
         <label htmlFor="dns-domain-name">{t('dns:domains.name')}</label>
         <input id="dns-domain-name" required autoComplete="off" spellCheck={false} placeholder="example.com" value={name} onChange={(e) => setName(e.target.value)} />
         <label htmlFor="dns-domain-account">{t('dns:domains.account')}</label>
@@ -195,6 +201,7 @@ export function DomainsSection() {
         <p className="hint">{t('dns:domains.localHint')}</p>
         <button type="submit" className="primary" disabled={add.isPending}>{t('dns:domains.create')}</button>
       </form>
+      </details>
     </section>
   )
 }

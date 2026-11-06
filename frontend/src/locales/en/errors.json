@@ -264,5 +264,11 @@
   "nodeconfig.not_with_key": "Only a person can change these settings, not an API key.",
   "worker.config_invalid": "The worker refused a setting of this node.",
   "projects.already_managed": "A managed project cannot be set aside: stop managing it first.",
-  "projects.not_found": "This folder is not a project on the node."
+  "projects.not_found": "This folder is not a project on the node.",
+  "traefik.invalid_item": "This is not a valid item: it must be a non-empty YAML mapping.",
+  "traefik.item_exists": "An item with this name already exists in this file.",
+  "traefik.flow_reference": "A router or a chain lists this middleware on one line ([a, b]): edit that file by hand first.",
+  "traefik.unsupported_layout": "This file's layout cannot take a new item automatically.",
+  "traefik.in_use": "Routers or groups still use this middleware: remove it from them first.",
+  "traefik.invalid_name": "This name cannot be used here (lower-case letters, digits and dashes)."
 }

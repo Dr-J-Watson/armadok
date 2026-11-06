@@ -3,6 +3,7 @@
 from armadok.core.module import Module, RelationProvider, Right, Signal, WorkerOp
 from armadok.modules.traefik import relations
 from armadok.modules.traefik.domain_routes import router as domain_router
+from armadok.modules.traefik.item_routes import router as item_router
 from armadok.modules.traefik.middleware_routes import router as middleware_router
 from armadok.modules.traefik.routes import router
 from armadok.modules.traefik.sites_routes import router as sites_router
@@ -13,7 +14,7 @@ _NODE_TYPES = ("network", "full")
 module = Module(
     name="traefik",
     requires=("workers",),
-    routes=(router, sites_router, middleware_router, domain_router, static_router),
+    routes=(router, sites_router, middleware_router, domain_router, static_router, item_router),
     rights=(
         Right("traefik.read", depends_on=("nodes.read",), node_owner=True, level="view"),
         Right("traefik.files.read", depends_on=("traefik.read",), node_owner=True, level="edit"),
@@ -53,6 +54,10 @@ module = Module(
         "traefik.middleware_update",
         "traefik.middleware_delete",
         "traefik.middleware_rename",
+        "traefik.item_toggle",
+        "traefik.item_write",
+        "traefik.item_create",
+        "traefik.item_delete",
         "traefik.static_read",
         "traefik.static_write",
         "traefik.static_history_read",

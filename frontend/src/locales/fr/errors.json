@@ -264,5 +264,11 @@
   "nodeconfig.not_with_key": "Seule une personne peut changer ces réglages, pas une clé d'API.",
   "worker.config_invalid": "Le worker a refusé un réglage de ce nœud.",
   "projects.already_managed": "Un projet géré ne peut pas être mis de côté : arrêtez d'abord de le gérer.",
-  "projects.not_found": "Ce dossier n'est pas un projet sur le nœud."
+  "projects.not_found": "Ce dossier n'est pas un projet sur le nœud.",
+  "traefik.invalid_item": "Ce n'est pas un élément valide : il doit être un bloc YAML non vide.",
+  "traefik.item_exists": "Un élément de ce nom existe déjà dans ce fichier.",
+  "traefik.flow_reference": "Un routeur ou un groupe cite ce middleware sur une seule ligne ([a, b]) : modifiez d'abord ce fichier à la main.",
+  "traefik.unsupported_layout": "La structure de ce fichier ne permet pas d'y ajouter un élément automatiquement.",
+  "traefik.in_use": "Des routeurs ou des groupes utilisent encore ce middleware : retirez-le d'abord.",
+  "traefik.invalid_name": "Ce nom ne peut pas être utilisé ici (minuscules, chiffres et tirets)."
 }

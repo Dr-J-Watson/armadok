@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../core/api'
 import { Problem } from '../../components/Problem'
 import { useConfirm } from '../../components/Confirm'
+import { Cloud } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import type { Domain } from './DomainsSection'
 
 export interface Provider {
   name: string
@@ -26,6 +29,7 @@ export function AccountsSection({ providers }: { providers: Provider[] }) {
   const queryClient = useQueryClient()
   const confirm = useConfirm()
   const accounts = useQuery({ queryKey: ['dns-accounts'], queryFn: () => api.get<Account[]>('/dns/accounts') })
+  const domains = useQuery({ queryKey: ['dns-domains'], queryFn: () => api.get<Domain[]>('/dns/domains') })
   // Local DNS has no account; the other providers do.
   const withAccount = providers.filter((p) => p.fields.length > 0)
   const [provider, setProvider] = useState(withAccount[0]?.name ?? '')
@@ -56,10 +60,21 @@ export function AccountsSection({ providers }: { providers: Provider[] }) {
       <p>{t('dns:accounts.explain')}</p>
       {failed != null && <Problem error={failed} />}
       {accounts.data?.length === 0 && <p className="empty">{t('dns:accounts.empty')}</p>}
-      <ul className="cards">
+      <ul className="dom-grid">
         {accounts.data?.map((a) => (
-          <li key={a.id}>
-            <strong>{a.name}</strong> <span className="badge">{t(`dns:providers.${a.provider}`, { defaultValue: a.provider })}</span>
+          <li key={a.id} className="dom-card">
+            <header>
+              <Cloud size={16} aria-hidden="true" className="muted" />
+              <strong className="grow">{a.name}</strong>
+              <span className="badge">{t(`dns:providers.${a.provider}`, { defaultValue: a.provider })}</span>
+            </header>
+            <ul className="dom-rows">
+              {(domains.data ?? []).filter((d) => d.account_name === a.name).map((d) => (
+                <li key={d.id}>
+                  <Link to={`/dns/${d.id}`}>{d.name}</Link>
+                </li>
+              ))}
+            </ul>
             <p>
               <button
                 type="button"
@@ -75,8 +90,10 @@ export function AccountsSection({ providers }: { providers: Provider[] }) {
         ))}
       </ul>
       {withAccount.length > 0 && (
+        <details className="panel add-panel" open={accounts.data?.length === 0}>
+        <summary>{t('dns:accounts.add')}</summary>
         <form className="form" onSubmit={submit}>
-          <h3>{t('dns:accounts.add')}</h3>
+          <h3 className="visually-hidden">{t('dns:accounts.add')}</h3>
           <label htmlFor="dns-provider">{t('dns:accounts.provider')}</label>
           <select id="dns-provider" value={provider} onChange={(e) => { setProvider(e.target.value); setValues({}) }}>
             {withAccount.map((p) => <option key={p.name} value={p.name}>{t(`dns:providers.${p.name}`, { defaultValue: p.name })}</option>)}
@@ -105,6 +122,7 @@ export function AccountsSection({ providers }: { providers: Provider[] }) {
           <p className="hint">{t('dns:accounts.private')}</p>
           <button type="submit" className="primary" disabled={add.isPending}>{t('dns:accounts.create')}</button>
         </form>
+        </details>
       )}
     </section>
   )

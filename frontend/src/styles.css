@@ -753,3 +753,16 @@ ul.plain { margin: .25rem 0 0; padding-left: 1.2rem; }
 .mw-choice[data-group='security'] { --gc: var(--g-security); } .mw-choice[data-group='path'] { --gc: var(--g-path); } .mw-choice[data-group='content'] { --gc: var(--g-content); }
 .mw-choice[data-group='traffic'] { --gc: var(--g-traffic); } .mw-choice[data-group='group'] { --gc: var(--g-group); }
 .menu > summary::before, .menu > summary::after { content: none; display: none; }
+
+/* DNS: domain and account cards */
+.dom-grid { list-style: none; margin: 0 0 1.25rem; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); }
+.dom-card { display: flex; flex-direction: column; gap: .5rem; padding: 1rem 1.1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.dom-card:hover { border-color: var(--accent-line); }
+.dom-card header { display: flex; align-items: center; gap: .5rem; }
+.dom-card header .badge { margin-left: 0; }
+.dom-card > p { margin: 0; }
+.dom-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
+.dom-rows li { padding: .4rem .65rem; border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 var(--radius) var(--radius) 0; }
+.add-panel > summary { cursor: pointer; font-weight: 600; }
+.add-panel[open] > summary { margin-bottom: .75rem; }
+.segmented { margin-bottom: 1rem; }
