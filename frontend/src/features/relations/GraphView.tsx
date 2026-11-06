@@ -15,6 +15,8 @@ interface Props {
   onSelect: (key: string | null) => void
   // Changes when the theme changes, so colours are read again.
   themeKey: string
+  // Objects a search matches: lit up while nothing is selected.
+  highlight?: Set<string> | null
 }
 
 // Colours come from CSS variables so themes apply to the map too.
@@ -97,6 +99,7 @@ function stylesheet(): cytoscape.StylesheetJson {
       },
     },
     { selector: '.dim', style: { opacity: 0.12 } },
+    { selector: 'node.match', style: { 'border-width': 3, 'border-color': accent } },
     { selector: 'node.near', style: { 'border-width': 2, 'border-color': accent } },
     { selector: 'node:selected', style: { 'border-width': 4, 'border-color': accent } },
     {
@@ -106,7 +109,12 @@ function stylesheet(): cytoscape.StylesheetJson {
   ] as cytoscape.StylesheetJson
 }
 
-export function GraphView({ elements, selected, onSelect, themeKey }: Props) {
+export function GraphView({ elements, selected, onSelect, themeKey, highlight = null }: Props) {
+  const highlightKey = highlight ? [...highlight].sort().join('|') : ''
+  const highlightRef = useRef(highlight)
+  useEffect(() => {
+    highlightRef.current = highlight
+  })
   const { t } = useTranslation('relations')
   const container = useRef<HTMLDivElement>(null)
   const cy = useRef<Core | null>(null)
@@ -167,10 +175,12 @@ export function GraphView({ elements, selected, onSelect, themeKey }: Props) {
     // Hovering lights up what a node is connected to.
     instance.on('mouseover', 'node[type != "__head"]', (event) => {
       container.current?.style.setProperty('cursor', 'pointer')
+      if (container.current) container.current.title = String(event.target.data('full') ?? event.target.data('label'))
       event.target.neighborhood('node').addClass('near')
     })
     instance.on('mouseout', 'node', () => {
       container.current?.style.removeProperty('cursor')
+      container.current?.removeAttribute('title')
       instance.nodes().removeClass('near')
     })
     cy.current = instance
@@ -180,6 +190,15 @@ export function GraphView({ elements, selected, onSelect, themeKey }: Props) {
       cy.current = null
     }
   }, [signature, themeKey, scope])
+
+  // The box changes size when the details open or close: tell the canvas, keeping the view.
+  useEffect(() => {
+    const box = container.current
+    if (!box || typeof ResizeObserver === 'undefined') return
+    const watch = new ResizeObserver(() => cy.current?.resize())
+    watch.observe(box)
+    return () => watch.disconnect()
+  }, [])
 
   // The canvas keeps its size by itself only if told when its box changes.
   useEffect(() => {
@@ -192,9 +211,17 @@ export function GraphView({ elements, selected, onSelect, themeKey }: Props) {
     const instance = cy.current
     if (!instance) return
     instance.batch(() => {
-      instance.elements().removeClass('dim hot')
+      instance.elements().removeClass('dim hot match')
       instance.nodes().unselect()
-      if (!selected) return
+      if (!selected) {
+        const lit = highlightRef.current
+        if (lit) {
+          instance.nodes('[type != "__head"]').forEach((n) => {
+            n.addClass(lit.has(n.id()) ? 'match' : 'dim')
+          })
+        }
+        return
+      }
       const node = instance.getElementById(selected)
       if (node.empty()) return
       node.select()
@@ -212,7 +239,7 @@ export function GraphView({ elements, selected, onSelect, themeKey }: Props) {
         if (!inside) instance.animate({ center: { eles: node }, duration: 200 })
       }
     }
-  }, [selected, signature, themeKey])
+  }, [selected, signature, themeKey, highlightKey])
 
   const zoom = (factor: number) => {
     const instance = cy.current

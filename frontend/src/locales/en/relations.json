@@ -5,7 +5,7 @@
   "show": "Show",
   "list": "Text list of objects",
   "search": "Search an object",
-  "pickOne": "Click a name to see what it is linked to.",
+  "pickOne": "Click an object to see what it is linked to.",
   "noLinks": "Nothing is linked to this object.",
   "openContainers": "Open in Containers",
   "unavailable": "Some relations could not be loaded ({{provider}}).",
@@ -50,5 +50,14 @@
   "overview.noDomain": "no domain",
   "overview.loose": "Not used by anything",
   "overview.looseHint": "Images, networks and volumes no container uses.",
-  "around": "Around {{name}}"
+  "around": "Around {{name}}",
+  "results": "Search results",
+  "moreResults": "{{count}} more… refine the search",
+  "only": "Only its surroundings",
+  "onlyTip": "Hides everything that is not linked to the selected object.",
+  "depth": "How far to look",
+  "depth1": "Direct links",
+  "depth2": "2 links away",
+  "depth3": "3 links away",
+  "close": "Close the details"
 }

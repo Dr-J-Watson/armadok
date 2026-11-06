@@ -5,7 +5,7 @@
   "show": "Afficher",
   "list": "Liste textuelle des objets",
   "search": "Chercher un objet",
-  "pickOne": "Cliquez sur un nom pour voir à quoi il est relié.",
+  "pickOne": "Cliquez sur un objet pour voir à quoi il est relié.",
   "noLinks": "Rien n'est lié à cet objet.",
   "openContainers": "Ouvrir dans Conteneurs",
   "unavailable": "Certaines relations n'ont pas pu être chargées ({{provider}}).",
@@ -50,5 +50,14 @@
   "overview.noDomain": "aucun domaine",
   "overview.loose": "Utilisés par rien",
   "overview.looseHint": "Images, réseaux et volumes qu'aucun conteneur n'utilise.",
-  "around": "Autour de {{name}}"
+  "around": "Autour de {{name}}",
+  "results": "Résultats de la recherche",
+  "moreResults": "{{count}} de plus… affinez la recherche",
+  "only": "Seulement son entourage",
+  "onlyTip": "Masque tout ce qui n'est pas relié à l'objet sélectionné.",
+  "depth": "Jusqu'où regarder",
+  "depth1": "Liens directs",
+  "depth2": "À 2 liens",
+  "depth3": "À 3 liens",
+  "close": "Fermer les détails"
 }

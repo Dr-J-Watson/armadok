@@ -107,7 +107,7 @@ test('on a phone the menu is a drawer that opens, navigates and closes', async (
   await menu.click()
   await expect(page.locator('.sidebar')).toBeInViewport()
   await page.getByRole('link', { name: 'Nodes', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Nodes' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Nodes', exact: true })).toBeVisible()
   await expect(page.locator('.sidebar')).not.toBeInViewport()
   // No horizontal scrolling on a phone.
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)

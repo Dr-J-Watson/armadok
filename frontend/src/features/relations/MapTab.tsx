@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -7,8 +8,7 @@ import { codeMessage } from '../../core/errors'
 import { readPref, writePref } from '../../core/storage'
 import { GraphView } from './GraphView'
 import { RelationsPanel } from './RelationsPanel'
-import { Overview } from './Overview'
-import { buildElements, buildOverview, matchesSearch, objectKey, typesOf } from './graph'
+import { buildElements, matchesSearch, neighbourhood, objectKey, typesOf } from './graph'
 import type { RelationsMap } from './graph'
 import { Problem } from '../../components/Problem'
 
@@ -17,13 +17,19 @@ function hiddenKey(nodeId: string) {
   return `map.hidden.${nodeId}`
 }
 
-function loadHidden(nodeId: string): Set<string> {
+// null when the person never chose: the page then picks a sensible default for the size.
+function loadHidden(nodeId: string): Set<string> | null {
   try {
-    return new Set(JSON.parse(readPref(hiddenKey(nodeId)) ?? '[]') as string[])
+    const stored = readPref(hiddenKey(nodeId))
+    return stored === null ? null : new Set(JSON.parse(stored) as string[])
   } catch {
-    return new Set()
+    return null
   }
 }
+
+// On a big node, images, networks and volumes (often shared by everything) bury the rest.
+const NOISY = ['image', 'network', 'volume']
+const BIG = 40
 
 // The same value as before while its content is unchanged.
 function useStable<T>(value: T): T {
@@ -40,9 +46,10 @@ function useStable<T>(value: T): T {
 export function MapTab({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation(['relations', 'errors'])
   const [params, setParams] = useSearchParams()
-  const [hidden, setHidden] = useState(() => loadHidden(nodeId))
+  const [chosen, setChosen] = useState(() => loadHidden(nodeId))
   const [search, setSearch] = useState('')
-  const [view, setView] = useState<'cards' | 'graph'>('cards')
+  const [only, setOnly] = useState(false)
+  const [depth, setDepth] = useState(1)
   const [selected, setSelected] = useState<string | null>(params.get('focus'))
 
   const map = useQuery({
@@ -51,24 +58,36 @@ export function MapTab({ nodeId }: { nodeId: string }) {
     refetchInterval: 15000,
   })
 
-  // The server is asked again every few seconds; the drawing is only rebuilt (and re-laid out)
-  // when the answer actually differs, so it does not jump while someone reads it.
+  // The server is asked again every few seconds; the drawing is only rebuilt when the answer
+  // actually differs, so it does not jump while someone reads it.
   const answer = useStable(map.data)
   const types = useMemo(() => typesOf(answer?.objects ?? []), [answer])
+  const counts = useMemo(() => {
+    const result: Record<string, number> = {}
+    for (const o of answer?.objects ?? []) result[o.type] = (result[o.type] ?? 0) + 1
+    return result
+  }, [answer])
+  const bigNode = (answer?.objects.length ?? 0) > BIG
+  const hidden = useMemo(() => chosen ?? new Set(bigNode ? NOISY : []), [chosen, bigNode])
   const visible = useMemo(() => new Set(types.filter((type) => !hidden.has(type))), [types, hidden])
-  const elements = useMemo(() => (answer ? buildElements(answer, visible) : []), [answer, visible])
+  const data = answer ?? map.data
+  const elements = useMemo(() => {
+    if (!data) return []
+    return buildElements(only && selected ? neighbourhood(data, selected, depth, visible) : data, only && selected ? new Set(types) : visible)
+  }, [data, visible, only, selected, depth, types])
   const matches = useMemo(
-    () => (answer?.objects ?? []).filter((o) => visible.has(o.type) && matchesSearch(o, search)),
-    [answer, visible, search],
+    () => (search.trim() ? (data?.objects ?? []).filter((o) => matchesSearch(o, search)) : []),
+    [data, search],
   )
+  const highlight = useMemo(() => (search.trim() ? new Set(matches.filter((o) => visible.has(o.type)).map(objectKey)) : null), [matches, visible, search])
   const themeKey = `${document.documentElement.dataset.theme ?? 'system'}`
-  const selectedObject = map.data?.objects.find((o) => objectKey(o) === selected)
+  const selectedObject = data?.objects.find((o) => objectKey(o) === selected)
 
   function toggle(type: string) {
     const next = new Set(hidden)
     if (next.has(type)) next.delete(type)
     else next.add(type)
-    setHidden(next)
+    setChosen(next)
     writePref(hiddenKey(nodeId), JSON.stringify([...next]))
   }
 
@@ -82,17 +101,9 @@ export function MapTab({ nodeId }: { nodeId: string }) {
   }
 
   if (map.isPending) return <p className="loading">{t('loading')}</p>
-  if (map.isError) {
-    return (
-      <Problem error={map.error} />
-    )
-  }
+  if (map.isError) return <Problem error={map.error} />
 
   const unavailable = Object.entries(map.data.unavailable)
-  const data = answer ?? map.data
-  const overview = buildOverview(data, visible)
-  const linked = new Set(selected ? [...data.links.flatMap((l) => (objectKey(l.source) === selected ? [objectKey(l.target)] : objectKey(l.target) === selected ? [objectKey(l.source)] : []))] : [])
-  const matching = search.trim() ? new Set(matches.map(objectKey)) : null
   return (
     <>
       {unavailable.map(([provider, code]) => (
@@ -104,65 +115,96 @@ export function MapTab({ nodeId }: { nodeId: string }) {
       {map.data.objects.length === 0 ? (
         <p className="empty">{t('relations:empty')}</p>
       ) : (
-        <>
-          <div className="map-bar">
-            <div className="segmented" role="group" aria-label={t('relations:view.title')}>
-              {(['cards', 'graph'] as const).map((v) => (
-                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>
-                  {t(`relations:view.${v}`)}
-                </button>
-              ))}
+        <div className="map-page">
+          <div className="map-toolbar">
+            <div className="map-search">
+              <label htmlFor="map-search" className="visually-hidden">
+                {t('relations:search')}
+              </label>
+              <input id="map-search" type="search" placeholder={t('relations:search')} value={search} onChange={(e) => setSearch(e.target.value)} />
+              {matches.length > 0 && (
+                <ul className="map-results" aria-label={t('relations:results')}>
+                  {matches.slice(0, 8).map((o) => (
+                    <li key={objectKey(o)}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          select(objectKey(o))
+                          setSearch('')
+                        }}
+                      >
+                        <span className="swatch" data-type={o.type} aria-hidden="true" /> {o.label}
+                        <span className="muted"> · {t(`relations:types.${o.type}`, { defaultValue: o.type })}</span>
+                      </button>
+                    </li>
+                  ))}
+                  {matches.length > 8 && <li className="hint">{t('relations:moreResults', { count: matches.length - 8 })}</li>}
+                </ul>
+              )}
             </div>
-            <label htmlFor="map-search" className="visually-hidden">
-              {t('relations:search')}
-            </label>
-            <input id="map-search" type="search" placeholder={t('relations:search')} value={search} onChange={(e) => setSearch(e.target.value)} />
-          </div>
-          <details className="legend-fold">
-            <summary>{t('relations:show')}</summary>
-            <fieldset className="legend">
+            <fieldset className="pills-filter">
               <legend className="visually-hidden">{t('relations:show')}</legend>
               {types.map((type) => (
-                <label key={type} className="legend-item">
+                <label key={type} className="pill-toggle">
                   <input type="checkbox" checked={!hidden.has(type)} onChange={() => toggle(type)} />
                   <span className="swatch" data-type={type} aria-hidden="true" />
                   {t(`relations:types.${type}`, { defaultValue: type })}
+                  <span className="count" aria-hidden="true">{counts[type]}</span>
                 </label>
               ))}
             </fieldset>
-          </details>
-
-          <div className={`map-layout${view === 'graph' ? ' map-layout-graph' : ''}`}>
-            <div>
-              {view === 'cards' ? (
-                <Overview data={overview} selected={selected} onSelect={select} matching={matching} linked={linked} />
-              ) : (
-                <GraphView elements={elements} selected={selected} onSelect={select} themeKey={themeKey} />
-              )}
-            </div>
-
-            <div className="map-side">
-              {selectedObject ? (
-                <>
-                  <RelationsPanel
-                    nodeId={nodeId}
-                    object={selectedObject}
-                    onSelect={select}
-                    extra={
-                      selectedObject.type === 'container' && (
-                        <p>
-                          <Link to={`/nodes/${nodeId}?tab=containers`}>{t('relations:openContainers')}</Link>
-                        </p>
-                      )
-                    }
-                  />
-                </>
-              ) : (
-                <p className="hint">{t('relations:pickOne')}</p>
+            <div className="map-focus">
+              <button type="button" aria-pressed={only} disabled={!selected} title={t('relations:onlyTip')} onClick={() => setOnly(!only)}>
+                {t('relations:only')}
+              </button>
+              {only && selected && (
+                <select aria-label={t('relations:depth')} value={depth} onChange={(e) => setDepth(Number(e.target.value))}>
+                  <option value={1}>{t('relations:depth1')}</option>
+                  <option value={2}>{t('relations:depth2')}</option>
+                  <option value={3}>{t('relations:depth3')}</option>
+                </select>
               )}
             </div>
           </div>
-        </>
+
+          <div className={`map-work${selectedObject ? ' has-drawer' : ''}`}>
+            <GraphView elements={elements} selected={selected} onSelect={select} themeKey={themeKey} highlight={highlight} />
+            {!selectedObject && <p className="map-empty hint">{t('relations:pickOne')}</p>}
+            {selectedObject && (
+              <div className="map-drawer">
+                <button type="button" className="icon-button map-close" aria-label={t('relations:close')} title={t('relations:close')} onClick={() => select(null)}>
+                  <X size={16} aria-hidden="true" />
+                </button>
+                <RelationsPanel
+                  nodeId={nodeId}
+                  object={selectedObject}
+                  onSelect={select}
+                  extra={
+                    selectedObject.type === 'container' && (
+                      <p>
+                        <Link to={`/nodes/${nodeId}?tab=containers`}>{t('relations:openContainers')}</Link>
+                      </p>
+                    )
+                  }
+                />
+              </div>
+            )}
+          </div>
+
+          <details className="object-list">
+            <summary>{t('relations:list')}</summary>
+            <ul>
+              {(data?.objects ?? []).filter((o) => visible.has(o.type)).map((o) => (
+                <li key={objectKey(o)}>
+                  <button type="button" className="link-button" aria-pressed={selected === objectKey(o)} onClick={() => select(objectKey(o))}>
+                    {o.label}
+                  </button>{' '}
+                  <span className="badge">{t(`relations:types.${o.type}`, { defaultValue: o.type })}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </div>
       )}
     </>
   )

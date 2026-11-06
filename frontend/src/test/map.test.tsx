@@ -59,7 +59,8 @@ describe('relations map', () => {
   it('shows links in both directions for the selected object and follows a neighbour', async () => {
     const calls = serve()
     renderMap()
-    const web = (await screen.findAllByRole('button', { name: 'web' })).find((b) => b.getAttribute('data-type') === 'container')!
+    await userEvent.click(await screen.findByText('Text list of objects'))
+    const web = (await screen.findAllByRole('button', { name: 'web' }))[0] // the container
     await userEvent.click(web)
     expect(await screen.findByText(/points to · runs/)).toBeInTheDocument()
     expect(screen.getByText(/pointed at by · routes to/)).toBeInTheDocument()
@@ -82,10 +83,10 @@ describe('relations map', () => {
   it('hides a type from the list and remembers it for this node only', async () => {
     serve()
     const { unmount } = renderMap()
-    await userEvent.click(await screen.findByText('Show', { selector: 'summary' }))
+    await userEvent.click(await screen.findByText('Text list of objects'))
+    expect(await screen.findByRole('button', { name: 'nginx:1.27' })).toBeInTheDocument()
     await userEvent.click(await screen.findByRole('checkbox', { name: 'Image' }))
     expect(screen.queryByRole('button', { name: 'nginx:1.27' })).not.toBeInTheDocument()
-    expect(await screen.findByRole('checkbox', { name: 'Image' })).not.toBeChecked()
     unmount()
     renderMap()
     expect(await screen.findByRole('checkbox', { name: 'Image' })).not.toBeChecked()
