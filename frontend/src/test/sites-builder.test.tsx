@@ -26,7 +26,7 @@ function server(sites: unknown[]) {
     if (path.endsWith('/dns/fix')) { dnsStatus = 'present'; return json({}, 201) }
     if (path.endsWith('/certs')) return json({ hosts: [{ host: 'blog.example.com', state: 'missing' }] })
     if (path.endsWith('/managed')) return json({ sites })
-    if (path.endsWith('/traefik/sites'))
+    if (path.endsWith('/traefik/items/overview'))
       return method === 'POST'
         ? json({ name: 'blog' }, 201)
         : json({

@@ -12,8 +12,9 @@ import hashlib
 import sqlite3
 from typing import Literal
 
+import yaml as yaml_module
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from armadok.core import audit
 from armadok.core.deps import get_db, get_principal, get_registry
@@ -40,24 +41,40 @@ class ToggleIn(BaseModel):
     enabled: bool
 
 
-class ItemIn(BaseModel):
-    """The new value (YAML text) of one item, and the version of the file it was read from."""
+class _Valued(BaseModel):
+    """A value given as YAML text (a person typing it) or as a mapping (a form), never both."""
 
     model_config = ConfigDict(extra="forbid")
+    yaml: str | None = Field(default=None, min_length=1, max_length=64 * 1024)
+    value: dict | None = None
+
+    @model_validator(mode="after")
+    def one_of_them(self) -> _Valued:
+        """Check that exactly one of `yaml` and `value` came, and turn a mapping into text."""
+        if (self.yaml is None) == (self.value is None):
+            raise ValueError("give either yaml or value")
+        if self.value is not None:
+            try:
+                self.yaml = itemfile.dump(self.value)
+            except (itemfile.ItemError, yaml_module.YAMLError, RecursionError):
+                raise ValueError("value cannot be written as YAML") from None
+        return self
+
+
+class ItemIn(_Valued):
+    """The new value of one item, and the version of the file it was read from."""
+
     path: str = Field(pattern=schemas.PATH_PATTERN)
     kind: Kind
     name: str = Field(pattern=ITEM_NAME)
-    yaml: str = Field(min_length=1, max_length=64 * 1024)
     expected_sha256: str | None = Field(default=None, pattern=schemas.SHA_PATTERN)
 
 
-class NewItemIn(BaseModel):
+class NewItemIn(_Valued):
     """A new item: in an existing file (with its version), or in a file of its own."""
 
-    model_config = ConfigDict(extra="forbid")
     kind: Kind
     name: str = Field(pattern=ITEM_NAME)
-    yaml: str = Field(min_length=1, max_length=64 * 1024)
     path: str | None = Field(default=None, pattern=schemas.PATH_PATTERN)
     expected_sha256: str | None = Field(default=None, pattern=schemas.SHA_PATTERN)
 
@@ -229,7 +246,7 @@ async def write_item(
         text, sha = files[body.path]
         try:
             span = itemfile.find(text, "http", body.kind, body.name)
-            new = itemfile.replace(text, span, body.yaml)
+            new = itemfile.replace(text, span, body.yaml or "")
             await asyncio.to_thread(parse.load, new)
         except itemfile.ItemError as error:
             raise _error(error) from error
@@ -270,7 +287,7 @@ async def add_item(
             ):
                 raise ApiError("traefik.invalid_name", 422)
             try:
-                new = itemfile.add("", "http", body.kind, body.name, body.yaml)
+                new = itemfile.add("", "http", body.kind, body.name, body.yaml or "")
                 await asyncio.to_thread(parse.load, new)
             except itemfile.ItemError as error:
                 raise _error(error) from error
@@ -290,7 +307,7 @@ async def add_item(
                 raise NotFound()
             text, sha = files[body.path]
             try:
-                new = itemfile.add(text, "http", body.kind, body.name, body.yaml)
+                new = itemfile.add(text, "http", body.kind, body.name, body.yaml or "")
                 await asyncio.to_thread(parse.load, new)
             except itemfile.ItemError as error:
                 raise _error(error) from error
@@ -340,3 +357,79 @@ async def delete_item(
         audit_failure(conn, registry, who, "traefik.item_delete", node_id, details, error)
         raise
     _record(conn, registry, who, "traefik.item_delete", node_id, **details)
+
+
+class ParseIn(BaseModel):
+    """YAML text to read as an item (to move from the YAML view to the form)."""
+
+    model_config = ConfigDict(extra="forbid")
+    yaml: str = Field(min_length=1, max_length=64 * 1024)
+
+
+@router.post("/parse", summary="Read YAML text as an item value")
+async def parse_item(
+    node_id: str,
+    body: ParseIn,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Return the mapping the text describes, or `traefik.invalid_yaml` / `traefik.invalid_item`.
+
+    Nothing is stored: the form uses it to show what a person typed in the YAML view.
+    """
+    authorise(conn, registry, who, node_id, "traefik.read")
+    try:
+        return {"value": await asyncio.to_thread(itemfile.check_value, body.yaml)}
+    except itemfile.ItemError as error:
+        raise _error(error) from error
+
+
+class HashIn(BaseModel):
+    """A user name and password to turn into an htpasswd entry."""
+
+    model_config = ConfigDict(extra="forbid")
+    username: str = Field(pattern=r"^[A-Za-z0-9_.@-]{1,64}$")
+    password: str = Field(min_length=8, max_length=72)
+
+
+@router.post("/htpasswd", summary="Make an htpasswd entry (bcrypt) from a user and a password")
+async def make_htpasswd(
+    node_id: str,
+    body: HashIn,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Return `user:hash`. The password is used here and kept nowhere: not stored, not logged."""
+    authorise(conn, registry, who, node_id, "traefik.files.write")
+    who.require("traefik.sites.write", registry.rights(), f"node:{node_id}")
+    import bcrypt
+
+    digest = await asyncio.to_thread(
+        bcrypt.hashpw, body.password.encode(), bcrypt.gensalt(rounds=12, prefix=b"2a")
+    )
+    return {"entry": f"{body.username}:{digest.decode()}"}
+
+
+class DumpIn(BaseModel):
+    """A mapping to write as YAML (to move from the form to the YAML view)."""
+
+    model_config = ConfigDict(extra="forbid")
+    value: dict
+
+
+@router.post("/dump", summary="Write an item value as YAML text")
+async def dump_item(
+    node_id: str,
+    body: DumpIn,
+    conn: sqlite3.Connection = Depends(get_db),
+    registry: Registry = Depends(get_registry),
+    who: Principal = Depends(get_principal),
+) -> dict:
+    """Return the YAML text of a mapping. Nothing is stored."""
+    authorise(conn, registry, who, node_id, "traefik.read")
+    try:
+        return {"yaml": itemfile.dump(body.value)}
+    except (itemfile.ItemError, yaml_module.YAMLError, RecursionError) as error:
+        raise ApiError("traefik.invalid_item", 422) from error

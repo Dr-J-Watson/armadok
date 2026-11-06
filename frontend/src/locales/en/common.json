@@ -48,5 +48,6 @@
   "crash.title": "Something went wrong on this screen",
   "crash.text": "Nothing was lost or changed because of it. You can try again, or reload the page.",
   "crash.reload": "Reload the page",
-  "crash.retry": "Try again"
+  "crash.retry": "Try again",
+  "drawer.close": "Close"
 }

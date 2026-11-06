@@ -28,7 +28,7 @@ describe('site cards', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const path = String(input)
       if (path.endsWith('/managed')) return json({ sites: [blog, shop] })
-      if (path.endsWith('/traefik/sites'))
+      if (path.endsWith('/traefik/items/overview'))
         return json({
           routers: [router(blog), router(shop)],
           services: [{ id: 'blog@file', urls: ['http://blog-web:80'] }, { id: 'shop@file', urls: ['http://shop-web:80'] }],

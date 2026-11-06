@@ -48,5 +48,6 @@
   "crash.title": "Un problème est survenu sur cet écran",
   "crash.text": "Rien n'a été perdu ni modifié à cause de cela. Vous pouvez réessayer ou recharger la page.",
   "crash.reload": "Recharger la page",
-  "crash.retry": "Réessayer"
+  "crash.retry": "Réessayer",
+  "drawer.close": "Fermer"
 }

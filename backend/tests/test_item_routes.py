@@ -154,3 +154,51 @@ def test_changes_are_audited_by_name_and_never_by_content(hub):  # noqa: F811
         .fetchall()
     )
     assert rows and rows[0][0] == "traefik.item_toggle" and "10.0.0.0" not in str(rows)
+
+
+def test_a_form_value_is_written_as_yaml_and_yaml_text_can_be_read_back(hub):
+    client, admin, node, folder = hub
+    put_file(folder, FILE)
+    params = {"path": "apps.yml", "kind": "middlewares", "name": "lan"}
+    value = {"ipAllowList": {"sourceRange": ["192.168.0.0/16"]}}
+    assert client.put(base(node), headers=admin, json={**params, "value": value}).status_code == 200
+    assert "- 192.168.0.0/16" in (folder / "apps.yml").read_text()
+    both = client.put(base(node), headers=admin, json={**params, "value": value, "yaml": "a: 1\n"})
+    assert both.status_code == 422
+    neither = client.put(base(node), headers=admin, json=params)
+    assert neither.status_code == 422
+    parsed = client.post(
+        f"{base(node)}/parse",
+        headers=admin,
+        json={"yaml": "compress:\n  minResponseBodyBytes: 5\n"},
+    )
+    assert parsed.json() == {"value": {"compress": {"minResponseBodyBytes": 5}}}
+    bad = client.post(f"{base(node)}/parse", headers=admin, json={"yaml": "a: [\n"})
+    assert bad.status_code == 422
+
+
+def test_an_htpasswd_entry_is_a_checkable_bcrypt_hash_and_the_password_is_not_kept(hub):
+    import bcrypt
+
+    client, admin, node, folder = hub
+    secret = "-".join(["a", "long", "pass"])
+    got = client.post(
+        f"{base(node)}/htpasswd", headers=admin, json={"username": "alice", "password": secret}
+    )
+    user, digest = got.json()["entry"].split(":", 1)
+    assert user == "alice" and bcrypt.checkpw(secret.encode(), digest.encode())
+    short = client.post(
+        f"{base(node)}/htpasswd", headers=admin, json={"username": "alice", "password": "short"}
+    )
+    assert short.status_code == 422
+
+
+def test_a_mapping_is_written_as_yaml_text(hub):
+    client, admin, node, folder = hub
+    got = client.post(
+        f"{base(node)}/dump",
+        headers=admin,
+        json={"value": {"compress": {"minResponseBodyBytes": 5}}},
+    )
+    assert got.json() == {"yaml": "compress:\n  minResponseBodyBytes: 5\n"}
+    assert client.post(f"{base(node)}/dump", headers=admin, json={"value": {}}).status_code == 422

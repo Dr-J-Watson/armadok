@@ -26,7 +26,7 @@ function server(putAnswer: Response | null = null) {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const path = String(input).replace('/api/v1', '')
     const method = (init?.method ?? 'GET').toUpperCase()
-    if (path === '/nodes/n1/traefik/sites') return json(sites)
+    if (path === '/nodes/n1/traefik/items/overview') return json(sites)
     if (path === '/nodes/n1/traefik/managed') return json({ sites: [] })
     if (path === '/nodes/n1/traefik/files') return json({ files: [{ path: 'apps/blog.yml', size: 10 }, { path: 'base.yaml', size: 5 }], truncated: false })
     if (path === '/nodes/n1/traefik/files/apps/blog.yml') {

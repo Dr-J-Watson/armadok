@@ -5,7 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Box, Copy, CornerUpRight, Database, FileKey, FileType, FolderMinus, FolderPlus, Gauge, KeyRound, Link2, Network,
-  Package, Pencil, Plug, Plus, Puzzle, Replace, RotateCw, Search, Shield, ShieldCheck, Trash2, TriangleAlert, Wrench, Zap,
+  FileText, Package, Pencil, Plug, Plus, Puzzle, Replace, RotateCw, Search, Shield, ShieldCheck, Trash2, TriangleAlert, Wrench, Zap,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,7 +14,10 @@ import { Problem } from '../../components/Problem'
 import { Tip } from '../../components/Tip'
 import { useConfirm } from '../../components/Confirm'
 import { api } from '../../core/api'
+import { ItemDrawer } from './ItemDrawer'
+import type { DrawerTarget } from './ItemDrawer'
 import { MiddlewareEditor } from './MiddlewareEditor'
+import { PRESETS } from './middlewareSchema'
 import { INTENTS, blank, fromSpec } from './middlewareForm'
 import type { Intent, Item } from './middlewareForm'
 import { GROUPS, INTENT_TYPE, kindOf } from './middlewareKinds'
@@ -26,13 +29,16 @@ interface FileMiddleware {
   type: string
   path: string
   refs: string[]
+  disabled?: boolean
 }
 interface FileRouter {
   name: string
   middlewares: string[]
+  disabled?: boolean
 }
 interface Sites {
   routers: FileRouter[]
+  services?: { id: string }[]
   middlewares: FileMiddleware[]
   errors: { path: string; error: string }[]
 }
@@ -52,7 +58,8 @@ export function MiddlewaresPage({ nodeId }: { nodeId: string }) {
   const base = `/nodes/${nodeId}/traefik/middlewares`
   const [filter, setFilter] = useState('')
   const [mode, setMode] = useState<Mode>(null)
-  const sites = useQuery({ queryKey: ['traefik-sites', nodeId], queryFn: () => api.get<Sites>(`/nodes/${nodeId}/traefik/sites`) })
+  const [drawer, setDrawer] = useState<DrawerTarget | null>(null)
+  const sites = useQuery({ queryKey: ['traefik-overview', nodeId], queryFn: () => api.get<Sites>(`/nodes/${nodeId}/traefik/items/overview`) })
   const managed = useQuery({ queryKey: ['traefik-middlewares', nodeId], queryFn: () => api.get<{ middlewares: Item[] }>(base), retry: false })
   const mine = useMemo(() => new Map((managed.data?.middlewares ?? []).map((m) => [m.name, m])), [managed.data])
 
@@ -60,8 +67,8 @@ export function MiddlewaresPage({ nodeId }: { nodeId: string }) {
   const usedBy = useMemo(() => {
     const result = new Map<string, string[]>()
     const add = (id: string, who: string) => result.set(id, [...new Set([...(result.get(id) ?? []), who])])
-    for (const r of sites.data?.routers ?? []) for (const m of r.middlewares) add(m, r.name)
-    for (const m of sites.data?.middlewares ?? []) for (const ref of m.refs) add(ref, m.name)
+    for (const r of sites.data?.routers ?? []) if (!r.disabled) for (const m of r.middlewares) add(m, r.name)
+    for (const m of sites.data?.middlewares ?? []) if (!m.disabled) for (const ref of m.refs) add(ref, m.name)
     return result
   }, [sites.data])
 
@@ -72,6 +79,15 @@ export function MiddlewaresPage({ nodeId }: { nodeId: string }) {
     .sort((a, b) => a.name.localeCompare(b.name))
   const sections = GROUPS.map((group) => ({ group, rows: shown.filter((m) => kindOf(m.type).group === group) })).filter((s) => s.rows.length > 0)
 
+  const refreshAll = () => Promise.all(['traefik-overview', 'traefik-sites', 'traefik-middlewares'].map((k) => client.invalidateQueries({ queryKey: [k, nodeId] })))
+  const toggle = useMutation({
+    mutationFn: (m: FileMiddleware) => api.post(`/nodes/${nodeId}/traefik/items/toggle`, { path: m.path, kind: 'middlewares', name: m.name, enabled: m.disabled === true }),
+    onSuccess: refreshAll,
+  })
+  const removeItem = useMutation({
+    mutationFn: (m: FileMiddleware) => api.del(`/nodes/${nodeId}/traefik/items?path=${encodeURIComponent(m.path)}&kind=middlewares&name=${encodeURIComponent(m.name)}`),
+    onSuccess: refreshAll,
+  })
   const remove = useMutation({
     mutationFn: (m: Item) => api.del(`${base}/${m.name}?expected_sha256=${m.sha256}`),
     onSuccess: async () => {
@@ -94,10 +110,19 @@ export function MiddlewaresPage({ nodeId }: { nodeId: string }) {
       await Promise.all(['traefik-middlewares', 'traefik-sites', 'traefik-managed'].map((k) => client.invalidateQueries({ queryKey: [k, nodeId] })))
     },
   })
-  const failed = sites.error ?? remove.error ?? plan.error ?? rename.error
+  const failed = sites.error ?? remove.error ?? plan.error ?? rename.error ?? toggle.error ?? removeItem.error
 
   if (mode?.kind === 'gallery')
-    return <Gallery onPick={(intent) => setMode({ kind: 'edit', item: null, initial: blank(intent) })} onCancel={() => setMode(null)} />
+    return (
+      <Gallery
+        onPick={(intent) => {
+          const preset = PRESETS[intent]
+          setMode(null)
+          setDrawer({ kind: 'new', name: preset.name, value: preset.value })
+        }}
+        onCancel={() => setMode(null)}
+      />
+    )
   if (mode?.kind === 'edit')
     return <MiddlewareEditor nodeId={nodeId} editing={mode.item} initial={mode.initial} onDone={() => setMode(null)} onCancel={() => setMode(null)} />
 
@@ -172,7 +197,7 @@ export function MiddlewaresPage({ nodeId }: { nodeId: string }) {
               const users = (usedBy.get(m.id) ?? []).sort()
               const kind = kindOf(m.type)
               return (
-                <article key={`${m.path}:${m.id}`} className="mw-card" data-group={group as MiddlewareGroup}>
+                <article key={`${m.path}:${m.id}`} className={`mw-card${m.disabled ? ' off' : ''}`} data-group={group as MiddlewareGroup}>
                   <header>
                     <span className="mw-icon" aria-hidden="true"><Icon name={kind.icon} size={16} /></span>
                     <div className="grow">
@@ -181,10 +206,21 @@ export function MiddlewaresPage({ nodeId }: { nodeId: string }) {
                         <b>{kind.label}</b> · {t(`traefik:mw.type.${m.type}`, { defaultValue: m.type })}
                       </span>
                     </div>
+                    {m.disabled && <span className="badge warn">{t('traefik:mw.off')}</span>}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={!m.disabled}
+                      className={`switch${m.disabled ? '' : ' on'}`}
+                      disabled={toggle.isPending}
+                      title={m.disabled ? t('traefik:mw.switchOn') : t('traefik:mw.switchOffTip')}
+                      aria-label={`${m.disabled ? t('traefik:mw.switchOn') : t('traefik:mw.switchOff')} ${m.name}`}
+                      onClick={() => toggle.mutate(m)}
+                    />
                   </header>
                   <div className="used" title={t('traefik:mw.usedTip')}>
                     <span className="hint">{t('traefik:mw.usedBy')}</span>
-                    {users.length === 0 ? <span className="badge warn">{t('traefik:mw.nobody')}</span> : (
+                    {m.disabled ? <span className="hint">—</span> : users.length === 0 ? <span className="badge warn">{t('traefik:mw.nobody')}</span> : (
                       <>
                         {users.slice(0, 4).map((u) => <span key={u} className="badge accent">{u}</span>)}
                         {users.length > 4 && <span className="badge">+{users.length - 4}</span>}
@@ -216,9 +252,24 @@ export function MiddlewaresPage({ nodeId }: { nodeId: string }) {
                         </button>
                       </span>
                     ) : (
-                      <Link className="button-link small" to={`/nodes/${nodeId}?tab=traefik-advanced&view=files&file=${encodeURIComponent(m.path)}`} title={t('traefik:mw.byHandTip')}>
-                        <Pencil size={13} aria-hidden="true" /> {t('traefik:mw.openFile')}
-                      </Link>
+                      <span className="mw-actions">
+                        <button type="button" className="icon-button" title={t('traefik:middlewares.edit')} aria-label={`${t('traefik:middlewares.edit')} ${m.name}`} onClick={() => setDrawer({ kind: 'edit', path: m.path, name: m.name })}>
+                          <Pencil size={14} aria-hidden="true" />
+                        </button>
+                        <Link className="icon-button" to={`/nodes/${nodeId}?tab=traefik-advanced&view=files&file=${encodeURIComponent(m.path)}`} title={t('traefik:mw.openFile')} aria-label={`${t('traefik:mw.openFile')} ${m.name}`}>
+                          <FileText size={14} aria-hidden="true" />
+                        </Link>
+                        <button
+                          type="button"
+                          className="icon-button danger"
+                          disabled={users.length > 0 && !m.disabled}
+                          title={users.length > 0 && !m.disabled ? t('traefik:middlewares.inUse') : t('traefik:middlewares.delete')}
+                          aria-label={`${t('traefik:middlewares.delete')} ${m.name}`}
+                          onClick={async () => (await confirm(t('traefik:middlewares.confirmDelete'))) && removeItem.mutate(m)}
+                        >
+                          <Trash2 size={14} aria-hidden="true" />
+                        </button>
+                      </span>
                     )}
                   </footer>
                 </article>
@@ -227,6 +278,16 @@ export function MiddlewaresPage({ nodeId }: { nodeId: string }) {
           </div>
         </section>
       ))}
+      {drawer && (
+        <ItemDrawer
+          key={drawer.name}
+          nodeId={nodeId}
+          target={drawer}
+          files={[...new Set(all.map((m) => m.path).filter((p) => p.startsWith('middlewares/')))].sort()}
+          names={{ middlewares: all.map((m) => m.name), services: (sites.data?.services ?? []).map((x) => x.id.replace(/@file$/, '')) }}
+          onClose={() => setDrawer(null)}
+        />
+      )}
     </>
   )
 }

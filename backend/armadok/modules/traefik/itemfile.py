@@ -270,3 +270,24 @@ def overview(path: str, text: str, sha256: str | None = None) -> dict[str, Any]:
             _OVERVIEW_CACHE.clear()
         _OVERVIEW_CACHE[key] = summary
     return summary
+
+
+MAX_DEPTH = 12
+
+
+def dump(value: Any) -> str:
+    """Write an item's value as block-style YAML (keys in the order given, no anchors)."""
+
+    def depth(node: Any, level: int = 0) -> int:
+        if level > MAX_DEPTH:
+            raise ItemError("invalid_item")
+        if isinstance(node, dict):
+            return max((depth(v, level + 1) for v in node.values()), default=level)
+        if isinstance(node, list):
+            return max((depth(v, level + 1) for v in node), default=level)
+        return level
+
+    if not isinstance(value, dict) or not value:
+        raise ItemError("invalid_item")
+    depth(value)
+    return yaml.safe_dump(value, default_flow_style=False, sort_keys=False, allow_unicode=True)

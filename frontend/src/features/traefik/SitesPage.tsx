@@ -23,10 +23,12 @@ interface Router {
   middlewares: string[]
   tls: boolean
   path: string
+  disabled?: boolean
 }
 interface Sites {
   routers: Router[]
   services: { id: string; urls: string[] }[]
+  middlewares?: { id: string; disabled?: boolean }[]
   errors: { path: string; error: string }[]
 }
 interface Managed {
@@ -64,6 +66,9 @@ interface Card {
   paused: boolean
   managed: Managed | null
   routerId: string | null
+  // A router of a hand-written file: where it is, and whether it was switched off here.
+  item: { path: string; name: string } | null
+  off: boolean
 }
 
 const HOST = /Host\(([^)]*)\)/g
@@ -81,7 +86,7 @@ export function SitesPage({ nodeId }: { nodeId: string }) {
   const [renaming, setRenaming] = useState<{ name: string; to: string; sha256: string } | null>(null)
   const [historyOf, setHistoryOf] = useState<Managed | null>(null)
 
-  const sites = useQuery({ queryKey: ['traefik-sites', nodeId], queryFn: () => api.get<Sites>(`${base}/sites`) })
+  const sites = useQuery({ queryKey: ['traefik-overview', nodeId], queryFn: () => api.get<Sites>(`${base}/items/overview`) })
   const managed = useQuery({ queryKey: ['traefik-managed', nodeId], queryFn: () => api.get<{ sites: Managed[] }>(`${base}/managed`), retry: false })
   const dns = useQuery({ queryKey: ['dns-report', nodeId], queryFn: () => api.get<{ hosts: Host[] }>(`/nodes/${nodeId}/dns/report`), retry: false })
   const certs = useQuery({ queryKey: ['certs', nodeId], queryFn: () => api.get<{ certificates: Certificate[] }>(`/nodes/${nodeId}/certs`), retry: false, staleTime: 60_000 })
@@ -93,8 +98,12 @@ export function SitesPage({ nodeId }: { nodeId: string }) {
 
   const refresh = async () => {
     setRenaming(null)
-    await Promise.all(['traefik-managed', 'traefik-sites', 'traefik-history', 'dns-report'].map((k) => client.invalidateQueries({ queryKey: [k, nodeId] })))
+    await Promise.all(['traefik-managed', 'traefik-sites', 'traefik-overview', 'traefik-history', 'dns-report'].map((k) => client.invalidateQueries({ queryKey: [k, nodeId] })))
   }
+  const switchItem = useMutation({
+    mutationFn: (c: Card) => api.post(`${base}/items/toggle`, { path: c.item!.path, kind: 'routers', name: c.item!.name, enabled: c.off }),
+    onSuccess: refresh,
+  })
   const act = useMutation({ mutationFn: (run: () => Promise<unknown>) => run(), onSuccess: refresh })
   const fixDns = useMutation({
     mutationFn: async (hosts: string[]) => {
@@ -107,6 +116,7 @@ export function SitesPage({ nodeId }: { nodeId: string }) {
   const cards: Card[] = useMemo(() => {
     const result: Card[] = []
     const services = new Map((sites.data?.services ?? []).map((s) => [s.id, s.urls]))
+    const switchedOff = new Set((sites.data?.middlewares ?? []).filter((m) => m.disabled).map((m) => strip(m.id)))
     for (const r of sites.data?.routers ?? []) {
       const own = /^sites\/([a-z0-9-]+)\.yml$/.exec(r.path)?.[1]
       const hosts = hostsOf(r.rule)
@@ -115,12 +125,14 @@ export function SitesPage({ nodeId }: { nodeId: string }) {
         title: hosts[0] ?? r.name,
         hosts,
         rule: r.rule,
-        middlewares: r.middlewares.map(strip),
+        middlewares: r.middlewares.map(strip).filter((m) => !switchedOff.has(m)),
         target: (services.get(r.service) ?? []).join(', ') || strip(r.service),
         path: r.path,
         paused: false,
         managed: own ? (managedByName.get(own) ?? null) : null,
         routerId: r.id,
+        item: own ? null : { path: r.path, name: r.name },
+        off: r.disabled === true,
       })
     }
     // A paused site is not loaded by Traefik, so it is described from what the form saved.
@@ -137,6 +149,8 @@ export function SitesPage({ nodeId }: { nodeId: string }) {
         paused: true,
         managed: s,
         routerId: null,
+        item: null,
+        off: false,
       })
     }
     return result.sort((a, b) => a.title.localeCompare(b.title))
@@ -147,7 +161,7 @@ export function SitesPage({ nodeId }: { nodeId: string }) {
   const dnsOf = new Map((dns.data?.hosts ?? []).map((h) => [h.host, h.status]))
   const missingHosts = (dns.data?.hosts ?? []).filter((h) => h.status === 'missing').map((h) => h.host)
   const paused = cards.filter((c) => c.paused).length
-  const failed = sites.error ?? act.error ?? fixDns.error
+  const failed = sites.error ?? act.error ?? fixDns.error ?? switchItem.error
 
   const certFor = (host: string) => (certs.data?.certificates ?? []).find((c) => c.names.some((n) => n === host || (n.startsWith('*.') && host.endsWith(n.slice(1)) && host.split('.').length === n.split('.').length)))
 
@@ -227,7 +241,7 @@ export function SitesPage({ nodeId }: { nodeId: string }) {
           const cert = c.hosts.length > 0 ? certFor(c.hosts[0]) : undefined
           const m = c.managed
           return (
-            <li key={c.key} className={`site-card${c.paused ? ' paused' : ''}`}>
+            <li key={c.key} className={`site-card${c.paused || c.off ? ' paused' : ''}`}>
               <header>
                 <Globe size={16} aria-hidden="true" className="muted" />
                 <span className="grow ellipsis">
@@ -237,7 +251,7 @@ export function SitesPage({ nodeId }: { nodeId: string }) {
                     c.title
                   )}
                 </span>
-                {c.paused && <span className="badge warn"><Pause size={10} aria-hidden="true" /> {t('traefik:managed.paused')}</span>}
+                {(c.paused || c.off) && <span className="badge warn"><Pause size={10} aria-hidden="true" /> {t('traefik:managed.paused')}</span>}
                 {c.hosts.length > 1 && <span className="badge">+{c.hosts.length - 1}</span>}
                 {c.routerId && (
                   <Link to={`/nodes/${nodeId}?tab=map&focus=${encodeURIComponent(`router:${c.routerId}`)}`} title={t('traefik:relations')} aria-label={t('traefik:relations')}>
@@ -302,6 +316,13 @@ export function SitesPage({ nodeId }: { nodeId: string }) {
                   <>
                     <span className="badge" title={t('traefik:sites.fileTip')}>{t('traefik:sites.file')}</span>
                     <span className="grow" />
+                    {c.item && (c.off ? (
+                      <button type="button" className="primary" disabled={switchItem.isPending} onClick={() => switchItem.mutate(c)}>
+                        <Play size={13} aria-hidden="true" /> {t('traefik:managed.resume')}
+                      </button>
+                    ) : (
+                      <button type="button" role="switch" aria-checked="true" className="switch on" disabled={switchItem.isPending} title={t('traefik:managed.pauseTip')} aria-label={`${t('traefik:managed.pause')} ${c.title}`} onClick={() => switchItem.mutate(c)} />
+                    ))}
                     {c.path && (
                       <Link className="button-link small" to={`/nodes/${nodeId}?tab=traefik-advanced&view=files&file=${encodeURIComponent(c.path)}`}>
                         <Pencil size={13} aria-hidden="true" /> {t('traefik:mw.openFile')}

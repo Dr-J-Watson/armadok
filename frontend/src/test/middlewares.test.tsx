@@ -22,7 +22,7 @@ const fileOf = (m: { name: string; spec: { intent: string } }) => ({
 function renderIt(items: unknown[], routers: unknown[] = [], extraFiles: unknown[] = []) {
   const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
     if (init?.method && init.method !== 'GET') return json({ name: 'x', reference: 'x@file', content: 'http: {}' }, 201)
-    if (String(url).endsWith('/traefik/sites'))
+    if (String(url).endsWith('/traefik/items/overview'))
       return json({ routers, services: [], middlewares: [...(items as Parameters<typeof fileOf>[0][]).map(fileOf), ...extraFiles], errors: [] })
     return json({ middlewares: items })
   })
@@ -47,26 +47,44 @@ afterEach(() => {
 })
 
 describe('middlewares', () => {
-  it('creates "only my network" with the private ranges as a starting point', async () => {
+  it('creates "only my network" with the private ranges as a starting point, in a drawer', async () => {
     const spy = renderIt([])
     await startNew('Only my network')
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    await userEvent.clear(screen.getByLabelText('Name'))
     await userEvent.type(screen.getByLabelText('Name'), 'lan')
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-    const post = spy.mock.calls.find(([, init]) => init?.method === 'POST')
-    const sent = JSON.parse(String(post![1]!.body)).spec
-    expect(sent).toMatchObject({ intent: 'local_only', name: 'lan' })
-    expect(sent.ranges).toContain('192.168.0.0/16')
+    const post = spy.mock.calls.find(([url, init]) => init?.method === 'POST' && String(url).endsWith('/traefik/items'))
+    const sent = JSON.parse(String(post![1]!.body))
+    expect(sent).toMatchObject({ kind: 'middlewares', name: 'lan' })
+    expect(sent.value.ipAllowList.sourceRange).toContain('192.168.0.0/16')
   })
 
-  it('sends a password once and offers no way to read it back', async () => {
-    const spy = renderIt([])
+  it('turns a typed password into a hash on the server and keeps only the hash in the form', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+      if (String(url).endsWith('/htpasswd')) return json({ entry: 'alice:HASH' })
+      if (init?.method === 'POST') return json({ path: 'middlewares/auth.yml', name: 'auth' }, 201)
+      if (String(url).endsWith('/traefik/items/overview')) return json({ routers: [], services: [], middlewares: [], errors: [] })
+      return json({ middlewares: [] })
+    })
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MemoryRouter>
+          <MiddlewaresPage nodeId="n1" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
     await startNew('Ask for a password')
-    await userEvent.type(screen.getByLabelText('Name'), 'private')
-    await userEvent.type(screen.getByLabelText('User name'), 'alice')
-    await userEvent.type(screen.getByLabelText(/Password/), PW)
+    await userEvent.type(await screen.findByLabelText('User name'), 'alice')
+    await userEvent.type(screen.getByLabelText(/^Password/), PW)
+    await userEvent.click(screen.getByRole('button', { name: 'Generate a user' }))
+    await vi.waitFor(() => expect(screen.getByLabelText('users')).toHaveValue('alice:HASH'))
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-    const post = spy.mock.calls.find(([, init]) => init?.method === 'POST')
-    expect(JSON.parse(String(post![1]!.body)).spec.users).toEqual([{ username: 'alice', password: PW }])
+    const saved = spy.mock.calls.filter(([, init]) => init?.method === 'POST').map(([url, init]) => ({ url: String(url), body: JSON.parse(String(init!.body)) }))
+    expect(saved.find((c) => c.url.endsWith('/htpasswd'))!.body).toEqual({ username: 'alice', password: PW })
+    const created = saved.find((c) => c.url.endsWith('/traefik/items'))!.body
+    expect(created.value.basicAuth.users).toEqual(['alice:HASH'])
+    expect(JSON.stringify(created)).not.toContain(PW) // the password itself is never sent with the item
   })
 
   it('editing keeps the stored password unless a new one is typed', async () => {
@@ -81,7 +99,7 @@ describe('middlewares', () => {
     expect(JSON.parse(String(put![1]!.body)).expected_sha256).toBe('a'.repeat(64))
   })
 
-  it('does not let a middleware that sites use be deleted, nor one written by hand be changed here', async () => {
+  it('does not let a middleware that sites use be deleted, and edits a hand-written one in place', async () => {
     renderIt(
       [item()],
       [{ name: 'blog', middlewares: ['private@file'] }],
@@ -89,9 +107,9 @@ describe('middlewares', () => {
     )
     expect(await screen.findByText('blog')).toBeInTheDocument() // who uses it
     expect(screen.getByRole('button', { name: 'Delete private' })).toBeDisabled()
-    // The hand-written one only offers its file.
-    expect(screen.getByRole('link', { name: 'Open the file' })).toHaveAttribute('href', expect.stringContaining('middlewares%2Fold.yml'))
-    expect(screen.queryByRole('button', { name: 'Edit old' })).not.toBeInTheDocument()
+    // The hand-written one is edited in place (its item only) and its whole file stays one click away.
+    expect(screen.getByRole('link', { name: 'Open the file old' })).toHaveAttribute('href', expect.stringContaining('middlewares%2Fold.yml'))
+    expect(screen.getByRole('button', { name: 'Edit old' })).toBeInTheDocument()
   })
 
   it('sorts middlewares by what they do', async () => {
@@ -100,11 +118,10 @@ describe('middlewares', () => {
     expect(screen.getByRole('region', { name: 'Groups' })).toBeInTheDocument()
   })
 
-  it('previews the file without saving', async () => {
-    const spy = renderIt([])
-    await startNew('Only my network')
-    await userEvent.type(screen.getByLabelText('Name'), 'lan')
-    await userEvent.click(screen.getByRole('button', { name: 'Preview the file' }))
+  it('previews the generated file of a managed middleware without saving', async () => {
+    const spy = renderIt([item({ name: 'lan', spec: { intent: 'compress', name: 'lan', min_bytes: 1 } })])
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit lan' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Preview the file' }))
     expect(await screen.findByText('http: {}')).toBeInTheDocument()
     expect(String(spy.mock.calls.find(([, init]) => init?.method === 'POST')![0])).toContain('/preview')
   })
@@ -120,7 +137,7 @@ describe('renaming a middleware', () => {
         return json({ sites: ['blog'], manual: ['legacy.yml'], name: 'office', reference: 'office@file' })
       }
       const lan = item({ name: 'lan', spec: { intent: 'compress', name: 'lan' } })
-      return String(input).endsWith('/traefik/sites')
+      return String(input).endsWith('/traefik/items/overview')
         ? json({ routers: [], services: [], middlewares: [fileOf(lan)], errors: [] })
         : json({ middlewares: [lan] })
     })
